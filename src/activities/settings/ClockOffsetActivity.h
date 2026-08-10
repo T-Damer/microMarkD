@@ -1,6 +1,10 @@
 #pragma once
 
+#include <FreeInkApp.h>
+#include <FreeInkUIGfxRenderer.h>
 #include <GfxRenderer.h>
+
+#include <atomic>
 
 #include "activities/Activity.h"
 #include "util/ButtonNavigator.h"
@@ -12,8 +16,7 @@ struct Rect;
 // Supports the full IANA UTC offset range in 15 minute steps, including oddball zones like Nepal (+5:45).
 class ClockOffsetActivity final : public Activity {
  public:
-  explicit ClockOffsetActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
-      : Activity("ClockOffset", renderer, mappedInput) {}
+  explicit ClockOffsetActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
   void onEnter() override;
   void onExit() override;
@@ -21,6 +24,11 @@ class ClockOffsetActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+  // The app only registers touch hit rects over the legacy-drawn controls
+  // (three fields plus -/+), so a small instantiation is plenty.
+  using UiApp = freeink::ui::FreeInkApp<12, 2>;
+  using UiScreen = UiApp::ScreenType;
+
   ButtonNavigator buttonNavigator;
 
   enum Field { FIELD_SIGN = 0, FIELD_HOURS = 1, FIELD_MINUTES = 2, FIELD_COUNT };
@@ -34,10 +42,23 @@ class ClockOffsetActivity final : public Activity {
   // Quarter-hour index 0..3 (0, 15, 30, 45).
   uint8_t minutesQuarter = 0;
 
+  freeink::ui::GfxRendererTarget uiTarget;  // must precede `app`: the app holds a reference to it
+  UiApp app;
+  // render() rebuilds the app's interaction table; loop() only routes touch
+  // snapshots against it while this is true (the two run on different tasks).
+  std::atomic<bool> uiReady{false};
+  // True while the routed snapshot carries a tap release: field contact (held
+  // frames) only selects, the release additionally toggles the sign field.
+  bool routedRelease = false;
+
   void loadFromSettings();
   void saveToSettings() const;
   void adjustActiveField(int delta);
   void clampForSign();
-  bool fieldFromPoint(int x, int y, Field& field) const;
+  void getFieldRects(Rect& signRect, Rect& hoursRect, Rect& minutesRect) const;
   void getTouchControlRects(Rect& minusRect, Rect& plusRect) const;
+  void buildOffsetScreen(UiScreen& screen);
+  static void offsetScreen(UiScreen& screen, void* user);
+  static void onFieldEvent(const freeink::ui::ActionEvent& event, void* user);
+  static void onStepEvent(const freeink::ui::ActionEvent& event, void* user);
 };

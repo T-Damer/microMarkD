@@ -99,8 +99,9 @@ class WifiSelectionActivity final : public Activity {
   static constexpr unsigned long AUTO_CONNECTION_TIMEOUT_MS = 7000;
   unsigned long connectionStartTime = 0;
 
-  // FreeInkApp hosts the network list (themed rows, touch routing); every
-  // other state keeps its legacy centered-text rendering.
+  // FreeInkApp hosts the network list and the save/forget prompts (themed
+  // rows and dialogs, touch routing); every other state keeps its legacy
+  // centered-text rendering.
   using UiApp = freeink::ui::FreeInkApp<20, 4>;
   freeink::ui::GfxRendererTarget uiTarget;  // must precede `app`: the app holds a reference to it
   UiApp app;
@@ -113,15 +114,15 @@ class WifiSelectionActivity final : public Activity {
   static void listScreen(UiApp::ScreenType& screen, void* user);
   static void onRowEvent(const freeink::ui::ActionEvent& event, void* user);
   static void onScanEvent(const freeink::ui::ActionEvent& event, void* user);
+  static void onPromptEvent(const freeink::ui::ActionEvent& event, void* user);
   void buildListScreen(UiApp::ScreenType& screen);
+  void buildPromptDialog(UiApp::ScreenType& screen);
 
   void renderNetworkList(const Rect* screen, const ThemeMetrics* metrics);
   void renderPasswordEntry(const Rect* screen, const ThemeMetrics* metrics) const;
   void renderConnecting(const Rect* screen, const ThemeMetrics* metrics) const;
   void renderConnected(const Rect* screen, const ThemeMetrics* metrics) const;
-  void renderSavePrompt(const Rect* screen, const ThemeMetrics* metrics) const;
   void renderConnectionFailed(const Rect* screen, const ThemeMetrics* metrics) const;
-  void renderForgetPrompt(const Rect* screen, const ThemeMetrics* metrics) const;
 
   void startWifiScan(bool autoScan = false);
   void processWifiScanResults();
