@@ -279,9 +279,7 @@ void StatusBarSettingsActivity::render(RenderLock&&) {
   // indicator; the list renders through the app; the preview stays raw.
   GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_CUSTOMISE_STATUS_BAR));
 
-  uiReady = false;
-  app.render();
-  uiReady = true;
+  renderUi();
 
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_TOGGLE), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);

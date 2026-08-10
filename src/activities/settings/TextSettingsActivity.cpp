@@ -267,9 +267,7 @@ void TextSettingsActivity::render(RenderLock&&) {
                               previewHeight, familyName, sizeName);
 
   // Tab bar + active tab's list draw inside the screen builder.
-  uiReady = false;
-  app.render();
-  uiReady = true;
+  renderUi();
 
   if (focusedRowHasNoPreview()) {
     const int captionHeight = renderer.getTextHeight(UI_10_FONT_ID) + metrics_.verticalSpacing;

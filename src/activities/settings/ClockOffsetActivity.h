@@ -1,12 +1,9 @@
 #pragma once
 
-#include <FreeInkApp.h>
-#include <FreeInkUIGfxRenderer.h>
 #include <GfxRenderer.h>
 
-#include <atomic>
-
 #include "activities/Activity.h"
+#include "components/UiAppHost.h"
 #include "util/ButtonNavigator.h"
 
 struct Rect;
@@ -14,7 +11,9 @@ struct Rect;
 // Dedicated UTC offset picker for the status bar clock.
 // Three editable fields (sign, hours, minutes); Confirm cycles fields, Up/Down adjust the active one.
 // Supports the full IANA UTC offset range in 15 minute steps, including oddball zones like Nepal (+5:45).
-class ClockOffsetActivity final : public Activity {
+// The UiAppHost app only registers touch hit rects over the legacy-drawn
+// controls (three fields plus -/+); all visuals stay on the legacy draws.
+class ClockOffsetActivity final : public Activity, private UiAppHost {
  public:
   explicit ClockOffsetActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
@@ -24,11 +23,6 @@ class ClockOffsetActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
-  // The app only registers touch hit rects over the legacy-drawn controls
-  // (three fields plus -/+), so a small instantiation is plenty.
-  using UiApp = freeink::ui::FreeInkApp<12, 2>;
-  using UiScreen = UiApp::ScreenType;
-
   ButtonNavigator buttonNavigator;
 
   enum Field { FIELD_SIGN = 0, FIELD_HOURS = 1, FIELD_MINUTES = 2, FIELD_COUNT };
@@ -42,11 +36,6 @@ class ClockOffsetActivity final : public Activity {
   // Quarter-hour index 0..3 (0, 15, 30, 45).
   uint8_t minutesQuarter = 0;
 
-  freeink::ui::GfxRendererTarget uiTarget;  // must precede `app`: the app holds a reference to it
-  UiApp app;
-  // render() rebuilds the app's interaction table; loop() only routes touch
-  // snapshots against it while this is true (the two run on different tasks).
-  std::atomic<bool> uiReady{false};
   // True while the routed snapshot carries a tap release: field contact (held
   // frames) only selects, the release additionally toggles the sign field.
   bool routedRelease = false;

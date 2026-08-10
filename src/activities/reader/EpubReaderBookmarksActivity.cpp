@@ -252,9 +252,7 @@ void EpubReaderBookmarksActivity::render(RenderLock&&) {
       contentX + (contentWidth - renderer.getTextWidth(UI_12_FONT_ID, tr(STR_BOOKMARKS), EpdFontFamily::BOLD)) / 2;
   renderer.drawText(UI_12_FONT_ID, titleX, 15 + contentY, tr(STR_BOOKMARKS), true, EpdFontFamily::BOLD);
 
-  uiReady = false;
-  app.render();
-  uiReady = true;
+  renderUi();
 
   if (confirmPopup.processRender(renderer, mappedInput)) return;
 

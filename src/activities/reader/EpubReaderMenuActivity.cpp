@@ -195,9 +195,7 @@ void EpubReaderMenuActivity::render(RenderLock&&) {
   renderer.clearScreen();
   drawChrome();
 
-  uiReady = false;
-  app.render();
-  uiReady = true;
+  renderUi();
 
   drawFooter();
   renderer.displayBuffer();

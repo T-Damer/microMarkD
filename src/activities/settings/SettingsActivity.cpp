@@ -182,7 +182,9 @@ void SettingsActivity::applyUiSettingChange(uint8_t CrossPointSettings::* valueP
     return;
   }
   UITheme::getInstance().reload();
-  applySharedUiTheme(app, uiTarget);
+  // Re-derive the shared tokens for the new look; the gate stays closed until
+  // the repaint that rebuilds the interaction table in the new layout.
+  resetUi();
 }
 
 bool SettingsActivity::handleCustomInput() {
@@ -476,9 +478,7 @@ void SettingsActivity::render(RenderLock&&) {
   GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_SETTINGS_TITLE),
                  CROSSPOINT_VERSION);
 
-  uiReady = false;
-  app.render();
-  uiReady = true;
+  renderUi();
 
   const int ring = ringPos();
   const auto confirmLabel =

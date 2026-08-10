@@ -14,8 +14,6 @@
 #include "WifiCredentialStore.h"
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
-#include "components/UIThemeTokens.h"
-#include "components/UiAppHelpers.h"
 #include "fontIds.h"
 
 namespace fui = freeink::ui;
@@ -28,10 +26,7 @@ constexpr fui::ActionId ACTION_PROMPT = 3;
 
 WifiSelectionActivity::WifiSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
                                              const bool autoConnect)
-    : Activity("WifiSelection", renderer, mappedInput),
-      allowAutoConnect(autoConnect),
-      uiTarget(makeUiTarget(renderer)),
-      app(uiTarget, uiTarget.deviceContext()) {}
+    : Activity("WifiSelection", renderer, mappedInput), UiAppHost(renderer), allowAutoConnect(autoConnect) {}
 
 void WifiSelectionActivity::onRowEvent(const fui::ActionEvent& event, void* user) {
   auto* self = static_cast<WifiSelectionActivity*>(user);
@@ -133,10 +128,8 @@ void WifiSelectionActivity::onEnter() {
   }
   cachedMacAddress = std::string(macStr);
 
-  uiReady = false;
-  visibleRows = 1;
-  topIndex = 0;
-  applySharedUiTheme(app, uiTarget);
+  listNav.reset();
+  resetUi();
   app.on(ACTION_ROW, &WifiSelectionActivity::onRowEvent, this);
   app.on(ACTION_SCAN, &WifiSelectionActivity::onScanEvent, this);
   app.on(ACTION_PROMPT, &WifiSelectionActivity::onPromptEvent, this);
@@ -185,7 +178,7 @@ void WifiSelectionActivity::onExit() {
 void WifiSelectionActivity::startWifiScan(const bool autoScan) {
   autoConnecting = autoScan;
   manualNetworkListRequested = false;
-  topIndex = 0;
+  listNav.reset();
   state = WifiSelectionState::SCANNING;
   networks.clear();
   requestUpdate();
@@ -618,14 +611,9 @@ void WifiSelectionActivity::loop() {
   if (state == WifiSelectionState::SAVE_PROMPT) {
     // Touch goes through the FreeInkApp: render() registered the dialog
     // button hit rects; route the snapshot and let onPromptEvent dispatch.
-    if (uiReady) {
-      const fui::InputSnapshot snap = touchSnapshotFrom(mappedInput);
-      if (snap.touchPressed || snap.touchReleased) {
-        const auto event = app.route(snap);
-        if (app.invalidated()) requestUpdate();
-        if (event) return;  // dispatched to onPromptEvent
-      }
-    }
+    const auto route = routeTouch(mappedInput);
+    if (route.routed && app.invalidated()) requestUpdate();
+    if (route) return;  // dispatched to onPromptEvent
 
     if (mappedInput.wasPressed(MappedInputManager::Button::Up) ||
         mappedInput.wasPressed(MappedInputManager::Button::Left)) {
@@ -658,14 +646,9 @@ void WifiSelectionActivity::loop() {
   if (state == WifiSelectionState::FORGET_PROMPT) {
     // Touch goes through the FreeInkApp: render() registered the dialog
     // button hit rects; route the snapshot and let onPromptEvent dispatch.
-    if (uiReady) {
-      const fui::InputSnapshot snap = touchSnapshotFrom(mappedInput);
-      if (snap.touchPressed || snap.touchReleased) {
-        const auto event = app.route(snap);
-        if (app.invalidated()) requestUpdate();
-        if (event) return;  // dispatched to onPromptEvent
-      }
-    }
+    const auto route = routeTouch(mappedInput);
+    if (route.routed && app.invalidated()) requestUpdate();
+    if (route) return;  // dispatched to onPromptEvent
 
     if (mappedInput.wasPressed(MappedInputManager::Button::Up) ||
         mappedInput.wasPressed(MappedInputManager::Button::Left)) {
@@ -765,34 +748,25 @@ void WifiSelectionActivity::loop() {
     // Touch goes through the FreeInkApp: render() registered the row hit
     // rects; route the snapshot and let onRowEvent dispatch. Long-press on a
     // network row fires "forget" while the finger is down.
-    if (uiReady) {
-      const fui::InputSnapshot snap = touchSnapshotFrom(mappedInput, /*withLongPress=*/true);
-      if (snap.touchPressed || snap.touchReleased) {
-        const auto event = app.route(snap);
-        if (app.invalidated()) requestUpdate();
-        if (event) return;  // dispatched to onRowEvent
-      }
-    }
+    const auto route = routeTouch(mappedInput, /*withLongPress=*/true);
+    if (route.routed && app.invalidated()) requestUpdate();
+    if (route) return;  // dispatched to onRowEvent
 
     if (!networks.empty()) {
       // Swipes scroll the viewport; the selection stays put and button
       // navigation pulls the view back to it.
       const auto swipe = mappedInput.wasSwipe();
       if (swipe == MappedInputManager::SwipeDir::Up || swipe == MappedInputManager::SwipeDir::Down) {
-        const int delta = swipe == MappedInputManager::SwipeDir::Up ? visibleRows : -visibleRows;
-        const int next = scrollListBy(topIndex, delta, visibleRows, static_cast<int>(networks.size()));
-        if (next != topIndex) {
-          topIndex = next;
-          requestUpdate();
-        }
+        const int delta = swipe == MappedInputManager::SwipeDir::Up ? listNav.visibleRows : -listNav.visibleRows;
+        if (listNav.scrollBy(delta, static_cast<int>(networks.size()))) requestUpdate();
         return;
       }
     }
 
     const auto moveSelection = [this](const int index) {
       selectedNetworkIndex = static_cast<size_t>(index);
-      topIndex = followListSelection(static_cast<int>(selectedNetworkIndex), topIndex, visibleRows,
-                                     static_cast<int>(networks.size()));
+      listNav.selected = index;
+      listNav.follow(static_cast<int>(networks.size()));
       requestUpdate();
     };
     buttonNavigator.onNext(
@@ -864,9 +838,7 @@ void WifiSelectionActivity::render(RenderLock&&) {
     case WifiSelectionState::SAVE_PROMPT:
     case WifiSelectionState::FORGET_PROMPT: {
       // The app's screen builder draws the option dialog panel itself.
-      uiReady = false;
-      app.render();
-      uiReady = true;
+      renderUi();
       const auto labels =
           mappedInput.mapLabels(state == WifiSelectionState::SAVE_PROMPT ? tr(STR_CANCEL) : tr(STR_BACK),
                                 tr(STR_SELECT), tr(STR_DIR_LEFT), tr(STR_DIR_RIGHT));
@@ -881,11 +853,11 @@ void WifiSelectionActivity::render(RenderLock&&) {
   renderer.displayBuffer();
 }
 
-void WifiSelectionActivity::listScreen(UiApp::ScreenType& screen, void* user) {
+void WifiSelectionActivity::listScreen(UiScreen& screen, void* user) {
   static_cast<WifiSelectionActivity*>(user)->buildListScreen(screen);
 }
 
-void WifiSelectionActivity::buildListScreen(UiApp::ScreenType& screen) {
+void WifiSelectionActivity::buildListScreen(UiScreen& screen) {
   const auto& metrics = UITheme::getInstance().getMetrics();
   const Rect safe = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
   // Content below the header + MAC sub-band, above the legend line.
@@ -942,7 +914,6 @@ void WifiSelectionActivity::buildListScreen(UiApp::ScreenType& screen) {
   fui::ListProps props;
   props.items = items.data();
   props.count = static_cast<uint16_t>(items.size());
-  props.selectedIndex = static_cast<int16_t>(selectedNetworkIndex);
   props.action = ACTION_ROW;
   // Tap opens; long-press a saved network forgets it (physical buttons stay in loop()).
   props.inputMask = fui::InputTouch | fui::InputLongPress;
@@ -953,14 +924,13 @@ void WifiSelectionActivity::buildListScreen(UiApp::ScreenType& screen) {
   props.labelText = screen.theme().bodyText;
   props.labelText.maxLines = 2;
   props.balanceWrappedLabelWithValue = false;
-  const auto rows = fui::listVisibleRows(screen.body(), screen.theme().rowHeight, screen.theme().listRowGap);
-  visibleRows = rows > 0 ? rows : 1;
-  topIndex = scrollListBy(topIndex, 0, visibleRows, static_cast<int>(networks.size()));  // clamp to range
-  props.topIndex = static_cast<uint16_t>(topIndex);
+  listNav.selected = static_cast<int>(selectedNetworkIndex);
+  listNav.syncToProps(screen.body(), screen.theme().rowHeight, screen.theme().listRowGap,
+                      static_cast<int>(networks.size()), props);
   screen.list(props);
 }
 
-void WifiSelectionActivity::buildPromptDialog(UiApp::ScreenType& screen) {
+void WifiSelectionActivity::buildPromptDialog(UiScreen& screen) {
   const bool isForget = state == WifiSelectionState::FORGET_PROMPT;
 
   // Owned for the duration of the draw; the dialog wraps long SSIDs itself.
@@ -1005,9 +975,7 @@ void WifiSelectionActivity::buildPromptDialog(UiApp::ScreenType& screen) {
 }
 
 void WifiSelectionActivity::renderNetworkList(const Rect* screen, const ThemeMetrics* metrics) {
-  uiReady = false;
-  app.render();
-  uiReady = true;
+  renderUi();
   if (networks.empty() && !mappedInput.hasTouch()) {
     // Below the centered "no networks" line the app drew. Touch boards get an
     // on-screen Retry button from the screen builder instead of this hint.

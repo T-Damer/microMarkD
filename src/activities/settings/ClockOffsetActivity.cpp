@@ -55,16 +55,13 @@ void decodeOffset(uint8_t biased, uint8_t& sign, uint8_t& hours, uint8_t& quarte
 }  // namespace
 
 ClockOffsetActivity::ClockOffsetActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
-    : Activity("ClockOffset", renderer, mappedInput),
-      uiTarget(makeUiTarget(renderer)),
-      app(uiTarget, uiTarget.deviceContext()) {}
+    : Activity("ClockOffset", renderer, mappedInput), UiAppHost(renderer) {}
 
 void ClockOffsetActivity::onEnter() {
   Activity::onEnter();
   loadFromSettings();
   activeField = FIELD_HOURS;
-  uiReady = false;
-  applySharedUiTheme(app, uiTarget);
+  resetUi();
   app.on(ACTION_FIELD, &ClockOffsetActivity::onFieldEvent, this);
   app.on(ACTION_STEP, &ClockOffsetActivity::onStepEvent, this);
   app.setScreen(&ClockOffsetActivity::offsetScreen, this);
@@ -198,11 +195,11 @@ void ClockOffsetActivity::loop() {
   // requestUpdate themselves, so the app's invalidation flag is deliberately
   // ignored: held frames dispatch every pass and must not repaint an
   // unchanged screen.
-  if (uiReady && mappedInput.hasTouch()) {
+  if (routingReady() && mappedInput.hasTouch()) {
     const fui::InputSnapshot snap = touchSnapshotFrom(mappedInput);
     if (snap.touchPressed || snap.touchHeld || snap.touchReleased) {
       routedRelease = snap.touchReleased;
-      if (app.route(snap)) {
+      if (route(snap)) {
         return;
       }
     }
@@ -372,9 +369,7 @@ void ClockOffsetActivity::render(RenderLock&&) {
 
   // Rebuild the app's touch hit rects over the legacy-drawn controls (the
   // screen builder draws nothing, so the visuals above are untouched).
-  uiReady = false;
-  app.render();
-  uiReady = true;
+  renderUi();
 
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_NEXT_FIELD), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);

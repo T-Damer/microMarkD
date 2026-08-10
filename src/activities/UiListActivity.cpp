@@ -5,24 +5,18 @@
 
 #include "MappedInputManager.h"
 #include "components/UITheme.h"
-#include "components/UIThemeTokens.h"
-#include "components/UiAppHelpers.h"
 #include "fontIds.h"
 
 namespace fui = freeink::ui;
 
 UiListActivity::UiListActivity(const char* name, GfxRenderer& renderer, MappedInputManager& mappedInput,
                                const bool wantsTouchLongPress)
-    : Activity(name, renderer, mappedInput),
-      uiTarget(makeUiTarget(renderer)),
-      app(uiTarget, uiTarget.deviceContext()),
-      wantsTouchLongPress(wantsTouchLongPress) {}
+    : Activity(name, renderer, mappedInput), UiAppHost(renderer), wantsTouchLongPress(wantsTouchLongPress) {}
 
 void UiListActivity::onEnter() {
   Activity::onEnter();
-  uiReady = false;
   activeNav().reset();
-  applySharedUiTheme(app, uiTarget);
+  resetUi();
   app.on(ACTION_ROW, &UiListActivity::rowActionTrampoline, this);
   app.setScreen(&UiListActivity::screenTrampoline, this);
   requestUpdate();
@@ -60,18 +54,15 @@ bool UiListActivity::handleButtons() {
   return false;
 }
 
-bool UiListActivity::routeTouch() {
+bool UiListActivity::routeListTouch() {
   // Touch goes through the FreeInkApp: render() registered the row hit rects;
   // route the snapshot and let the action trampoline dispatch.
-  if (!uiReady) return false;
-  const fui::InputSnapshot snap = touchSnapshotFrom(mappedInput, wantsTouchLongPress);
-  if (!snap.touchPressed && !snap.touchReleased) return false;
-  const auto event = app.route(snap);
+  const auto route = UiAppHost::routeTouch(mappedInput, wantsTouchLongPress);
   // No pressed-state repaint: the render it triggers would drop a slow tap's
   // release inside the uiReady window (tap-to-activate needed two taps), and
   // it costs a second e-ink refresh per tap.
-  if (app.invalidated()) requestUpdate();
-  return static_cast<bool>(event);  // dispatched to the action handler
+  if (route.routed && app.invalidated()) requestUpdate();
+  return static_cast<bool>(route);  // dispatched to the action handler
 }
 
 void UiListActivity::moveSelectionTo(const int index) {
@@ -84,7 +75,7 @@ void UiListActivity::moveSelectionTo(const int index) {
 void UiListActivity::loop() {
   if (handleCustomInput()) return;
   if (handleButtons()) return;
-  if (routeTouch()) return;
+  if (routeListTouch()) return;
 
   // Swipes scroll the viewport; the selection stays put (it may scroll
   // off-screen) and button navigation pulls the view back to it.
@@ -130,11 +121,7 @@ void UiListActivity::drawFooter() {
 void UiListActivity::render(RenderLock&&) {
   renderer.clearScreen();
   drawChrome();
-
-  uiReady = false;
-  app.render();
-  uiReady = true;
-
+  renderUi();
   drawFooter();
   renderer.displayBuffer();
 }

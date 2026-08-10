@@ -128,25 +128,6 @@ inline void addDialogCancelOk(Screen& screen, const freeink::ui::ActionId cancel
       freeink::ui::Rect{static_cast<int16_t>(band.x + band.width - buttonWidth), band.y, buttonWidth, band.height}, ok);
 }
 
-// Scroll semantics shared by every FreeInkUI list screen: swipes move the
-// viewport (topIndex) without touching the selection; button navigation moves
-// the selection and pulls the viewport along just enough to keep it visible.
-
-inline int scrollListBy(const int topIndex, const int delta, const int visibleRows, const int count) {
-  int maxTop = count - visibleRows;
-  if (maxTop < 0) maxTop = 0;
-  int next = topIndex + delta;
-  if (next > maxTop) next = maxTop;
-  if (next < 0) next = 0;
-  return next;
-}
-
-inline int followListSelection(const int selectedIndex, const int topIndex, const int visibleRows, const int count) {
-  return static_cast<int>(freeink::ui::listTopIndexFor(
-      static_cast<int16_t>(selectedIndex), static_cast<uint16_t>(topIndex),
-      static_cast<uint16_t>(visibleRows > 0 ? visibleRows : 1), static_cast<uint16_t>(count)));
-}
-
 // withLongPress: the SDK touch classifier fires the long-press WHILE the
 // finger is still down (matching the physical-button hold-to-act feel) and
 // suppresses the remainder of the contact, so the finger lift can't also

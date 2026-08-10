@@ -1,38 +1,26 @@
 #pragma once
 
-#include <FreeInkApp.h>
-#include <FreeInkUIGfxRenderer.h>
-
-#include <atomic>
-
 #include "activities/Activity.h"
+#include "components/UiAppHost.h"
 #include "util/ButtonNavigator.h"
 
-// Base for activities hosting a single FreeInkUI list screen. Owns the shared
-// scaffold every converted list screen used to repeat: the font-bound render
-// target and FreeInkApp, the uiReady render-task handshake, the touch-routing /
-// swipe-scroll / button-navigation loop protocol (swipes scroll the viewport
-// without moving the selection; buttons move the selection and pull the
-// viewport along via fui::ListNav), and the render skeleton (chrome, app,
-// footer). Subclasses supply the data: item count, screen content, and what
-// activating a row does.
+// Base for activities hosting a single FreeInkUI list screen. UiAppHost owns
+// the app-hosting protocol (render target, FreeInkApp, uiReady handshake);
+// this base layers the list protocol on top: the touch-routing / swipe-scroll
+// / button-navigation loop (swipes scroll the viewport without moving the
+// selection; buttons move the selection and pull the viewport along via
+// fui::ListNav), and the render skeleton (chrome, app, footer). Subclasses
+// supply the data: item count, screen content, and what activating a row does.
 //
 // Screens that are not a single list (sliders, tab layouts, state machines)
-// should NOT derive from this — they keep composing UiAppHelpers directly.
-class UiListActivity : public Activity {
+// should NOT derive from this — they use UiAppHost directly.
+class UiListActivity : public Activity, protected UiAppHost {
  public:
   void onEnter() override;
   void loop() override;
   void render(RenderLock&&) override;
 
  protected:
-  // One shared instantiation for every list screen (largest of the sizes the
-  // converted activities used) so this base stays a plain class instead of a
-  // template: capacity for a full page of rows plus sub-band controls, and for
-  // the row handler plus a few subclass actions.
-  using UiApp = freeink::ui::FreeInkApp<24, 6>;
-  using UiScreen = UiApp::ScreenType;
-
   // Base-owned row action; subclass-registered actions start at ACTION_USER.
   static constexpr freeink::ui::ActionId ACTION_ROW = 1;
   static constexpr freeink::ui::ActionId ACTION_USER = 2;
@@ -86,11 +74,6 @@ class UiListActivity : public Activity {
   void moveSelectionTo(int index);
 
   // --- shared state ----------------------------------------------------------
-  freeink::ui::GfxRendererTarget uiTarget;  // must precede `app`: the app holds a reference to it
-  UiApp app;
-  // render() rebuilds the app's interaction table; loop() only routes touch
-  // snapshots against it while this is true (the two run on different tasks).
-  std::atomic<bool> uiReady{false};
   // Selection + viewport (selected/top/visibleRows/followOnBuild). Access via
   // activeNav() in shared code; `nav` is the single-list default storage.
   freeink::ui::ListNav nav;
@@ -99,7 +82,9 @@ class UiListActivity : public Activity {
  private:
   static void screenTrampoline(UiScreen& screen, void* user);
   static void rowActionTrampoline(const freeink::ui::ActionEvent& event, void* user);
-  bool routeTouch();
+  // Named apart from UiAppHost::routeTouch so the host overload stays visible
+  // (not name-hidden) to subclasses with extra touch surfaces.
+  bool routeListTouch();
 
   const bool wantsTouchLongPress;
 };

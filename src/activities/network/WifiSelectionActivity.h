@@ -1,9 +1,5 @@
 #pragma once
 
-#include <FreeInkApp.h>
-#include <FreeInkUIGfxRenderer.h>
-
-#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -11,7 +7,7 @@
 #include <vector>
 
 #include "activities/Activity.h"
-#include "components/UiAppHelpers.h"
+#include "components/UiAppHost.h"
 #include "util/ButtonNavigator.h"
 
 struct Rect;
@@ -52,7 +48,7 @@ enum class WifiSelectionState {
  *
  * The onComplete callback receives true if connected successfully, false if cancelled.
  */
-class WifiSelectionActivity final : public Activity {
+class WifiSelectionActivity final : public Activity, private UiAppHost {
   ButtonNavigator buttonNavigator;
 
   WifiSelectionState state = WifiSelectionState::SCANNING;
@@ -99,24 +95,19 @@ class WifiSelectionActivity final : public Activity {
   static constexpr unsigned long AUTO_CONNECTION_TIMEOUT_MS = 7000;
   unsigned long connectionStartTime = 0;
 
-  // FreeInkApp hosts the network list and the save/forget prompts (themed
-  // rows and dialogs, touch routing); every other state keeps its legacy
-  // centered-text rendering.
-  using UiApp = freeink::ui::FreeInkApp<20, 4>;
-  freeink::ui::GfxRendererTarget uiTarget;  // must precede `app`: the app holds a reference to it
-  UiApp app;
-  // render() rebuilds the app's interaction table; loop() only routes touch
-  // snapshots against it while this is true (the two run on different tasks).
-  std::atomic<bool> uiReady{false};
-  int visibleRows = 1;  // rows per page at the current scale; set by the screen builder
-  int topIndex = 0;     // viewport scroll position, decoupled from the selection
+  // The UiAppHost app hosts the network list and the save/forget prompts
+  // (themed rows and dialogs, touch routing); every other state keeps its
+  // legacy centered-text rendering.
+  // Viewport memory (top/visibleRows) for the network list; `selected` is
+  // mirrored from selectedNetworkIndex at build/move time.
+  freeink::ui::ListNav listNav;
 
-  static void listScreen(UiApp::ScreenType& screen, void* user);
+  static void listScreen(UiScreen& screen, void* user);
   static void onRowEvent(const freeink::ui::ActionEvent& event, void* user);
   static void onScanEvent(const freeink::ui::ActionEvent& event, void* user);
   static void onPromptEvent(const freeink::ui::ActionEvent& event, void* user);
-  void buildListScreen(UiApp::ScreenType& screen);
-  void buildPromptDialog(UiApp::ScreenType& screen);
+  void buildListScreen(UiScreen& screen);
+  void buildPromptDialog(UiScreen& screen);
 
   void renderNetworkList(const Rect* screen, const ThemeMetrics* metrics);
   void renderPasswordEntry(const Rect* screen, const ThemeMetrics* metrics) const;

@@ -616,9 +616,7 @@ void FontDownloadActivity::render(RenderLock&&) {
   if (state_ == LOADING_MANIFEST) {
     renderer.drawCenteredText(UI_10_FONT_ID, centerY, tr(STR_LOADING_FONT_LIST));
   } else if (state_ == FAMILY_LIST) {
-    uiReady = false;
-    app.render();
-    uiReady = true;
+    renderUi();
 
     const char* confirmLabel = families_.empty()              ? ""
                                : isSelectedFamilyDeletable()  ? tr(STR_DELETE)
