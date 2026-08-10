@@ -982,10 +982,18 @@ void WifiSelectionActivity::buildPromptDialog(UiApp::ScreenType& screen) {
   props.message = isForget ? tr(STR_FORGET_AND_REMOVE) : tr(STR_SAVE_PASSWORD);
   props.options = options;
   props.optionCount = 2;
+  // Stacked full-width options (matching OptionPopup): side-by-side halves
+  // truncate the long "Forget network" label.
+  props.verticalOptions = true;
   props.titleText = screen.theme().smallText;
   props.titleText.bold = true;
+  // TextStyle defaults to maxLines=1 (ellipsis truncation); let the SSID
+  // headline and the question wrap. optionDialogHeight measures with the same
+  // styles, so the dialog grows to fit the wrapped lines.
   props.headlineText = screen.theme().bodyText;
+  props.headlineText.maxLines = 2;
   props.messageText = screen.theme().smallText;
+  props.messageText.maxLines = 3;
   props.buttonText = screen.theme().smallText;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
 
