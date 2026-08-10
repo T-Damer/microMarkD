@@ -21,15 +21,15 @@ void UiAppHost::renderUi() {
 
 UiAppHost::TouchRoute UiAppHost::routeTouch(const MappedInputManager& input, const bool withLongPress,
                                             const bool routeHeld) {
-  TouchRoute route;
-  if (!uiReady) return route;
-  route.snap = touchSnapshotFrom(input, withLongPress);
-  if (!route.snap.touchPressed && !route.snap.touchReleased && !(routeHeld && route.snap.touchHeld)) {
-    return route;
+  TouchRoute result;  // named apart from route() — cppcheck flags the shadow
+  if (!uiReady) return result;
+  result.snap = touchSnapshotFrom(input, withLongPress);
+  if (!result.snap.touchPressed && !result.snap.touchReleased && !(routeHeld && result.snap.touchHeld)) {
+    return result;
   }
-  route.routed = true;
-  route.event = app.route(route.snap);
-  return route;
+  result.routed = true;
+  result.event = app.route(result.snap);
+  return result;
 }
 
 fui::ActionEvent UiAppHost::route(const fui::InputSnapshot& snap) {

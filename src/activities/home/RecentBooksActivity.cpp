@@ -159,6 +159,9 @@ void RecentBooksActivity::buildScreen(UiScreen& screen) {
 }
 
 void RecentBooksActivity::drawFooter() {
-  const auto labels = mappedInput.mapLabels(tr(STR_HOME), tr(STR_OPEN), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
+  // No rows: blank the row-action hints, same as FileBrowserActivity.
+  const bool empty = recentBooks.empty();
+  const auto labels = mappedInput.mapLabels(tr(STR_HOME), empty ? "" : tr(STR_OPEN), empty ? "" : tr(STR_DIR_UP),
+                                            empty ? "" : tr(STR_DIR_DOWN));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 }

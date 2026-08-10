@@ -397,7 +397,11 @@ std::string SettingsActivity::settingValueText(const SettingInfo& setting) {
     return SETTINGS.*(setting.valuePtr) ? tr(STR_STATE_ON) : tr(STR_STATE_OFF);
   }
   if (setting.type == SettingType::ENUM && setting.valuePtr != nullptr) {
-    return I18N.get(setting.enumValues[SETTINGS.*(setting.valuePtr)]);
+    // Guard like the valueGetter branch below: a corrupt/migrated settings
+    // byte must not index past the enum table.
+    const uint8_t value = SETTINGS.*(setting.valuePtr);
+    if (value >= setting.enumValues.size()) return "";
+    return I18N.get(setting.enumValues[value]);
   }
   if (setting.type == SettingType::ENUM && setting.valueGetter) {
     const uint8_t value = setting.valueGetter();

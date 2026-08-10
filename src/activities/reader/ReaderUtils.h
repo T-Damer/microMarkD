@@ -115,7 +115,10 @@ inline bool isTouchMenuTap(const GfxRenderer& renderer, const MappedInputManager
   int y = 0;
   if (!input.wasScreenTapped(x, y)) return false;
   const int width = renderer.getScreenWidth();
-  return x >= width / 3 && x < (2 * width) / 3;
+  // Same boundary math as detectTouchPageTurn's outer zones, so the middle
+  // band meets them with no dead column when width % 3 != 0.
+  const int zoneWidth = width / 3;
+  return x >= zoneWidth && x < width - zoneWidth;
 }
 
 // Reader menu opens on the menu edge-swipe or a middle-third tap. On home-key

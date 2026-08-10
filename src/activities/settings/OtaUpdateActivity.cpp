@@ -50,7 +50,9 @@ void OtaUpdateActivity::onWifiSelectionComplete(const bool success) {
     state = WAITING_CONFIRMATION;
   }
   const char* options[] = {tr(STR_CANCEL), tr(STR_UPDATE)};
-  confirmPopup.show(tr(STR_NEW_UPDATE), options, 2, 0, [this](const int idx) {
+  // Default the selection to Update so the hardware Confirm button installs,
+  // matching the pre-popup layout (Back = cancel, Confirm = update).
+  confirmPopup.show(tr(STR_NEW_UPDATE), options, 2, 1, [this](const int idx) {
     if (idx == 1) {
       runUpdateInstall();
     } else {

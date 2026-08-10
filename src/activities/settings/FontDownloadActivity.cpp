@@ -460,7 +460,11 @@ void FontDownloadActivity::activateSelected() {
     }
     updateAll();
   } else {
-    auto& family = families_[familyIndexFromList(nav.selected)];
+    // The special rows disappear when a download starts, so a stale selection
+    // can map past the family table.
+    const int familyIndex = familyIndexFromList(nav.selected);
+    if (familyIndex < 0 || familyIndex >= static_cast<int>(families_.size())) return;
+    auto& family = families_[familyIndex];
     if (!family.installed || family.hasUpdate) {
       currentFileIndex_ = 0;
       currentFileTotal_ = family.files.size();

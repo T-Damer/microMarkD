@@ -9,6 +9,7 @@
 
 #include <Xtc.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <utility>
@@ -25,6 +26,11 @@ class XtcReaderActivity final : public Activity {
   // theme tokens): exists only while the end screen is showing — created at
   // the render path's sole load site, dropped by loop() on paging back in.
   std::unique_ptr<EndOfBookOptions> endOfBookOptions;
+  // Publication flag for the pointer above: the render task creates the object
+  // and release-stores true; the main task acquire-loads before dereferencing,
+  // so it never sees a partially constructed object. Cleared (main task, under
+  // RenderLock) before reset.
+  std::atomic<bool> endOfBookOptionsReady{false};
 
   enum class StatusBarOverlayPosition { Bottom, Top };
   struct StatusBarInfo {

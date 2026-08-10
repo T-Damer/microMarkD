@@ -2,6 +2,8 @@
 
 #include <GfxRenderer.h>
 
+#include <cassert>
+
 #include "MappedInputManager.h"
 #include "components/UITheme.h"
 
@@ -20,11 +22,15 @@ void UiTabListActivity::onEnter() {
 
 fui::ListNav& UiTabListActivity::activeNav() {
   if (tabNavs.empty()) return nav;  // pre-onEnter fallback
+  // Invariant: subclasses keep activeTab() inside [0, tabCount()), and
+  // tabCount() does not change after onEnter() sized tabNavs.
+  assert(activeTab() >= 0 && static_cast<size_t>(activeTab()) < tabNavs.size());
   return tabNavs[static_cast<size_t>(activeTab())];
 }
 
 int UiTabListActivity::ringPos() const {
   if (tabNavs.empty()) return 0;
+  assert(activeTab() >= 0 && static_cast<size_t>(activeTab()) < tabNavs.size());
   return tabNavs[static_cast<size_t>(activeTab())].selected;
 }
 

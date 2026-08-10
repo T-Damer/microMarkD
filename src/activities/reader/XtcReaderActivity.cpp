@@ -76,8 +76,9 @@ void XtcReaderActivity::loop() {
 
   // Paged back into the book: drop the end screen's suggestion menu (its app +
   // theme tokens, ~2KB) so long sessions read with the smaller footprint.
-  if (!atEndOfBook && endOfBookOptions) {
+  if (!atEndOfBook && endOfBookOptionsReady.load(std::memory_order_acquire)) {
     RenderLock lock(*this);
+    endOfBookOptionsReady.store(false, std::memory_order_release);
     endOfBookOptions.reset();
   }
 
@@ -85,7 +86,7 @@ void XtcReaderActivity::loop() {
   // input. Anything it doesn't handle (e.g. long-press Back to the file browser) falls
   // through to the regular handlers below; page turns are absorbed by the end-of-book
   // block.
-  if (atEndOfBook && endOfBookOptions && endOfBookOptions->menuActive()) {
+  if (atEndOfBook && endOfBookOptionsReady.load(std::memory_order_acquire) && endOfBookOptions->menuActive()) {
     std::string openPath;
     switch (endOfBookOptions->handleMenuInput(mappedInput, &openPath)) {
       case EndOfBookOptions::Action::OpenBook:
@@ -127,7 +128,7 @@ void XtcReaderActivity::loop() {
   // At end of the book with no suggestion menu, forward button goes home and back
   // button returns to last page
   if (currentPage >= xtc->getPageCount()) {
-    if (endOfBookOptions && endOfBookOptions->menuActive()) {
+    if (endOfBookOptionsReady.load(std::memory_order_acquire) && endOfBookOptions->menuActive()) {
       // Selection movement was handled above; absorb leftover page-turn triggers so
       // e.g. "previous" at the top of the list doesn't jump back into the book
       return;
@@ -176,6 +177,9 @@ void XtcReaderActivity::render(RenderLock&&) {
     if (!endOfBookOptions) {
       endOfBookOptions = makeUniqueNoThrow<EndOfBookOptions>(renderer);
       if (!endOfBookOptions) LOG_ERR("XTC", "OOM: EndOfBookOptions");
+      // Release-publish AFTER construction so the main task's acquire load
+      // can't observe a half-built object.
+      endOfBookOptionsReady.store(endOfBookOptions != nullptr, std::memory_order_release);
     }
     renderer.clearScreen();
     if (endOfBookOptions) {

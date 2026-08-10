@@ -211,8 +211,8 @@ void FileBrowserActivity::onRowLongPress(const int index) {
   activateSelected(/*forceDelete=*/true);
 }
 
-void FileBrowserActivity::activateSelected(const bool forceDelete) {
-  if (lockNextConfirmRelease) {
+void FileBrowserActivity::activateSelected(const bool forceDelete, const bool fromButton) {
+  if (fromButton && lockNextConfirmRelease) {
     lockNextConfirmRelease = false;
     return;
   }
@@ -310,7 +310,7 @@ bool FileBrowserActivity::handleCustomInput() {
 
 bool FileBrowserActivity::handleButtons() {
   if (mappedInput.wasReleased(MappedInputManager::Button::Confirm)) {
-    activateSelected();
+    activateSelected(/*forceDelete=*/false, /*fromButton=*/true);
     return true;
   }
 

@@ -430,8 +430,9 @@ void EpubReaderActivity::loop() {
 
   // Paged back into the book: drop the end screen's suggestion menu (its app +
   // theme tokens, ~2KB) so long sessions read with the smaller footprint.
-  if (!atEndOfBook && endOfBookOptions) {
+  if (!atEndOfBook && endOfBookOptionsReady.load(std::memory_order_acquire)) {
     RenderLock lock(*this);
+    endOfBookOptionsReady.store(false, std::memory_order_release);
     endOfBookOptions.reset();
   }
 
@@ -504,7 +505,7 @@ void EpubReaderActivity::loop() {
   // through to the regular handlers below; page turns are absorbed by the end-of-book
   // block. A Confirm release after a long-press function (bookmark/sync) fired is left
   // to the regular Confirm handler below, which consumes it via ignoreNextConfirmRelease.
-  if (atEndOfBook && endOfBookOptions && endOfBookOptions->menuActive() &&
+  if (atEndOfBook && endOfBookOptionsReady.load(std::memory_order_acquire) && endOfBookOptions->menuActive() &&
       !(ignoreNextConfirmRelease && mappedInput.wasReleased(MappedInputManager::Button::Confirm))) {
     std::string openPath;
     switch (endOfBookOptions->handleMenuInput(mappedInput, &openPath)) {
@@ -623,6 +624,12 @@ void EpubReaderActivity::loop() {
   constexpr unsigned long kMinManualTurnGapMs = 200;
   const bool turnGuardActive = RenderLock::peek() || (millis() - lastPageTurnTime) < kMinManualTurnGapMs;
   if (pendingManualTurn != 0 && !turnGuardActive) {
+    if (!section) {
+      // The section was dropped after the latch (re-layout, build failure,
+      // bookmark jump): the queued turn no longer names a page.
+      pendingManualTurn = 0;
+      return;
+    }
     const bool forward = pendingManualTurn > 0;
     pendingManualTurn = 0;
     pageTurn(forward);
@@ -639,7 +646,7 @@ void EpubReaderActivity::loop() {
   // At end of the book with no suggestion menu, forward button goes home and back
   // button returns to last page
   if (currentSpineIndex > 0 && currentSpineIndex >= epub->getSpineItemsCount()) {
-    if (endOfBookOptions && endOfBookOptions->menuActive()) {
+    if (endOfBookOptionsReady.load(std::memory_order_acquire) && endOfBookOptions->menuActive()) {
       // Selection movement was handled above; absorb leftover page-turn triggers so
       // e.g. "previous" at the top of the list doesn't jump back into the book
       return;
@@ -1157,6 +1164,9 @@ void EpubReaderActivity::render(RenderLock&& lock) {
     if (!endOfBookOptions) {
       endOfBookOptions = makeUniqueNoThrow<EndOfBookOptions>(renderer);
       if (!endOfBookOptions) LOG_ERR("ERS", "OOM: EndOfBookOptions");
+      // Release-publish AFTER construction so the main task's acquire load
+      // can't observe a half-built object.
+      endOfBookOptionsReady.store(endOfBookOptions != nullptr, std::memory_order_release);
     }
     renderer.clearScreen();
     if (endOfBookOptions) {

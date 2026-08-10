@@ -3,6 +3,7 @@
 #include <Epub/FootnoteEntry.h>
 #include <Epub/Section.h>
 
+#include <atomic>
 #include <memory>
 #include <optional>
 
@@ -82,6 +83,11 @@ class EpubReaderActivity final : public Activity {
   // exists while the end screen is actually showing — created at the render
   // path's sole load site, dropped by loop() when the user pages back in.
   std::unique_ptr<EndOfBookOptions> endOfBookOptions;
+  // Publication flag for the pointer above: the render task creates the object
+  // and release-stores true; the main task acquire-loads before dereferencing,
+  // so it never sees a partially constructed object. Cleared (main task, under
+  // RenderLock) before reset.
+  std::atomic<bool> endOfBookOptionsReady{false};
 
   // Footnote support
   std::vector<FootnoteEntry> currentPageFootnotes;

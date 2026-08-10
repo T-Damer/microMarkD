@@ -41,7 +41,9 @@ class FileBrowserActivity final : public UiListActivity {
   void drawFooter() override;
   // forceDelete routes the touch long-press to the delete branch; button
   // navigation leaves it false and relies on getHeldTime() instead.
-  void activateSelected(bool forceDelete = false);
+  // fromButton: only the physical Confirm path may consume the
+  // lockNextConfirmRelease swallow — a touch tap has no pending release.
+  void activateSelected(bool forceDelete = false, bool fromButton = false);
 
   // Data loading
   void loadFiles();

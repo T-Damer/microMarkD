@@ -17,6 +17,7 @@
 #include "components/UIScale.h"
 #include "components/UITheme.h"
 #include "components/UIThemeTokens.h"
+#include "components/UiAppHelpers.h"
 #include "components/icons/bookmark.h"
 #include "fontIds.h"
 
@@ -354,7 +355,11 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
   namespace fui = freeink::ui;
   const auto spec = uiScaleSpec();
   fui::GfxRendererFrame<1> ui(renderer, spec.smallFontId, spec.bodyFontId, spec.titleFontId);
-  const fui::ThemeTokens tokens = uiThemeTokens(ui.target);
+  // Refresh the app-wide shared tokens instead of copying ~1.5KB of
+  // ThemeTokens onto this render-path stack frame; the values derived here
+  // are identical to what every FreeInkApp screen derives.
+  fui::ThemeTokens& tokens = sharedUiThemeTokens();
+  tokens = uiThemeTokens(ui.target);
   // Header status text (battery percent, right label) stays at the fixed
   // small font like the legacy headers; the uiScale small font is for list
   // subtitles.

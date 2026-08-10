@@ -48,9 +48,8 @@ class EpubReaderMenuActivity final : public UiListActivity {
   void activateIndex(int index) override;
   // Popup input/close-swallow runs before any button or touch handling.
   bool handleCustomInput() override;
-  // Back closes on RELEASE (with the home-key menu-gesture mirror), Confirm
-  // activates on RELEASE, and navigation keeps the legacy press-plus-hold
-  // row-repeat feel rather than the base release/page-jump blocks.
+  // Back closes on RELEASE and Confirm activates on RELEASE; everything else
+  // (row navigation, page jumps) falls through to the base handler.
   bool handleButtons() override;
   // Header via GUI.drawHeader inside the safe area for the battery indicator.
   void drawChrome() override;

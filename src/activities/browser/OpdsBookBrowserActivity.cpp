@@ -533,12 +533,15 @@ void OpdsBookBrowserActivity::downloadBook(const OpdsEntry& book) {
 }
 
 void OpdsBookBrowserActivity::launchSearch() {
-  consumeConfirm = true;
   state = BrowserState::SEARCH_INPUT;
   requestUpdate();
 
   auto keyboard = std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_SEARCH));
   startActivityForResult(std::move(keyboard), [this](const ActivityResult& result) {
+    // Swallow the release of the Confirm press that closed the keyboard only
+    // when that button is actually still held on resume — a blanket flag set
+    // at launch went stale on touch flows and ate the next genuine Confirm.
+    consumeConfirm = mappedInput.isPressed(MappedInputManager::Button::Confirm);
     state = BrowserState::BROWSING;
     if (!result.isCancelled) {
       performSearch(std::get<KeyboardResult>(result.data).text);
