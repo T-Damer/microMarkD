@@ -36,11 +36,16 @@ class MyListActivity final : public UiListActivity {
   MyListActivity(GfxRenderer& r, MappedInputManager& in) : UiListActivity("MyList", r, in) {}
 
  private:
-  int listCount() const override { return items.size(); }
+  std::vector<Entry> entries;  // the activity's data, loaded in onEnter
+
+  int listCount() const override { return entries.size(); }
   const char* headerTitle() const override { return tr(STR_MY_TITLE); }
 
   void buildScreen(UiScreen& screen) override {
     // set content margin from the theme safe area, then:
+    std::vector<fui::ListItem> rows;
+    rows.reserve(entries.size());
+    // ... one fui::ListItem per entry (label, actionValue = index) ...
     fui::ListProps props;
     props.items = rows.data();
     props.count = rows.size();
