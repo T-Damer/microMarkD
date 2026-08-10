@@ -3,128 +3,127 @@
 #include <GfxRenderer.h>
 #include <I18n.h>
 
+#include <string>
+#include <vector>
+
 #include "MappedInputManager.h"
 #include "components/UITheme.h"
-#include "fontIds.h"
 
-int EpubReaderChapterSelectionActivity::getTotalItems() const { return epub->getTocItemsCount(); }
+namespace fui = freeink::ui;
+
+EpubReaderChapterSelectionActivity::EpubReaderChapterSelectionActivity(GfxRenderer& renderer,
+                                                                       MappedInputManager& mappedInput,
+                                                                       const std::shared_ptr<Epub>& epub,
+                                                                       const int currentSpineIndex)
+    : UiListActivity("EpubReaderChapterSelection", renderer, mappedInput),
+      epub(epub),
+      currentSpineIndex(currentSpineIndex) {}
 
 void EpubReaderChapterSelectionActivity::onEnter() {
-  Activity::onEnter();
+  UiListActivity::onEnter();
 
   if (!epub) {
     return;
   }
 
-  selectorIndex = epub->getTocIndexForSpineIndex(currentSpineIndex);
-  if (selectorIndex == -1) {
-    selectorIndex = 0;
+  // Start with the current chapter at the top of the viewport; the first
+  // screen build pulls the viewport to it (ListNav follow-on-build).
+  int tocIndex = epub->getTocIndexForSpineIndex(currentSpineIndex);
+  if (tocIndex == -1) {
+    tocIndex = 0;
   }
-
-  // Trigger first update
-  requestUpdate();
+  nav.selected = tocIndex;
 }
 
-void EpubReaderChapterSelectionActivity::onExit() { Activity::onExit(); }
+void EpubReaderChapterSelectionActivity::activateIndex(const int index) {
+  if (index < 0 || index >= listCount()) {
+    return;
+  }
+  // The activated row leaves this screen (finish); a lingering flash would gray
+  // an unrelated element on the next render.
+  app.clearTapFlash();
+  nav.selected = index;
+  const auto tocItem = epub->getTocItem(index);
+  if (tocItem.spineIndex == -1) {
+    ActivityResult result;
+    result.isCancelled = true;
+    setResult(std::move(result));
+    finish();
+  } else {
+    setResult(ChapterResult{tocItem.spineIndex, tocItem.anchor});
+    finish();
+  }
+}
 
-void EpubReaderChapterSelectionActivity::loop() {
-  const int pageItems = UITheme::getInstance().getNumberOfItemsPerPage(renderer, true, false, true, false);
-  const int totalItems = getTotalItems();
-
+bool EpubReaderChapterSelectionActivity::handleButtons() {
   if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
     ActivityResult result;
     result.isCancelled = true;
     setResult(std::move(result));
     finish();
-    return;
+    return true;
   }
 
-  auto selectChapter = [this] {
-    const auto tocItem = epub->getTocItem(selectorIndex);
-    if (tocItem.spineIndex == -1) {
-      ActivityResult result;
-      result.isCancelled = true;
-      setResult(std::move(result));
-      finish();
-    } else {
-      setResult(ChapterResult{tocItem.spineIndex, tocItem.anchor});
-      finish();
-    }
-  };
-
-  auto metrics = UITheme::getInstance().getMetrics();
-  Rect screen = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
-  const int contentTop = screen.y + metrics.topPadding + metrics.headerHeight + metrics.verticalSpacing;
-  const int contentHeight = screen.height - contentTop - metrics.verticalSpacing;
-  switch (handleListTouch(selectorIndex, totalItems, contentTop, contentHeight, false)) {
-    case ListTouchResult::Activated:
-      selectChapter();
-      return;
-    case ListTouchResult::Consumed:
-      return;
-    case ListTouchResult::None:
-      break;
-  }
-
-  const auto swipe = mappedInput.wasSwipe();
-  if (swipe == MappedInputManager::SwipeDir::Up) {
-    selectorIndex = ButtonNavigator::nextPageIndex(selectorIndex, totalItems, pageItems);
-    requestUpdate();
-    return;
-  }
-  if (swipe == MappedInputManager::SwipeDir::Down) {
-    selectorIndex = ButtonNavigator::previousPageIndex(selectorIndex, totalItems, pageItems);
-    requestUpdate();
-    return;
+  if (!epub) {
+    return true;
   }
 
   if (mappedInput.wasReleased(MappedInputManager::Button::Confirm)) {
-    selectChapter();
+    activateIndex(nav.selected);
+    return true;
   }
 
-  buttonNavigator.onNextRelease([this, totalItems] {
-    selectorIndex = ButtonNavigator::nextIndex(selectorIndex, totalItems);
-    requestUpdate();
-  });
-
-  buttonNavigator.onPreviousRelease([this, totalItems] {
-    selectorIndex = ButtonNavigator::previousIndex(selectorIndex, totalItems);
-    requestUpdate();
-  });
-
-  buttonNavigator.onNextContinuous([this, totalItems, pageItems] {
-    selectorIndex = ButtonNavigator::nextPageIndex(selectorIndex, totalItems, pageItems);
-    requestUpdate();
-  });
-
-  buttonNavigator.onPreviousContinuous([this, totalItems, pageItems] {
-    selectorIndex = ButtonNavigator::previousPageIndex(selectorIndex, totalItems, pageItems);
-    requestUpdate();
-  });
+  return false;
 }
 
-void EpubReaderChapterSelectionActivity::render(RenderLock&&) {
-  renderer.clearScreen();
+void EpubReaderChapterSelectionActivity::buildScreen(UiScreen& screen) {
+  const auto& metrics = UITheme::getInstance().getMetrics();
+  const Rect safe = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
+  // Content: the safe area minus the header band drawChrome paints the title in.
+  screen.setContentMargin(fui::Insets{static_cast<int16_t>(safe.y + metrics.topPadding + metrics.headerHeight),
+                                      static_cast<int16_t>(renderer.getScreenWidth() - (safe.x + safe.width)),
+                                      static_cast<int16_t>(renderer.getScreenHeight() - (safe.y + safe.height)),
+                                      static_cast<int16_t>(safe.x)});
+  screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
 
-  auto metrics = UITheme::getInstance().getMetrics();
-  Rect screen = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
+  if (!epub) {
+    return;
+  }
+  const int totalItems = listCount();
+  if (totalItems == 0) {
+    screen.centeredText(tr(STR_NO_CHAPTERS), screen.theme().bodyText);
+    return;
+  }
 
-  GUI.drawHeader(renderer, Rect{screen.x, screen.y + metrics.topPadding, screen.width, metrics.headerHeight},
+  // Per-render composed labels (indent + title from the TOC cache): the
+  // strings must stay alive through screen.list(), so they live in a local
+  // vector the ListItems point into.
+  std::vector<std::string> labels;
+  labels.reserve(totalItems);
+  std::vector<fui::ListItem> items;
+  items.reserve(totalItems);
+  for (int i = 0; i < totalItems; i++) {
+    const auto tocItem = epub->getTocItem(i);
+    std::string indent(tocItem.level > 0 ? (tocItem.level - 1) * 2 : 0, ' ');
+    labels.push_back(indent + tocItem.title);
+    fui::ListItem item;
+    item.label = labels.back().c_str();
+    item.actionValue = static_cast<int16_t>(i);
+    items.push_back(item);
+  }
+
+  fui::ListProps props;
+  props.items = items.data();
+  props.count = static_cast<uint16_t>(items.size());
+  props.action = ACTION_ROW;
+  props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
+  syncListViewport(screen, props);
+  screen.list(props);
+}
+
+void EpubReaderChapterSelectionActivity::drawChrome() {
+  const auto& metrics = UITheme::getInstance().getMetrics();
+  const Rect safe = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
+  GUI.drawHeader(renderer, Rect{safe.x, safe.y + metrics.topPadding, safe.width, metrics.headerHeight},
                  tr(STR_SELECT_CHAPTER));
-
-  const int contentTop = screen.y + metrics.topPadding + metrics.headerHeight + metrics.verticalSpacing;
-  const int contentHeight = screen.height - contentTop - metrics.verticalSpacing;
-
-  const int totalItems = getTotalItems();
-  GUI.drawList(renderer, Rect{screen.x, contentTop, screen.width, contentHeight}, totalItems, selectorIndex,
-               [this](int index) {
-                 auto item = epub->getTocItem(index);
-                 std::string indent((item.level - 1) * 2, ' ');
-                 return indent + item.title;
-               });
-
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
-  GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
-
-  renderer.displayBuffer();
 }

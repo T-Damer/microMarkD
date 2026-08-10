@@ -5,11 +5,10 @@
 #include <string>
 #include <vector>
 
-#include "activities/Activity.h"
+#include "activities/UiListActivity.h"
 #include "components/OptionPopup.h"
-#include "util/ButtonNavigator.h"
 
-class EpubReaderMenuActivity final : public Activity {
+class EpubReaderMenuActivity final : public UiListActivity {
  public:
   // Menu actions available from the reader menu.
   enum class MenuAction {
@@ -33,9 +32,6 @@ class EpubReaderMenuActivity final : public Activity {
                                   const int currentPage, const int totalPages, const int bookProgressPercent,
                                   const uint8_t currentOrientation, const bool hasFootnotes, bool hasBookmarks);
 
-  void onEnter() override;
-  void onExit() override;
-  void loop() override;
   void render(RenderLock&&) override;
   bool handleHomeGesture() override;
 
@@ -46,14 +42,24 @@ class EpubReaderMenuActivity final : public Activity {
   };
 
   static std::vector<MenuItem> buildMenuItems(bool hasFootnotes, bool hasBookmarks);
+
+  int listCount() const override { return static_cast<int>(menuItems.size()); }
+  void buildScreen(UiScreen& screen) override;
+  void activateIndex(int index) override;
+  // Popup input/close-swallow runs before any button or touch handling.
+  bool handleCustomInput() override;
+  // Back closes on RELEASE (with the home-key menu-gesture mirror), Confirm
+  // activates on RELEASE, and navigation keeps the legacy press-plus-hold
+  // row-repeat feel rather than the base release/page-jump blocks.
+  bool handleButtons() override;
+  // Header via GUI.drawHeader inside the safe area for the battery indicator.
+  void drawChrome() override;
+
   void closeCancelled();
 
   // Fixed menu layout
   const std::vector<MenuItem> menuItems;
 
-  int selectedIndex = 0;
-
-  ButtonNavigator buttonNavigator;
   OptionPopup optionPopup;
   // True while the button press that closed the popup is still held; its release
   // must not fall through to the menu's own Back/Confirm handlers.
