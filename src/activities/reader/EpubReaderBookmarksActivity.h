@@ -16,6 +16,13 @@ class EpubReaderBookmarksActivity final : public UiListActivity {
   std::shared_ptr<Epub> epub;
   std::string epubPath;
   std::vector<BookmarkEntry> bookmarks;
+  // Row buffers derived from `bookmarks`, rebuilt only when it changes
+  // (onEnter() load, post-delete) instead of on every repaint — buildScreen()
+  // used to re-compose a percentage/chapter/TOC-title subtitle string per
+  // bookmark on every render (cursor move, tap flash, ...).
+  std::vector<std::string> bookmarkSubtitles;
+  std::vector<freeink::ui::ListItem> bookmarkRowItems;
+  void rebuildBookmarkRowItems();
   bool confirmingDelete = false;
   OptionPopup confirmPopup;
   // True while the button press that closed the popup is still held; its release

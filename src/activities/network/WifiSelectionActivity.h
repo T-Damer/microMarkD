@@ -57,6 +57,14 @@ class WifiSelectionActivity final : public Activity, private UiAppHost {
   // Number of real (scanned) networks, excluding the synthetic hidden-network entry
   size_t realNetworkCount = 0;
 
+  // Row buffers derived from `networks`, rebuilt only when it changes
+  // (processWifiScanResults()) instead of on every repaint — buildListScreen()
+  // used to re-derive a "+ * ||||" status string per network on every render
+  // (cursor move, tap flash, ...).
+  std::vector<std::string> networkStatuses;
+  std::vector<freeink::ui::ListItem> networkRowItems;
+  void rebuildNetworkRowItems();
+
   // Selected network for connection
   std::string selectedSSID;
   bool selectedRequiresPassword = false;

@@ -98,6 +98,8 @@ void WifiSelectionActivity::onEnter() {
   // Reset state
   selectedNetworkIndex = 0;
   networks.clear();
+  networkStatuses.clear();
+  networkRowItems.clear();
   realNetworkCount = 0;
   state = WifiSelectionState::SCANNING;
   selectedSSID.clear();
@@ -204,6 +206,7 @@ void WifiSelectionActivity::processWifiScanResults() {
     networks.clear();
     realNetworkCount = 0;
     appendHiddenNetworkEntry();
+    rebuildNetworkRowItems();
     autoConnecting = false;
     manualNetworkListRequested = false;
     state = WifiSelectionState::NETWORK_LIST;
@@ -251,6 +254,7 @@ void WifiSelectionActivity::processWifiScanResults() {
 
   realNetworkCount = networks.size();
   appendHiddenNetworkEntry();
+  rebuildNetworkRowItems();
 
   WiFi.scanDelete();
 
@@ -274,6 +278,28 @@ void WifiSelectionActivity::appendHiddenNetworkEntry() {
   placeholder.hasSavedPassword = false;
   placeholder.isHiddenPlaceholder = true;
   networks.push_back(std::move(placeholder));
+}
+
+// Derives networkStatuses/networkRowItems from `networks`. Called whenever
+// `networks` changes (both branches of processWifiScanResults()) so
+// buildListScreen() reuses the cached rows on every repaint instead of
+// re-deriving a "+ * ||||" status string per network each time.
+void WifiSelectionActivity::rebuildNetworkRowItems() {
+  networkStatuses.assign(networks.size(), std::string());
+  networkRowItems.clear();
+  networkRowItems.reserve(networks.size());
+  for (size_t i = 0; i < networks.size(); i++) {
+    const auto& network = networks[i];
+    if (!network.isHiddenPlaceholder) {
+      networkStatuses[i] = std::string(network.hasSavedPassword ? "+ " : "") + (network.isEncrypted ? "* " : "") +
+                           getSignalStrengthIndicator(network.rssi);
+    }
+    fui::ListItem item;
+    item.label = network.isHiddenPlaceholder ? tr(STR_ADD_HIDDEN_NETWORK) : network.ssid.c_str();
+    if (!networkStatuses[i].empty()) item.value = networkStatuses[i].c_str();
+    item.actionValue = static_cast<int16_t>(i);
+    networkRowItems.push_back(item);
+  }
 }
 
 void WifiSelectionActivity::selectNetwork(const int index) {
@@ -893,27 +919,11 @@ void WifiSelectionActivity::buildListScreen(UiScreen& screen) {
     return;
   }
 
-  // Per-render owned status strings ("+ * ||||"); items point into them for
-  // the draw only.
-  std::vector<std::string> statuses(networks.size());
-  std::vector<fui::ListItem> items;
-  items.reserve(networks.size());
-  for (size_t i = 0; i < networks.size(); i++) {
-    const auto& network = networks[i];
-    if (!network.isHiddenPlaceholder) {
-      statuses[i] = std::string(network.hasSavedPassword ? "+ " : "") + (network.isEncrypted ? "* " : "") +
-                    getSignalStrengthIndicator(network.rssi);
-    }
-    fui::ListItem item;
-    item.label = network.isHiddenPlaceholder ? tr(STR_ADD_HIDDEN_NETWORK) : network.ssid.c_str();
-    if (!statuses[i].empty()) item.value = statuses[i].c_str();
-    item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
-  }
-
+  // networkStatuses/networkRowItems are built once per processWifiScanResults()
+  // call (see rebuildNetworkRowItems()) and reused here on every repaint.
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = networkRowItems.data();
+  props.count = static_cast<uint16_t>(networkRowItems.size());
   props.action = ACTION_ROW;
   // Tap opens; long-press a saved network forgets it (physical buttons stay in loop()).
   props.inputMask = fui::InputTouch | fui::InputLongPress;

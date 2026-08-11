@@ -34,6 +34,39 @@ void EpubReaderBookmarksActivity::onEnter() {
     bookmarks.shrink_to_fit();
   }
   LOG_DBG("EPB", "Loaded %d bookmarks for book: %s", static_cast<int>(bookmarks.size()), epubPath.c_str());
+  rebuildBookmarkRowItems();
+}
+
+// Derives bookmarkSubtitles/bookmarkRowItems from `bookmarks`. Called
+// whenever `bookmarks` changes (onEnter() load, post-delete) so buildScreen()
+// reuses the cached rows on every repaint instead of re-composing a
+// percentage/chapter/TOC-title subtitle string per bookmark each time.
+void EpubReaderBookmarksActivity::rebuildBookmarkRowItems() {
+  bookmarkSubtitles.clear();
+  bookmarkRowItems.clear();
+  if (!epub) {
+    return;
+  }
+  bookmarkSubtitles.reserve(bookmarks.size());
+  bookmarkRowItems.reserve(bookmarks.size());
+  for (const auto& bookmark : bookmarks) {
+    const auto tocIndex = epub->getTocIndexForSpineIndex(bookmark.computedSpineIndex);
+    const auto tocTitle = (tocIndex >= 0) ? epub->getTocItem(tocIndex).title : tr(STR_UNNAMED);
+    std::string subtitle = std::to_string((int)(std::clamp(bookmark.percentage, 0.0f, 1.0f) * 100.0f + 0.5f)) + "% - ";
+    if (bookmark.computedChapterPageCount > 0) {
+      subtitle += std::to_string(bookmark.computedChapterProgress + 1) + "/" +
+                  std::to_string(bookmark.computedChapterPageCount) + " - ";
+    }
+    subtitle += tocTitle;
+    bookmarkSubtitles.push_back(std::move(subtitle));
+
+    fui::ListItem item;
+    item.label = bookmark.summary.c_str();
+    item.subtitle = bookmarkSubtitles.back().c_str();
+    item.icon = listIconFor(UIIcon::Bookmark, 32);  // subtitle rows carry the larger icon
+    item.actionValue = static_cast<int16_t>(bookmarkRowItems.size());
+    bookmarkRowItems.push_back(item);
+  }
 }
 
 void EpubReaderBookmarksActivity::openSelectedBookmark() {
@@ -153,6 +186,9 @@ void EpubReaderBookmarksActivity::deleteSelectedBookmark() {
   if (!BookmarkFile::save(epubPath, bookmarks)) {
     LOG_ERR("EPB", "Failed to save bookmarks after delete");
   }
+  // Deleting shifts every later bookmark's index, so the cached subtitles and
+  // actionValues must be re-derived, not just trimmed.
+  rebuildBookmarkRowItems();
 
   // Move selector up if we deleted the last item
   if (nav.selected >= static_cast<int>(bookmarks.size()) && nav.selected > 0) {
@@ -195,35 +231,11 @@ void EpubReaderBookmarksActivity::buildScreen(UiScreen& screen) {
                      tr(STR_HOLD_OPEN_TO_DELETE));
   }
 
-  // Transient per-render: labels point into the bookmarks entries; subtitles
-  // are composed strings that must outlive screen.list(), so they are owned by
-  // a reserved vector (reserve keeps the c_str pointers stable).
-  std::vector<std::string> subtitles;
-  subtitles.reserve(bookmarks.size());
-  std::vector<fui::ListItem> items;
-  items.reserve(bookmarks.size());
-  for (const auto& bookmark : bookmarks) {
-    const auto tocIndex = epub->getTocIndexForSpineIndex(bookmark.computedSpineIndex);
-    const auto tocTitle = (tocIndex >= 0) ? epub->getTocItem(tocIndex).title : tr(STR_UNNAMED);
-    std::string subtitle = std::to_string((int)(std::clamp(bookmark.percentage, 0.0f, 1.0f) * 100.0f + 0.5f)) + "% - ";
-    if (bookmark.computedChapterPageCount > 0) {
-      subtitle += std::to_string(bookmark.computedChapterProgress + 1) + "/" +
-                  std::to_string(bookmark.computedChapterPageCount) + " - ";
-    }
-    subtitle += tocTitle;
-    subtitles.push_back(std::move(subtitle));
-
-    fui::ListItem item;
-    item.label = bookmark.summary.c_str();
-    item.subtitle = subtitles.back().c_str();
-    item.icon = listIconFor(UIIcon::Bookmark, 32);  // subtitle rows carry the larger icon
-    item.actionValue = static_cast<int16_t>(items.size());
-    items.push_back(item);
-  }
-
+  // bookmarkSubtitles/bookmarkRowItems are built once whenever `bookmarks`
+  // changes (see rebuildBookmarkRowItems()) and reused here on every repaint.
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = bookmarkRowItems.data();
+  props.count = static_cast<uint16_t>(bookmarkRowItems.size());
   props.action = ACTION_ROW;
   // Tap opens; long-press deletes (physical buttons stay in loop()).
   props.inputMask = fui::InputTouch | fui::InputLongPress;

@@ -2,12 +2,22 @@
 #include <Epub.h>
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "activities/UiListActivity.h"
 
 class EpubReaderChapterSelectionActivity final : public UiListActivity {
   std::shared_ptr<Epub> epub;
   int currentSpineIndex = 0;
+
+  // Row buffers, built once in onEnter() (the TOC never changes for the
+  // lifetime of this screen) and reused by buildScreen() on every repaint
+  // (cursor move, tap flash, ...) instead of re-composing an indent+title
+  // string per TOC entry each time.
+  std::vector<std::string> tocLabels;
+  std::vector<freeink::ui::ListItem> tocRowItems;
+  void buildTocRowItems();
 
   // Total TOC items count
   int listCount() const override { return epub ? epub->getTocItemsCount() : 0; }

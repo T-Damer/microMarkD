@@ -26,6 +26,8 @@ void EpubReaderChapterSelectionActivity::onEnter() {
     return;
   }
 
+  buildTocRowItems();
+
   // Start with the current chapter at the top of the viewport; the first
   // screen build pulls the viewport to it (ListNav follow-on-build).
   int tocIndex = epub->getTocIndexForSpineIndex(currentSpineIndex);
@@ -33,6 +35,25 @@ void EpubReaderChapterSelectionActivity::onEnter() {
     tocIndex = 0;
   }
   nav.selected = tocIndex;
+}
+
+// Derives tocLabels/tocRowItems from the epub's TOC. Called once from
+// onEnter() since the TOC is static for this screen's lifetime.
+void EpubReaderChapterSelectionActivity::buildTocRowItems() {
+  const int totalItems = listCount();
+  tocLabels.clear();
+  tocLabels.reserve(totalItems);
+  tocRowItems.clear();
+  tocRowItems.reserve(totalItems);
+  for (int i = 0; i < totalItems; i++) {
+    const auto tocItem = epub->getTocItem(i);
+    std::string indent(tocItem.level > 0 ? (tocItem.level - 1) * 2 : 0, ' ');
+    tocLabels.push_back(indent + tocItem.title);
+    fui::ListItem item;
+    item.label = tocLabels.back().c_str();
+    item.actionValue = static_cast<int16_t>(i);
+    tocRowItems.push_back(item);
+  }
 }
 
 void EpubReaderChapterSelectionActivity::activateIndex(const int index) {
@@ -89,32 +110,16 @@ void EpubReaderChapterSelectionActivity::buildScreen(UiScreen& screen) {
   if (!epub) {
     return;
   }
-  const int totalItems = listCount();
-  if (totalItems == 0) {
+  if (tocRowItems.empty()) {
     screen.centeredText(tr(STR_NO_CHAPTERS), screen.theme().bodyText);
     return;
   }
 
-  // Per-render composed labels (indent + title from the TOC cache): the
-  // strings must stay alive through screen.list(), so they live in a local
-  // vector the ListItems point into.
-  std::vector<std::string> labels;
-  labels.reserve(totalItems);
-  std::vector<fui::ListItem> items;
-  items.reserve(totalItems);
-  for (int i = 0; i < totalItems; i++) {
-    const auto tocItem = epub->getTocItem(i);
-    std::string indent(tocItem.level > 0 ? (tocItem.level - 1) * 2 : 0, ' ');
-    labels.push_back(indent + tocItem.title);
-    fui::ListItem item;
-    item.label = labels.back().c_str();
-    item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
-  }
-
+  // tocLabels/tocRowItems are built once in onEnter() (see
+  // buildTocRowItems()) and reused here on every repaint.
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = tocRowItems.data();
+  props.count = static_cast<uint16_t>(tocRowItems.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   syncListViewport(screen, props);
