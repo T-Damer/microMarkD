@@ -37,6 +37,7 @@ void FileBrowserActivity::loadFiles() {
 
   auto root = Storage.open(basepath.c_str());
   if (!root || !root.isDirectory()) {
+    rebuildRowItems();  // files is empty; also drops any now-stale cached rows
     return;
   }
 
@@ -45,6 +46,7 @@ void FileBrowserActivity::loadFiles() {
   if (!fileNameBuffer) {
     LOG_ERR("FileBrowser", "fileNameBuffer not allocated");
     root.close();
+    rebuildRowItems();
     return;
   }
 
@@ -73,6 +75,29 @@ void FileBrowserActivity::loadFiles() {
   }
   root.close();
   FsHelpers::sortFileList(files);
+  rebuildRowItems();
+}
+
+// Derives rowNames/rowExtensions/rowItems from `files`. Called whenever
+// `files` changes (end of loadFiles()) so buildScreen() can reuse the cached
+// rows on every repaint instead of re-deriving a name/extension string (and a
+// ListItem) per file each time it's called.
+void FileBrowserActivity::rebuildRowItems() {
+  rowsUseFileIcons = UITheme::getInstance().getTheme().showsFileIcons();
+  rowNames.resize(files.size());
+  rowExtensions.resize(files.size());
+  rowItems.clear();
+  rowItems.reserve(files.size());
+  for (size_t i = 0; i < files.size(); i++) {
+    rowNames[i] = getFileName(files[i]);
+    rowExtensions[i] = getFileExtension(files[i]);
+    fui::ListItem item;
+    item.label = rowNames[i].c_str();
+    if (!rowExtensions[i].empty()) item.value = rowExtensions[i].c_str();
+    item.icon = listIconFor(UITheme::getFileIcon(files[i]));
+    item.actionValue = static_cast<int16_t>(i);
+    rowItems.push_back(item);
+  }
 }
 
 void FileBrowserActivity::onEnter() {
@@ -111,6 +136,9 @@ void FileBrowserActivity::onEnter() {
 void FileBrowserActivity::onExit() {
   Activity::onExit();
   files.clear();
+  rowNames.clear();
+  rowExtensions.clear();
+  rowItems.clear();
   fileNameBuffer.reset();
 }
 
@@ -409,26 +437,17 @@ void FileBrowserActivity::buildScreen(UiScreen& screen) {
     return;
   }
 
-  // Transient per-render: names/extensions are built strings, owned for the
-  // draw only.
-  std::vector<std::string> names(files.size());
-  std::vector<std::string> extensions(files.size());
-  std::vector<fui::ListItem> items;
-  items.reserve(files.size());
-  for (size_t i = 0; i < files.size(); i++) {
-    names[i] = getFileName(files[i]);
-    extensions[i] = getFileExtension(files[i]);
-    fui::ListItem item;
-    item.label = names[i].c_str();
-    if (!extensions[i].empty()) item.value = extensions[i].c_str();
-    item.icon = listIconFor(UITheme::getFileIcon(files[i]));
-    item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
+  // rowNames/rowExtensions/rowItems are built once per loadFiles() call (see
+  // rebuildRowItems()) and reused here. getFileName()'s folder-bracket format
+  // depends on the theme, so a theme change picked up while this activity was
+  // paused underneath another screen invalidates the cache before it's read.
+  if (rowsUseFileIcons != UITheme::getInstance().getTheme().showsFileIcons()) {
+    rebuildRowItems();
   }
 
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems.data();
+  props.count = static_cast<uint16_t>(rowItems.size());
   props.action = ACTION_ROW;
   // Tap opens/navigates; long-press prompts delete (physical buttons stay in loop()).
   props.inputMask = fui::InputTouch | fui::InputLongPress;
