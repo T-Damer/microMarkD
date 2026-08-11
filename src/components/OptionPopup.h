@@ -176,6 +176,18 @@ class OptionPopup {
     const int16_t innerPadding = static_cast<int16_t>(metrics.optionPopupInnerPadding);
     props.padding = fui::Insets{innerPadding, innerPadding, innerPadding, innerPadding};
     props.gap = static_cast<int16_t>(metrics.optionPopupItemSpacing);
+    // defaultPopupStyles() (the fallback fui::optionDialog uses when styles is
+    // left unset) has no border, so the dialog frame drawn by the old
+    // BaseTheme::drawOptionPopup outline is opted back in explicitly here,
+    // reusing the same per-theme frame metrics that code used.
+    props.styles = fui::defaultPopupStyles();
+    props.styles.normal.border = fui::Paint::solid(fui::Color::Black);
+    props.styles.normal.borderWidth = static_cast<uint8_t>(metrics.popupFrameThickness);
+    props.styles.normal.radius = static_cast<uint8_t>(metrics.popupCornerRadius);
+    props.styles.selected = props.styles.normal;
+    props.styles.focused = props.styles.normal;
+    props.styles.active = props.styles.normal;
+    props.styles.disabled = props.styles.normal;
     props.buttonHeight =
         fui::clampI16(target.lineHeight(fui::GfxRendererTarget::FONT_BODY) + metrics.optionPopupSelectionVPadding * 2);
 

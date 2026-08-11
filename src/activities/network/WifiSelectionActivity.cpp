@@ -966,6 +966,18 @@ void WifiSelectionActivity::buildPromptDialog(UiScreen& screen) {
   props.messageText.maxLines = 3;
   props.buttonText = screen.theme().smallText;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
+  // defaultPopupStyles() (fui::optionDialog's fallback when styles is left
+  // unset) has no border; opt one in explicitly using the theme's popup frame
+  // metrics, matching OptionPopup::render().
+  const auto& metrics = UITheme::getInstance().getMetrics();
+  props.styles = fui::defaultPopupStyles();
+  props.styles.normal.border = fui::Paint::solid(fui::Color::Black);
+  props.styles.normal.borderWidth = static_cast<uint8_t>(metrics.popupFrameThickness);
+  props.styles.normal.radius = static_cast<uint8_t>(metrics.popupCornerRadius);
+  props.styles.selected = props.styles.normal;
+  props.styles.focused = props.styles.normal;
+  props.styles.active = props.styles.normal;
+  props.styles.disabled = props.styles.normal;
 
   const fui::Rect body = screen.body();
   int16_t width = static_cast<int16_t>(renderer.getScreenWidth() * 3 / 4);
