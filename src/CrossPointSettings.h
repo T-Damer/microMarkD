@@ -286,6 +286,9 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t frontlightBrightness = 60;
   uint8_t frontlightWarmth = 50;  // 0 = cool .. 100 = warm
   uint8_t frontlightOn = 0;
+  // Restore the saved on/off state after a normal boot or wake. Brightness and
+  // warmth are always remembered even when this is disabled.
+  uint8_t frontlightRestoreOnWake = 0;
   // Invert reading surfaces only; menus and the rest of the UI stay light.
   uint8_t screenInverted = 0;
   // Language setting (Language enum index, default 0 = EN)

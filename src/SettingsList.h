@@ -232,6 +232,10 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
                           "uiTheme", StrId::STR_CAT_DISPLAY),
         SettingInfo::Toggle(StrId::STR_SUNLIGHT_FADING_FIX, &CrossPointSettings::fadingFix, "fadingFix",
                             StrId::STR_CAT_DISPLAY),
+#if FREEINK_CAP_FRONTLIGHT
+        SettingInfo::Toggle(StrId::STR_RESTORE_LIGHT_ON_WAKE, &CrossPointSettings::frontlightRestoreOnWake,
+                            "frontlightRestoreOnWake", StrId::STR_CAT_DISPLAY),
+#endif
 
         // --- Reader ---
         // Built-in font-family entry. Replaced per-call with a registry-aware

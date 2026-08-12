@@ -44,6 +44,12 @@ FontDecompressor fontDecompressor;
 SdCardFontSystem sdFontSystem;
 FontCacheManager fontCacheManager(renderer.getFontMap(), renderer.getSdCardFonts());
 static unsigned long allowSleepAt = 0;
+static unsigned long lastX4ProPowerClickAt = 0;
+
+namespace {
+constexpr unsigned long X4PRO_POWER_DOUBLE_CLICK_MS = 500;
+constexpr unsigned long X4PRO_POWER_CLICK_MAX_HOLD_MS = 300;
+}  // namespace
 
 // Fonts
 EpdFont notoserif14RegularFont(&notoserif_14_regular);
@@ -168,6 +174,31 @@ void waitForPowerRelease() {
     delay(50);
     gpio.update();
   }
+}
+
+bool handleX4ProFrontlightDoubleClick() {
+  if (!BoardConfig::isX4Pro() || !gpio.wasReleased(HalGPIO::BTN_POWER)) {
+    return false;
+  }
+
+  const unsigned long now = millis();
+  if (gpio.getPowerButtonHeldTime() > X4PRO_POWER_CLICK_MAX_HOLD_MS) {
+    lastX4ProPowerClickAt = 0;
+    return false;
+  }
+
+  if (lastX4ProPowerClickAt == 0 || now - lastX4ProPowerClickAt > X4PRO_POWER_DOUBLE_CLICK_MS) {
+    lastX4ProPowerClickAt = now;
+    return false;
+  }
+
+  lastX4ProPowerClickAt = 0;
+  const bool lightOn = !Frontlight.isOn();
+  Frontlight.setOn(lightOn);
+  SETTINGS.frontlightOn = lightOn ? 1 : 0;
+  SETTINGS.saveToFile();
+  LOG_INF("LIGHT", "Frontlight toggled %s by power-button double-click", lightOn ? "on" : "off");
+  return true;
 }
 
 constexpr char SLEEP_FRAME_FILE[] = "/.crosspoint/sleep_frame.bin";
@@ -334,9 +365,11 @@ void setup() {
   UITheme::getInstance().reload();
   ButtonNavigator::setMappedInputManager(mappedInputManager);
 
-  // No-op on boards without a frontlight. Restore the last panel state before
-  // any activity can receive the top-edge light-panel gesture.
-  Frontlight.begin(SETTINGS.frontlightBrightness, SETTINGS.frontlightWarmth, SETTINGS.frontlightOn != 0);
+  // Brightness and warmth are always restored. A normal wake starts with the
+  // light off unless Restore Light on Wake is enabled; silent maintenance
+  // reboots preserve the live state so they do not unexpectedly go dark.
+  const bool restoreLightOn = SETTINGS.frontlightOn != 0 && (SETTINGS.frontlightRestoreOnWake != 0 || isSilentReboot);
+  Frontlight.begin(SETTINGS.frontlightBrightness, SETTINGS.frontlightWarmth, restoreLightOn);
 
   const auto wakeupReason = gpio.getWakeupReason();
   switch (wakeupReason) {
@@ -549,6 +582,12 @@ void loop() {
     }
     screenshotButtonsReleased = true;
     screenshotComboActive = false;
+  }
+
+  // Consume the second X4 Pro power-button release so it does not also run a
+  // configured short-power action after toggling the frontlight.
+  if (handleX4ProFrontlightDoubleClick()) {
+    return;
   }
 
   const unsigned long sleepTimeoutMs = SETTINGS.getSleepTimeoutMs();
