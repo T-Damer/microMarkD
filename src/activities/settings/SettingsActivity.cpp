@@ -355,7 +355,15 @@ void SettingsActivity::toggleCurrentSetting() {
                                });
         break;
       case SettingAction::Language:
-        startActivityForResult(std::make_unique<LanguageSelectActivity>(renderer, mappedInput), resultHandler);
+        // The generic resultHandler only saves; row labels are baked with
+        // I18N.get(...) inside rebuildRowItems() (see rebuildSettingsLists()),
+        // so without an explicit rebuild here they'd stay in the old
+        // language until some other trigger (a tab switch) forces one.
+        startActivityForResult(std::make_unique<LanguageSelectActivity>(renderer, mappedInput),
+                               [this](const ActivityResult&) {
+                                 SETTINGS.saveToFile();
+                                 rebuildSettingsLists();
+                               });
         break;
       case SettingAction::None:
         // Do nothing
