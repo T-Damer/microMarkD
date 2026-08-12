@@ -183,6 +183,9 @@ void WifiSelectionActivity::startWifiScan(const bool autoScan) {
   listNav.reset();
   state = WifiSelectionState::SCANNING;
   networks.clear();
+  // The cached rows point into the cleared networks' strings; drop them too.
+  networkStatuses.clear();
+  networkRowItems.clear();
   requestUpdate();
 
   // Set WiFi mode to station

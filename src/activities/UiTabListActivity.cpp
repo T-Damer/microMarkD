@@ -94,6 +94,9 @@ void UiTabListActivity::syncTabListViewport(UiScreen& screen, fui::ListProps& pr
                            : 0;
   }
   n.scrollBy(0, count);  // clamp to range
+  // listCount() may shrink between passes (ring: 0 = tab band, 1..count = rows);
+  // keep a stale ring selection from indexing past the new row count.
+  if (n.selected > count) n.selected = count;
   props.topIndex = static_cast<uint16_t>(n.top);
   props.selectedIndex = static_cast<int16_t>(n.selected - 1);  // -1 = tab band focused
 }
