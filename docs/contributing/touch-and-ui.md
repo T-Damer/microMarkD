@@ -36,16 +36,28 @@ class MyListActivity final : public UiListActivity {
   MyListActivity(GfxRenderer& r, MappedInputManager& in) : UiListActivity("MyList", r, in) {}
 
  private:
-  std::vector<Entry> entries;  // the activity's data, loaded in onEnter
+  std::vector<Entry> entries;       // the activity's data, loaded in onEnter
+  std::vector<fui::ListItem> rows;  // activity-owned row cache: rebuilt only when entries changes, reused every render
 
   int listCount() const override { return entries.size(); }
   const char* headerTitle() const override { return tr(STR_MY_TITLE); }
 
-  void buildScreen(UiScreen& screen) override {
-    // set content margin from the theme safe area, then:
-    std::vector<fui::ListItem> rows;
+  void onEnter() override {
+    UiListActivity::onEnter();
+    entries = /* ... load from wherever ... */;
+    rebuildRows();
+  }
+
+  // Called whenever entries changes (here, only onEnter; a mutable list would
+  // also call this after any add/remove). NOT called from buildScreen().
+  void rebuildRows() {
+    rows.clear();
     rows.reserve(entries.size());
     // ... one fui::ListItem per entry (label, actionValue = index) ...
+  }
+
+  void buildScreen(UiScreen& screen) override {
+    // set content margin from the theme safe area, then:
     fui::ListProps props;
     props.items = rows.data();
     props.count = rows.size();
@@ -62,7 +74,7 @@ class MyListActivity final : public UiListActivity {
 };
 ```
 
-See `LanguageSelectActivity.cpp` for the complete 85-line version including the content-margin math. Optional overrides: `onRowLongPress(index)`, `drawFooter()`, `handleButtons()` for extra physical-button handling, and `ACTION_USER`-and-up action ids for non-row elements (register handlers in `onEnter` after the base's).
+See [`FileBrowserActivity`](../../src/activities/home/FileBrowserActivity.cpp)'s `rebuildRowItems()` for this pattern applied to a directory listing that can run into the hundreds of entries, and `LanguageSelectActivity.cpp` for the rest of the skeleton (content-margin math, footer, etc.) — note that file still builds its row vector locally inside `buildScreen()`; match `FileBrowserActivity`, not that file, for the row cache. Optional overrides: `onRowLongPress(index)`, `drawFooter()`, `handleButtons()` for extra physical-button handling, and `ACTION_USER`-and-up action ids for non-row elements (register handlers in `onEnter` after the base's).
 
 ### Rules that apply to every FUI screen
 
@@ -70,7 +82,7 @@ See `LanguageSelectActivity.cpp` for the complete 85-line version including the 
 - Handlers that leave the current screen call `app.clearTapFlash()` first.
 - Theme tokens are shared and bound by `resetUi()`; never call `app.setTheme` yourself. Metrics flow from the active UITheme through [`UIThemeTokens.h`](../../src/components/UIThemeTokens.h), including the per-board bezel insets that keep scrollbars visible.
 - `TextStyle.maxLines` defaults to 1 and truncates with an ellipsis. Set `maxLines` explicitly on any dialog headline or message that can wrap.
-- Everything stays allocation-free in steady state. Per-render `std::vector`s of `ListItem` are fine (reserve first, point at static strings); do not hold FUI props across renders.
+- Everything stays allocation-free in steady state. A local `std::vector` inside `buildScreen()` is **not** allocation-free even with `reserve()` first: it starts at zero capacity on every call, `reserve()` allocates, and the destructor frees that storage before the call returns — real allocator work and fragmentation risk on every repaint (cursor move, tap flash, ...), not just on data changes. Build `ListItem` rows into activity-owned storage instead, reserved once when the underlying data loads (`onEnter()`/a `load*()` — see the skeleton above and `FileBrowserActivity::rebuildRowItems()`), and reused unchanged by every `buildScreen()` call. Use a fixed-capacity array (e.g. `ListItem rows[MAX]`, as `OptionPopup` and `KOReaderSyncActivity`'s action rows do) when the count is small and bounded. Do not hold FUI `props` across renders — only the row storage they point into.
 
 ### Component inventory
 
