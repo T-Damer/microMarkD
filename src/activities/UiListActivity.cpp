@@ -110,17 +110,10 @@ void UiListActivity::syncListViewport(UiScreen& screen, fui::ListProps& props, c
     // as many rows per screen as they did before the FreeInkUI migration.
     // props.rowHeight must be set explicitly: screen.list() otherwise falls
     // back to the (touch-friendly) theme token, not this local value.
+    // A label that must wrap (labelText.maxLines > 1) grows only its own row:
+    // list() sizes wrapped items per-row, so the dense height stays.
     const auto& metrics = UITheme::getInstance().getMetrics();
     rowHeight = static_cast<int16_t>(hasSubtitle ? metrics.listWithSubtitleRowHeight : metrics.listRowHeight);
-    // The dense constants above predate FreeInkUI's wrap-in-place labels
-    // (labelText.maxLines > 1) and were never sized for them. A single-line
-    // dense row already bakes in this theme's intended breathing room around
-    // one line of text; scaling the whole row height by the line count (not
-    // just the raw text height) carries that same proportional padding into
-    // the wrapped row instead of packing N lines in edge-to-edge.
-    if (props.labelText.maxLines > 1) {
-      rowHeight = static_cast<int16_t>(rowHeight * props.labelText.maxLines);
-    }
     props.rowHeight = rowHeight;
   }
   activeNav().syncToProps(screen.body(), rowHeight, screen.theme().listRowGap, listCount(), props);

@@ -943,15 +943,9 @@ void WifiSelectionActivity::buildListScreen(UiScreen& screen) {
     // Non-touch hardware (X3/X4) keeps the original, denser row height
     // instead of FreeInkUI's touch-target-sized default (see
     // UiListActivity::syncListViewport; this screen predates that base and
-    // syncs its own viewport directly). listRowHeight predates the 2-line
-    // label wrap above and was never sized for it: scale the whole row
-    // height by the line count so a wrapped SSID keeps the same
-    // proportional breathing room a single-line dense row already has,
-    // instead of packing both lines in edge-to-edge.
+    // syncs its own viewport directly). A long SSID that wraps grows only
+    // its own row: list() sizes wrapped items per-row.
     rowHeight = static_cast<int16_t>(metrics.listRowHeight);
-    const int16_t wrappedMin =
-        static_cast<int16_t>(screen.target().lineHeight(props.labelText.font) * props.labelText.maxLines);
-    if (wrappedMin > rowHeight) rowHeight = wrappedMin;
     props.rowHeight = rowHeight;
   }
   listNav.syncToProps(screen.body(), rowHeight, screen.theme().listRowGap, static_cast<int>(networks.size()), props);
