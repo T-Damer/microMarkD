@@ -42,6 +42,7 @@ void FrontlightPanelActivity::onEnter() {
   brightness = Frontlight.brightness();
   warmth = Frontlight.warmth();
   lightOn = Frontlight.isOn();
+  lightOnChanged = false;
 
   uiReady = false;
   applySharedUiTheme(app, uiTarget);
@@ -55,11 +56,18 @@ void FrontlightPanelActivity::onEnter() {
 }
 
 void FrontlightPanelActivity::onExit() {
-  if (SETTINGS.frontlightBrightness != brightness || SETTINGS.frontlightWarmth != warmth ||
-      SETTINGS.frontlightOn != (lightOn ? 1 : 0)) {
+  // brightness/warmth are always restored unconditionally on boot (see
+  // main.cpp), so they never diverge from SETTINGS at onEnter() — comparing
+  // against SETTINGS here only fires on a genuine user change. lightOn has
+  // no such guarantee (see lightOnChanged's declaration), so it's gated on
+  // the user actually having touched it this session instead.
+  const bool changed =
+      SETTINGS.frontlightBrightness != brightness || SETTINGS.frontlightWarmth != warmth ||
+      (lightOnChanged && SETTINGS.frontlightOn != (lightOn ? 1 : 0));
+  if (changed) {
     SETTINGS.frontlightBrightness = brightness;
     SETTINGS.frontlightWarmth = warmth;
-    SETTINGS.frontlightOn = lightOn ? 1 : 0;
+    if (lightOnChanged) SETTINGS.frontlightOn = lightOn ? 1 : 0;
     SETTINGS.saveToFile();
   }
   Activity::onExit();
@@ -72,6 +80,7 @@ void FrontlightPanelActivity::onBrightnessEvent(const fui::ActionEvent& event, v
   Frontlight.setBrightness(self->brightness);
   if (!self->lightOn) {
     self->lightOn = true;
+    self->lightOnChanged = true;
     Frontlight.setOn(true);
   }
 }
@@ -104,6 +113,7 @@ void FrontlightPanelActivity::adjustBrightness(const int delta) {
   Frontlight.setBrightness(brightness);
   if (!lightOn) {
     lightOn = true;
+    lightOnChanged = true;
     Frontlight.setOn(true);
   }
   requestUpdate();
@@ -121,6 +131,7 @@ void FrontlightPanelActivity::adjustWarmth(const int delta) {
 
 void FrontlightPanelActivity::toggleLight() {
   lightOn = !lightOn;
+  lightOnChanged = true;
   Frontlight.setOn(lightOn);
   requestUpdate();
 }

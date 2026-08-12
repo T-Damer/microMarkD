@@ -22,6 +22,15 @@ class FrontlightPanelActivity final : public Activity {
   uint8_t brightness = 60;
   uint8_t warmth = 50;
   bool lightOn = false;
+  // lightOn is seeded from the live hardware state (Frontlight.isOn()), which
+  // legitimately diverges from the saved SETTINGS.frontlightOn preference —
+  // e.g. after a wake with frontlightRestoreOnWake off, the light stays off
+  // live while the saved "was on" preference is deliberately kept (see
+  // main.cpp's restoreLightOn). brightness/warmth have no such divergence
+  // (always restored unconditionally on boot), so only lightOn needs a
+  // touched-by-the-user flag: onExit() must not persist a mirror that never
+  // reflected user intent in the first place.
+  bool lightOnChanged = false;
   bool draggingSlider = false;
   int panelBottom = 0;
 
