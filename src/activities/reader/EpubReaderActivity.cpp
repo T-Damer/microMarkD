@@ -797,9 +797,16 @@ void EpubReaderActivity::jumpToPercent(int percent) {
 }
 
 void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction action) {
+  // Menu-launched sub-screens return one level to the reader menu when
+  // cancelled (Back button or back gesture, identical on touch and button
+  // devices), instead of dropping to the reading surface. Home-gesture exits
+  // never run these handlers (ActivityManager replaces the stack), so they
+  // cannot re-open the menu.
   auto progressChangeResultHandler = [this](const ActivityResult& result) {
     loadCachedBookmarks();
-    if (!result.isCancelled) {
+    if (result.isCancelled) {
+      openReaderMenu();
+    } else {
       const auto& sync = std::get<ProgressChangeResult>(result.data);
 
       // Preferred path: a bookmark carrying an exact content offset. It is immune to
@@ -857,7 +864,10 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
       startActivityForResult(
           std::make_unique<EpubReaderChapterSelectionActivity>(renderer, mappedInput, epub, spineIdx),
           [this](const ActivityResult& result) {
-            if (result.isCancelled) return;
+            if (result.isCancelled) {
+              openReaderMenu();
+              return;
+            }
             const auto& chapterResult = std::get<ChapterResult>(result.data);
             RenderLock lock(*this);
 
@@ -876,10 +886,12 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
     case EpubReaderMenuActivity::MenuAction::FOOTNOTES: {
       startActivityForResult(std::make_unique<EpubReaderFootnotesActivity>(renderer, mappedInput, currentPageFootnotes),
                              [this](const ActivityResult& result) {
-                               if (!result.isCancelled) {
-                                 const auto& footnoteResult = std::get<FootnoteResult>(result.data);
-                                 navigateToHref(footnoteResult.href, true);
+                               if (result.isCancelled) {
+                                 openReaderMenu();
+                                 return;
                                }
+                               const auto& footnoteResult = std::get<FootnoteResult>(result.data);
+                               navigateToHref(footnoteResult.href, true);
                                requestUpdate();
                              });
       break;
@@ -892,14 +904,18 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
                                // Font/size/spacing/margin changes invalidate the current
                                // layout: preserve position and force a re-layout, mirroring
                                // applyOrientation()'s reflow.
-                               RenderLock lock(*this);
-                               if (section) {
-                                 rememberCurrentContentOffset();
-                                 cachedSpineIndex = currentSpineIndex;
-                                 cachedChapterTotalPageCount = section->pageCount;
-                                 nextPageNumber = section->currentPage;
+                               {
+                                 RenderLock lock(*this);
+                                 if (section) {
+                                   rememberCurrentContentOffset();
+                                   cachedSpineIndex = currentSpineIndex;
+                                   cachedChapterTotalPageCount = section->pageCount;
+                                   nextPageNumber = section->currentPage;
+                                 }
+                                 section.reset();
                                }
-                               section.reset();
+                               // Text settings' only exit is Back, so always step back to the menu.
+                               openReaderMenu();
                              });
       break;
     }
@@ -913,7 +929,9 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
       startActivityForResult(
           std::make_unique<EpubReaderPercentSelectionActivity>(renderer, mappedInput, initialPercent),
           [this](const ActivityResult& result) {
-            if (!result.isCancelled) {
+            if (result.isCancelled) {
+              openReaderMenu();
+            } else {
               jumpToPercent(std::get<PercentResult>(result.data).percent);
             }
           });
@@ -928,7 +946,7 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
         std::string fullText = section->getTextFromSectionFile();
         if (!fullText.empty()) {
           startActivityForResult(std::make_unique<QrDisplayActivity>(renderer, mappedInput, fullText),
-                                 [this](const ActivityResult& result) {});
+                                 [this](const ActivityResult&) { openReaderMenu(); });
           break;
         }
       }
