@@ -15,6 +15,7 @@
 #include <Logging.h>
 #include <SPI.h>
 #include <WiFi.h>
+#include <XteinkDetect.h>
 #include <builtinFonts/all.h>
 
 #include <cstring>
@@ -228,6 +229,19 @@ void enterDeepSleep(bool fromTimeout = false) {
 }
 
 void setupDisplayAndFonts(bool seamless = false) {
+#if !FREEINK_MCU_C3
+  // C3 resolves its controller in HalGPIO::begin() before SPI claims the
+  // display pins. X4 Pro skips that C3-only path, so probe here before
+  // display.begin() selects and initializes its panel driver.
+  static bool controllerResolved = false;
+  if (!controllerResolved) {
+    controllerResolved = true;
+    if (freeink::applyXteinkDisplayController()) {
+      LOG_DBG("MAIN", "Panel controller: UltraChip UC81xx variant detected");
+    }
+  }
+#endif
+
   display.begin(seamless);
   renderer.begin();
   activityManager.begin();
@@ -293,7 +307,11 @@ void setup() {
   halTiltSensor.begin();
   halClock.begin();
 
+#if FREEINK_DEVICE_X4 || FREEINK_DEVICE_X3
   LOG_INF("MAIN", "Hardware detect: %s", gpio.deviceIsX3() ? "X3" : "X4");
+#else
+  LOG_INF("MAIN", "Device: %s", BoardConfig::ACTIVE.name);
+#endif
 
   // SD Card Initialization
   // We need 6 open files concurrently when parsing a new chapter
