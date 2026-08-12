@@ -935,8 +935,16 @@ void WifiSelectionActivity::buildListScreen(UiScreen& screen) {
   props.labelText.maxLines = 2;
   props.balanceWrappedLabelWithValue = false;
   listNav.selected = static_cast<int>(selectedNetworkIndex);
-  listNav.syncToProps(screen.body(), screen.theme().rowHeight, screen.theme().listRowGap,
-                      static_cast<int>(networks.size()), props);
+  int16_t rowHeight = screen.theme().rowHeight;
+  if (!mappedInput.hasTouch()) {
+    // Non-touch hardware (X3/X4) keeps the original, denser row height
+    // instead of FreeInkUI's touch-target-sized default (see
+    // UiListActivity::syncListViewport; this screen predates that base and
+    // syncs its own viewport directly).
+    rowHeight = static_cast<int16_t>(metrics.listRowHeight);
+    props.rowHeight = rowHeight;
+  }
+  listNav.syncToProps(screen.body(), rowHeight, screen.theme().listRowGap, static_cast<int>(networks.size()), props);
   screen.list(props);
 }
 

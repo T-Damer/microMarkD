@@ -239,7 +239,7 @@ void EpubReaderBookmarksActivity::buildScreen(UiScreen& screen) {
   props.action = ACTION_ROW;
   // Tap opens; long-press deletes (physical buttons stay in loop()).
   props.inputMask = fui::InputTouch | fui::InputLongPress;
-  syncListViewport(screen, props);
+  syncListViewport(screen, props, /*hasSubtitle=*/true);
   screen.list(props);
 }
 

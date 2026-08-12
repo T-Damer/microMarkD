@@ -154,7 +154,7 @@ void RecentBooksActivity::buildScreen(UiScreen& screen) {
   fui::TextStyle label = screen.theme().smallText;
   label.bold = true;
   props.labelText = label;
-  syncListViewport(screen, props);
+  syncListViewport(screen, props, /*hasSubtitle=*/true);
   screen.list(props);
 }
 

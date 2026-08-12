@@ -70,10 +70,19 @@ void UiTabListActivity::navigateButtons() {
   buttonNavigator.onPreviousContinuous([this] { stepTab(-1); });
 }
 
-void UiTabListActivity::syncTabListViewport(UiScreen& screen, fui::ListProps& props) {
+void UiTabListActivity::syncTabListViewport(UiScreen& screen, fui::ListProps& props, const bool hasSubtitle) {
   const int count = listCount();
   auto& n = activeNav();
-  const uint16_t rows = fui::listVisibleRows(screen.body(), screen.theme().rowHeight, screen.theme().listRowGap);
+  int16_t rowHeight = screen.theme().rowHeight;
+  if (!mappedInput.hasTouch()) {
+    // Non-touch hardware (X3/X4) keeps the original, denser per-theme row
+    // height instead of FreeInkUI's touch-target-sized default (see
+    // UiListActivity::syncListViewport, the non-tab counterpart of this).
+    const auto& metrics = UITheme::getInstance().getMetrics();
+    rowHeight = static_cast<int16_t>(hasSubtitle ? metrics.listWithSubtitleRowHeight : metrics.listRowHeight);
+    props.rowHeight = rowHeight;
+  }
+  const uint16_t rows = fui::listVisibleRows(screen.body(), rowHeight, screen.theme().listRowGap);
   n.visibleRows = rows > 0 ? rows : 1;
   if (n.followOnBuild) {
     // Screen entry / tab switch: show the tab's remembered selection, or the

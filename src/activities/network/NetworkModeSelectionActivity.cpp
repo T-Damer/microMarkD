@@ -64,7 +64,7 @@ void NetworkModeSelectionActivity::buildScreen(UiScreen& screen) {
   props.count = static_cast<uint16_t>(items.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
-  syncListViewport(screen, props);
+  syncListViewport(screen, props, /*hasSubtitle=*/true);
   screen.list(props);
 }
 

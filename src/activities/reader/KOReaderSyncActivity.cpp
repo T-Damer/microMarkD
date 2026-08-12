@@ -550,11 +550,20 @@ void KOReaderSyncActivity::buildResultScreen(UiScreen& screen) {
     actionProps.action = ACTION_ROW;
     actionProps.inputMask = fui::InputTouch;  // physical buttons stay in loop()
     actionProps.scrollIndicator = false;      // never scrolls; no indicator needed
+    // Non-touch hardware (X3/X4) keeps the original, denser row height instead
+    // of FreeInkUI's touch-target-sized default (see
+    // UiListActivity::syncListViewport); actionsBand must use the same value
+    // or the band and the rows it contains fall out of sync.
+    int16_t actionRowHeight = screen.theme().rowHeight;
+    if (!mappedInput.hasTouch()) {
+      actionRowHeight = static_cast<int16_t>(UITheme::getInstance().getMetrics().listRowHeight);
+      actionProps.rowHeight = actionRowHeight;
+    }
     // Keep the theme's row inset + side padding so the selected-row highlight has
     // the same padding around its icon/label as every other list in the UI; the
     // labels above are indented to match this content-left.
     const auto actionsBand =
-        static_cast<int16_t>(screen.theme().rowHeight * 2 + screen.theme().listRowGap + screen.theme().spaceSm);
+        static_cast<int16_t>(actionRowHeight * 2 + screen.theme().listRowGap + screen.theme().spaceSm);
     screen.list(actionProps, actionsBand);
     return;
   }
@@ -580,7 +589,14 @@ void KOReaderSyncActivity::buildResultScreen(UiScreen& screen) {
     actionProps.action = ACTION_ROW;
     actionProps.inputMask = fui::InputTouch;
     actionProps.scrollIndicator = false;
-    const auto actionsBand = static_cast<int16_t>(screen.theme().rowHeight + screen.theme().spaceMd);
+    // See the equivalent override above; keeps actionsBand in sync with the
+    // row height actually used on non-touch hardware (X3/X4).
+    int16_t actionRowHeight = screen.theme().rowHeight;
+    if (!mappedInput.hasTouch()) {
+      actionRowHeight = static_cast<int16_t>(UITheme::getInstance().getMetrics().listRowHeight);
+      actionProps.rowHeight = actionRowHeight;
+    }
+    const auto actionsBand = static_cast<int16_t>(actionRowHeight + screen.theme().spaceMd);
     screen.list(actionProps, actionsBand, fui::LayoutAnchor::Bottom);
   }
 }
