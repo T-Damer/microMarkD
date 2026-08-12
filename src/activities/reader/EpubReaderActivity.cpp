@@ -1743,15 +1743,8 @@ void EpubReaderActivity::renderContents(std::unique_ptr<Page> page, const int or
     pagesUntilFullRefresh = 1;
   } else if (combinedGrayscaleBase) {
     // Stash the base without activating; displayGrayBuffer() below commits
-    // base + grays as one waveform. Same cadence bookkeeping as
-    // ReaderUtils::displayWithRefreshCycle.
-    const auto mode = (pagesUntilFullRefresh <= 1) ? HalDisplay::HALF_REFRESH : HalDisplay::FAST_REFRESH;
-    renderer.displayGrayscaleBase(mode);
-    if (pagesUntilFullRefresh <= 1) {
-      pagesUntilFullRefresh = SETTINGS.getRefreshFrequency();
-    } else {
-      pagesUntilFullRefresh--;
-    }
+    // base + grays as one waveform.
+    ReaderUtils::displayBaseWithRefreshCycle(renderer, pagesUntilFullRefresh);
   } else {
     // Async form: start the waveform and return so the grayscale plane rendering
     // below overlaps the panel's refresh time instead of following it.

@@ -163,6 +163,25 @@ inline void displayWithRefreshCycle(const GfxRenderer& renderer, int& pagesUntil
   }
 }
 
+// Display the B/W base of a page whose grayscale pass follows. Panels that
+// combine the base (Paper Mono) defer the activation so base + gray planes go
+// out as one waveform — displaying the base separately makes the gray pass
+// re-drive the whole text body (a visible flash). Other panels display
+// normally. Same refresh-cadence bookkeeping as displayWithRefreshCycle.
+inline void displayBaseWithRefreshCycle(const GfxRenderer& renderer, int& pagesUntilFullRefresh) {
+  if (!renderer.combinesGrayscaleBase()) {
+    displayWithRefreshCycle(renderer, pagesUntilFullRefresh);
+    return;
+  }
+  const auto mode = (pagesUntilFullRefresh <= 1) ? HalDisplay::HALF_REFRESH : HalDisplay::FAST_REFRESH;
+  renderer.displayGrayscaleBase(mode);
+  if (pagesUntilFullRefresh <= 1) {
+    pagesUntilFullRefresh = SETTINGS.getRefreshFrequency();
+  } else {
+    pagesUntilFullRefresh--;
+  }
+}
+
 // Grayscale anti-aliasing pass. Renders content twice (LSB + MSB) to build
 // the grayscale buffer. Only the content callback is re-rendered — status bars
 // and other overlays should be drawn before calling this.
@@ -171,6 +190,9 @@ template <typename RenderFn>
 void renderAntiAliased(GfxRenderer& renderer, RenderFn&& renderFn) {
   if (!renderer.storeBwBuffer()) {
     LOG_ERR("READER", "Failed to store BW buffer for anti-aliasing");
+    // A combined-base panel may still hold a deferred B/W activation; flush it
+    // so the page reaches the panel even without its grays.
+    if (renderer.combinesGrayscaleBase()) renderer.cleanupGrayscaleWithFrameBuffer();
     return;
   }
 
