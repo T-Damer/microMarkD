@@ -944,13 +944,14 @@ void WifiSelectionActivity::buildListScreen(UiScreen& screen) {
     // instead of FreeInkUI's touch-target-sized default (see
     // UiListActivity::syncListViewport; this screen predates that base and
     // syncs its own viewport directly). listRowHeight predates the 2-line
-    // label wrap above and was never sized for it: floor against however
-    // many full body-text lines it actually needs, or a long SSID's wrapped
-    // second line bleeds into the row below.
+    // label wrap above and was never sized for it: scale the whole row
+    // height by the line count so a wrapped SSID keeps the same
+    // proportional breathing room a single-line dense row already has,
+    // instead of packing both lines in edge-to-edge.
     rowHeight = static_cast<int16_t>(metrics.listRowHeight);
-    const int16_t wrappedMin = static_cast<int16_t>(screen.target().lineHeight(props.labelText.font) *
-                                                     props.labelText.maxLines);
-    if (wrappedMin > rowHeight) rowHeight = wrappedMin;
+    if (props.labelText.maxLines > 1) {
+      rowHeight = static_cast<int16_t>(rowHeight * props.labelText.maxLines);
+    }
     props.rowHeight = rowHeight;
   }
   listNav.syncToProps(screen.body(), rowHeight, screen.theme().listRowGap, static_cast<int>(networks.size()), props);

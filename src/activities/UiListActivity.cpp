@@ -113,15 +113,13 @@ void UiListActivity::syncListViewport(UiScreen& screen, fui::ListProps& props, c
     const auto& metrics = UITheme::getInstance().getMetrics();
     rowHeight = static_cast<int16_t>(hasSubtitle ? metrics.listWithSubtitleRowHeight : metrics.listRowHeight);
     // The dense constants above predate FreeInkUI's wrap-in-place labels
-    // (labelText.maxLines > 1) and were never sized for them: a label that
-    // can wrap to N lines needs at least N full lines of its own font's
-    // height, or the wrapped second line bleeds into the row below. Floor,
-    // not override — a list whose dense constant already covers its label
-    // (the common case) is unaffected.
+    // (labelText.maxLines > 1) and were never sized for them. A single-line
+    // dense row already bakes in this theme's intended breathing room around
+    // one line of text; scaling the whole row height by the line count (not
+    // just the raw text height) carries that same proportional padding into
+    // the wrapped row instead of packing N lines in edge-to-edge.
     if (props.labelText.maxLines > 1) {
-      const int16_t wrappedMin =
-          static_cast<int16_t>(screen.target().lineHeight(props.labelText.font) * props.labelText.maxLines);
-      if (wrappedMin > rowHeight) rowHeight = wrappedMin;
+      rowHeight = static_cast<int16_t>(rowHeight * props.labelText.maxLines);
     }
     props.rowHeight = rowHeight;
   }

@@ -80,13 +80,12 @@ void UiTabListActivity::syncTabListViewport(UiScreen& screen, fui::ListProps& pr
     // UiListActivity::syncListViewport, the non-tab counterpart of this).
     const auto& metrics = UITheme::getInstance().getMetrics();
     rowHeight = static_cast<int16_t>(hasSubtitle ? metrics.listWithSubtitleRowHeight : metrics.listRowHeight);
-    // See UiListActivity::syncListViewport: the dense constants above were
-    // never sized for a wrapped (maxLines>1) label, so floor against however
-    // many full lines of the label's own font it actually needs.
+    // See UiListActivity::syncListViewport: scale the whole row height by
+    // the line count so a wrapped label keeps the same proportional
+    // breathing room a single-line dense row already has, instead of
+    // packing N lines in edge-to-edge.
     if (props.labelText.maxLines > 1) {
-      const int16_t wrappedMin =
-          static_cast<int16_t>(screen.target().lineHeight(props.labelText.font) * props.labelText.maxLines);
-      if (wrappedMin > rowHeight) rowHeight = wrappedMin;
+      rowHeight = static_cast<int16_t>(rowHeight * props.labelText.maxLines);
     }
     props.rowHeight = rowHeight;
   }
