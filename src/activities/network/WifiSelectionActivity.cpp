@@ -949,9 +949,9 @@ void WifiSelectionActivity::buildListScreen(UiScreen& screen) {
     // proportional breathing room a single-line dense row already has,
     // instead of packing both lines in edge-to-edge.
     rowHeight = static_cast<int16_t>(metrics.listRowHeight);
-    if (props.labelText.maxLines > 1) {
-      rowHeight = static_cast<int16_t>(rowHeight * props.labelText.maxLines);
-    }
+    const int16_t wrappedMin =
+        static_cast<int16_t>(screen.target().lineHeight(props.labelText.font) * props.labelText.maxLines);
+    if (wrappedMin > rowHeight) rowHeight = wrappedMin;
     props.rowHeight = rowHeight;
   }
   listNav.syncToProps(screen.body(), rowHeight, screen.theme().listRowGap, static_cast<int>(networks.size()), props);
