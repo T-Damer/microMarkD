@@ -447,7 +447,8 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
     v.erase(std::remove_if(v.begin(), v.end(),
                            [](const SettingInfo& s) {
                              return s.nameId == StrId::STR_FRONT_BTN_FOLLOW_ORIENTATION ||
-                                    s.nameId == StrId::STR_SUNLIGHT_FADING_FIX;
+                                    s.nameId == StrId::STR_SUNLIGHT_FADING_FIX ||
+                                    s.nameId == StrId::STR_BACK_SHORT_TO_FILE_BROWSER;
                            }),
             v.end());
   }
