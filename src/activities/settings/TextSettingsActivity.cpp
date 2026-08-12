@@ -86,6 +86,39 @@ void TextSettingsActivity::onEnter() {
   tabNavs[static_cast<int>(Tab::Family)].selected = currentFamilyIndex_ + 1;
   tabNavs[static_cast<int>(Tab::Size)].selected = currentSizeIndex_ + 1;
   tabNavs[static_cast<int>(tab_)].selected = 0;  // screen opens with the tab bar focused, not a list row
+
+  rebuildRowItems();
+}
+
+// Rebuilds rowItems_ (label + actionValue) for the active tab. Structural —
+// call only when tab_ or its backing data (fonts_/sizes_) changes, never from
+// buildScreen(), which just refreshes rowValues_/rowItems_[].value in place.
+void TextSettingsActivity::rebuildRowItems() {
+  const int count = listCount();
+  rowValues_.assign(count, std::string());
+  rowItems_.clear();
+  rowItems_.reserve(count);
+  for (int i = 0; i < count; i++) {
+    fui::ListItem item;
+    switch (tab_) {
+      case Tab::Family:
+        item.label = fonts_[i].name.c_str();
+        break;
+      case Tab::Size:
+        item.label = sizes_[i].name.c_str();
+        break;
+      case Tab::Layout:
+        item.label = I18N.get(LAYOUT_ROW_NAME_IDS[i]);
+        break;
+      case Tab::Style:
+        item.label = I18N.get(STYLE_ROW_NAME_IDS[i]);
+        break;
+      default:
+        break;
+    }
+    item.actionValue = static_cast<int16_t>(i);
+    rowItems_.push_back(item);
+  }
 }
 
 // The selectable sizes belong to the active family, so this runs on entry and
@@ -117,6 +150,7 @@ void TextSettingsActivity::onTabAction(const int index) {
   if (optionPopup_.isActive()) return;
   if (tab_ != static_cast<Tab>(index)) {
     tab_ = static_cast<Tab>(index);
+    rebuildRowItems();
     auto& n = activeNav();
     n.selected = 0;          // tab taps land with the tab bar focused (legacy tap behavior)
     n.followOnBuild = true;  // pull the new tab's viewport to its remembered selection
@@ -185,41 +219,34 @@ void TextSettingsActivity::buildScreen(UiScreen& screen) {
 
   buildTabBar(screen);
 
-  // Active tab's rows. Values are built per render and owned for the draw only.
+  // rowItems_ (label/actionValue) was built by rebuildRowItems() when the tab
+  // was last switched; only the live value text needs refreshing here, by
+  // assigning into the existing rowValues_ strings (no vector growth) rather
+  // than building a new items/values vector on every render.
   const int count = listCount();
-  std::vector<std::string> values(count);
-  std::vector<fui::ListItem> items;
-  items.reserve(count);
   for (int i = 0; i < count; i++) {
-    fui::ListItem item;
     switch (tab_) {
       case Tab::Family:
-        item.label = fonts_[i].name.c_str();
-        if (i == currentFamilyIndex_) values[i] = tr(STR_SELECTED);
+        rowValues_[i] = (i == currentFamilyIndex_) ? tr(STR_SELECTED) : "";
         break;
       case Tab::Size:
-        item.label = sizes_[i].name.c_str();
-        if (i == currentSizeIndex_) values[i] = tr(STR_SELECTED);
+        rowValues_[i] = (i == currentSizeIndex_) ? tr(STR_SELECTED) : "";
         break;
       case Tab::Layout:
-        item.label = I18N.get(LAYOUT_ROW_NAME_IDS[i]);
-        values[i] = layoutValueText(i);
+        rowValues_[i] = layoutValueText(i);
         break;
       case Tab::Style:
-        item.label = I18N.get(STYLE_ROW_NAME_IDS[i]);
-        values[i] = styleValueText(i);
+        rowValues_[i] = styleValueText(i);
         break;
       default:
         break;
     }
-    if (!values[i].empty()) item.value = values[i].c_str();
-    item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
+    rowItems_[i].value = rowValues_[i].empty() ? nullptr : rowValues_[i].c_str();
   }
 
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems_.data();
+  props.count = static_cast<uint16_t>(rowItems_.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   props.valueInset = 8;               // air between the value and the row edge
@@ -469,6 +496,7 @@ void TextSettingsActivity::switchTab(const int direction) {
   const bool onTabBar = ringPos() == 0;
   constexpr int count = static_cast<int>(Tab::Count);
   tab_ = static_cast<Tab>((static_cast<int>(tab_) + direction + count) % count);
+  rebuildRowItems();
   auto& n = activeNav();
   if (onTabBar) n.selected = 0;
   n.followOnBuild = true;  // pull the new tab's viewport to its remembered selection

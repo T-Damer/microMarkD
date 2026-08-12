@@ -38,9 +38,25 @@ void XtcReaderChapterSelectionActivity::onEnter() {
     return;
   }
 
+  buildRowItems();
+
   // Open on the current chapter, which may sit past the first page; the first
   // screen build pulls the viewport to it (ListNav follow-on-build).
   nav.selected = findChapterIndexForPage(currentPage);
+}
+
+// Derives rowItems from the xtc's chapters. Called once from onEnter() since
+// chapters are static for this screen's lifetime.
+void XtcReaderChapterSelectionActivity::buildRowItems() {
+  const auto& chapters = xtc->getChapters();
+  rowItems.clear();
+  rowItems.reserve(chapters.size());
+  for (const auto& chapter : chapters) {
+    fui::ListItem item;
+    item.label = chapter.name.empty() ? tr(STR_UNNAMED) : chapter.name.c_str();
+    item.actionValue = static_cast<int16_t>(rowItems.size());
+    rowItems.push_back(item);
+  }
 }
 
 void XtcReaderChapterSelectionActivity::activateIndex(const int index) {
@@ -89,26 +105,16 @@ void XtcReaderChapterSelectionActivity::buildScreen(UiScreen& screen) {
   if (!xtc) {
     return;
   }
-  const auto& chapters = xtc->getChapters();
-  if (chapters.empty()) {
+  if (rowItems.empty()) {
     screen.centeredText(tr(STR_NO_CHAPTERS), screen.theme().bodyText);
     return;
   }
 
-  // Transient per-render: labels point at the chapter names owned by `xtc`
-  // (alive for the activity's lifetime) or the static i18n fallback.
-  std::vector<fui::ListItem> items;
-  items.reserve(chapters.size());
-  for (const auto& chapter : chapters) {
-    fui::ListItem item;
-    item.label = chapter.name.empty() ? tr(STR_UNNAMED) : chapter.name.c_str();
-    item.actionValue = static_cast<int16_t>(items.size());
-    items.push_back(item);
-  }
-
+  // rowItems is built once in onEnter() (see buildRowItems()) and reused
+  // here on every repaint.
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems.data();
+  props.count = static_cast<uint16_t>(rowItems.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   syncListViewport(screen, props);

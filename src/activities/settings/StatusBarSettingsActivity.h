@@ -9,6 +9,10 @@ class StatusBarSettingsActivity final : public UiListActivity {
  public:
   explicit StatusBarSettingsActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
+  // Must equal ITEM_COUNT in the .cpp (static_assert'd there) — the max
+  // possible row count (RTC-equipped devices show all of them).
+  static constexpr int MAX_STATUS_BAR_ITEMS = 11;
+
   void onEnter() override;
   void render(RenderLock&&) override;
 
@@ -26,4 +30,12 @@ class StatusBarSettingsActivity final : public UiListActivity {
   std::string rowValueText(int index);
 
   void handleSelection();
+
+  // Row storage: MAX_STATUS_BAR_ITEMS is a compile-time constant, so
+  // fixed-capacity storage avoids any heap allocation for the row list.
+  // Labels are set once in onEnter() (visibleItemCount is decided there);
+  // buildScreen() only refreshes the live value text (rowValues_) by
+  // assigning into the existing strings (no array growth).
+  std::string rowValues_[MAX_STATUS_BAR_ITEMS];
+  freeink::ui::ListItem rowItems_[MAX_STATUS_BAR_ITEMS]{};
 };

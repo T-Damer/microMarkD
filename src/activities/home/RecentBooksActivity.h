@@ -29,6 +29,10 @@ class RecentBooksActivity final : public UiListActivity {
   bool longPressFired = false;
 
   std::vector<RecentBook> recentBooks;
+  // Row buffer, built in loadRecentBooks() (not buildScreen(), which reuses
+  // it on every repaint instead of rebuilding a ListItem vector per render).
+  std::vector<freeink::ui::ListItem> rowItems;
+  void rebuildRowItems();
 
   // Data loading
   void loadRecentBooks();

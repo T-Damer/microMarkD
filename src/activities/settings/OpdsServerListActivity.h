@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "activities/UiListActivity.h"
 #include "components/OptionPopup.h"
 
@@ -28,6 +30,13 @@ class OpdsServerListActivity final : public UiListActivity {
 
   bool pickerMode = false;
   OptionPopup optionPopup;
+
+  // Row structure (labels, actionValue; server subtitles), rebuilt only when
+  // the server list itself reloads (rebuildRowItems(), called from onEnter()
+  // and after returning from the server editor) — not on every repaint. The
+  // folder/format rows' live subtitle is refreshed in place by buildScreen().
+  std::vector<freeink::ui::ListItem> rowItems_;
+  void rebuildRowItems();
 
   int getItemCount() const;
   void handleSelection();

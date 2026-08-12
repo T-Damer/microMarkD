@@ -86,6 +86,17 @@ class FontDownloadActivity final : public UiListActivity {
   // callback's own input pump); exit to home after the abort unwinds.
   bool goHomeRequested_ = false;
 
+  // Row cache: buildScreen() only runs while state_ == FAMILY_LIST, and
+  // families_ only changes at the handful of state_-transition points back to
+  // FAMILY_LIST (manifest load, download/update/delete completing) — never
+  // mid-stay (cursor move, tap flash). rowsDirty_ marks those transitions so
+  // buildScreen() rebuilds rowItems_ only when it actually needs to, instead
+  // of on every repaint.
+  std::vector<std::string> rowLabels_;
+  std::vector<freeink::ui::ListItem> rowItems_;
+  bool rowsDirty_ = true;
+  void rebuildRowItems();
+
   int listCount() const override { return listItemCount(); }
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;

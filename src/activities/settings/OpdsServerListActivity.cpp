@@ -63,6 +63,45 @@ void OpdsServerListActivity::onEnter() {
   // Reload from disk in case servers were added/removed by a subactivity or the web UI
   OPDS_STORE.loadFromFile();
   nav.selected = 0;
+  rebuildRowItems();
+}
+
+// Rebuilds rowItems_ (labels/actionValue, server subtitles) from OPDS_STORE.
+// Structural — call only when the server list actually reloads, not from
+// buildScreen(). The folder/format rows' live subtitle is refreshed in place
+// by buildScreen() every render instead, since those track live SETTINGS
+// values that can change without a server-list reload.
+void OpdsServerListActivity::rebuildRowItems() {
+  rowItems_.clear();
+  const int itemCount = getItemCount();
+  if (itemCount == 0) return;
+  rowItems_.reserve(itemCount);
+
+  const auto& servers = OPDS_STORE.getServers();
+  const auto serverCount = static_cast<int>(servers.size());
+  for (int i = 0; i < serverCount; i++) {
+    fui::ListItem item;
+    item.label = servers[i].name.empty() ? servers[i].url.c_str() : servers[i].name.c_str();
+    if (!servers[i].name.empty()) item.subtitle = servers[i].url.c_str();
+    item.actionValue = static_cast<int16_t>(i);
+    rowItems_.push_back(item);
+  }
+  if (!pickerMode) {
+    fui::ListItem addServer;
+    addServer.label = tr(STR_ADD_SERVER);
+    addServer.actionValue = static_cast<int16_t>(serverCount);
+    rowItems_.push_back(addServer);
+
+    fui::ListItem folder;
+    folder.label = tr(STR_OPDS_DOWNLOAD_FOLDER);
+    folder.actionValue = static_cast<int16_t>(serverCount + 1);
+    rowItems_.push_back(folder);  // subtitle refreshed per render below
+
+    fui::ListItem format;
+    format.label = tr(STR_OPDS_FILENAME_FORMAT);
+    format.actionValue = static_cast<int16_t>(serverCount + 2);
+    rowItems_.push_back(format);  // subtitle refreshed per render below
+  }
 }
 
 bool OpdsServerListActivity::handleCustomInput() {
@@ -139,6 +178,7 @@ void OpdsServerListActivity::handleSelection() {
     // Reload server list when returning from editor
     OPDS_STORE.loadFromFile();
     nav.selected = 0;
+    rebuildRowItems();
   };
 
   if (nav.selected < serverCount) {
@@ -166,42 +206,20 @@ void OpdsServerListActivity::buildScreen(UiScreen& screen) {
     return;
   }
 
-  const auto& servers = OPDS_STORE.getServers();
-  const auto serverCount = static_cast<int>(servers.size());
-
-  // Primary label: server name (falling back to URL if unnamed); subtitle is
-  // the URL when a name is set, or the current folder/format values.
-  std::vector<fui::ListItem> items;
-  items.reserve(itemCount);
-  for (int i = 0; i < serverCount; i++) {
-    fui::ListItem item;
-    item.label = servers[i].name.empty() ? servers[i].url.c_str() : servers[i].name.c_str();
-    if (!servers[i].name.empty()) item.subtitle = servers[i].url.c_str();
-    item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
-  }
+  // rowItems_ (labels/actionValue, server subtitles) was built by
+  // rebuildRowItems() when the server list last reloaded; only the
+  // folder/format rows' live subtitle needs refreshing here (pointer
+  // reassignment onto already-owned strings — no allocation).
   if (!pickerMode) {
-    fui::ListItem addServer;
-    addServer.label = tr(STR_ADD_SERVER);
-    addServer.actionValue = static_cast<int16_t>(serverCount);
-    items.push_back(addServer);
-
-    fui::ListItem folder;
-    folder.label = tr(STR_OPDS_DOWNLOAD_FOLDER);
-    folder.subtitle = SETTINGS.opdsDownloadFolder[0] ? SETTINGS.opdsDownloadFolder : tr(STR_OPDS_SD_ROOT);
-    folder.actionValue = static_cast<int16_t>(serverCount + 1);
-    items.push_back(folder);
-
-    fui::ListItem format;
-    format.label = tr(STR_OPDS_FILENAME_FORMAT);
-    format.subtitle = I18N.get(opdsFormatLabel(SETTINGS.opdsFilenameFormat));
-    format.actionValue = static_cast<int16_t>(serverCount + 2);
-    items.push_back(format);
+    const auto serverCount = static_cast<int>(OPDS_STORE.getServers().size());
+    rowItems_[serverCount + 1].subtitle =
+        SETTINGS.opdsDownloadFolder[0] ? SETTINGS.opdsDownloadFolder : tr(STR_OPDS_SD_ROOT);
+    rowItems_[serverCount + 2].subtitle = I18N.get(opdsFormatLabel(SETTINGS.opdsFilenameFormat));
   }
 
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems_.data();
+  props.count = static_cast<uint16_t>(rowItems_.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   syncListViewport(screen, props, /*hasSubtitle=*/true);

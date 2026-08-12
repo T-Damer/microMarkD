@@ -19,6 +19,8 @@ class NetworkModeSelectionActivity final : public UiListActivity {
  public:
   explicit NetworkModeSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
+  static constexpr int MENU_ITEM_COUNT = 3;
+
   void onModeSelected(NetworkMode mode);
   void onCancel();
 
@@ -28,4 +30,9 @@ class NetworkModeSelectionActivity final : public UiListActivity {
   void activateIndex(int index) override;
   void onBackButton() override { onCancel(); }
   const char* headerTitle() const override;
+
+  // Row storage: entirely static (label/subtitle/icon never change), so it's
+  // built once in the constructor instead of every buildScreen() call, into
+  // fixed-capacity storage that avoids any heap allocation for the row list.
+  freeink::ui::ListItem rowItems_[MENU_ITEM_COUNT]{};
 };

@@ -252,20 +252,11 @@ void OpdsBookBrowserActivity::buildBrowsingScreen(UiScreen& screen) {
 
   // Transient per-render: sized once via reserve, points into `entries`
   // strings, freed on scope exit.
-  std::vector<fui::ListItem> items;
-  items.reserve(entries.size());
-  for (const auto& entry : entries) {
-    fui::ListItem item;
-    item.label = entry.title.c_str();
-    if (entry.type == OpdsEntryType::BOOK && !entry.author.empty()) item.subtitle = entry.author.c_str();
-    if (entry.type == OpdsEntryType::NAVIGATION) item.value = ">";
-    item.actionValue = static_cast<int16_t>(items.size());
-    items.push_back(item);
-  }
-
+  // rowItems is built whenever entries changes (see rebuildRowItems(), called
+  // from fetchFeed()/releaseEntries()) and reused here on every repaint.
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems.data();
+  props.count = static_cast<uint16_t>(rowItems.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   props.valueInset = 8;               // air between the nav chevron and the row edge
@@ -417,7 +408,24 @@ void OpdsBookBrowserActivity::fetchFeed(const std::string& path) {
   listNav.reset();
   state = entries.empty() ? BrowserState::ERROR : BrowserState::BROWSING;
   if (entries.empty()) errorMessage = tr(STR_NO_ENTRIES);
+  rebuildRowItems();
   requestUpdate();
+}
+
+// Derives rowItems from entries. Called whenever entries changes
+// (fetchFeed()/releaseEntries()) so buildBrowsingScreen() reuses the cached
+// rows on every repaint instead of rebuilding them per render.
+void OpdsBookBrowserActivity::rebuildRowItems() {
+  rowItems.clear();
+  rowItems.reserve(entries.size());
+  for (const auto& entry : entries) {
+    fui::ListItem item;
+    item.label = entry.title.c_str();
+    if (entry.type == OpdsEntryType::BOOK && !entry.author.empty()) item.subtitle = entry.author.c_str();
+    if (entry.type == OpdsEntryType::NAVIGATION) item.value = ">";
+    item.actionValue = static_cast<int16_t>(rowItems.size());
+    rowItems.push_back(item);
+  }
 }
 
 void OpdsBookBrowserActivity::releaseEntries() {
@@ -425,6 +433,7 @@ void OpdsBookBrowserActivity::releaseEntries() {
   // entries; stop routing touches against it until the next render.
   closeRouting();
   std::vector<OpdsEntry>().swap(entries);
+  rebuildRowItems();
 }
 
 void OpdsBookBrowserActivity::navigateToEntry(const OpdsEntry& entry) {

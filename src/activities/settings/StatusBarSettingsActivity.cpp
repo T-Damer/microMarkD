@@ -6,7 +6,6 @@
 
 #include <cstring>
 #include <memory>
-#include <vector>
 
 #include "ClockOffsetActivity.h"
 #include "ClockSyncActivity.h"
@@ -37,6 +36,8 @@ enum MenuItem {
 
 constexpr int BASE_MENU_ITEMS = ITEM_CLOCK;  // Items shown on every device
 constexpr int FULL_MENU_ITEMS = ITEM_COUNT;  // Items shown when RTC is available
+static_assert(FULL_MENU_ITEMS == StatusBarSettingsActivity::MAX_STATUS_BAR_ITEMS,
+             "keep StatusBarSettingsActivity::MAX_STATUS_BAR_ITEMS in sync with ITEM_COUNT");
 
 const StrId menuNames[FULL_MENU_ITEMS] = {
     StrId::STR_CHAPTER_PAGE_COUNT,
@@ -121,6 +122,13 @@ void StatusBarSettingsActivity::onEnter() {
 
   if (SETTINGS.statusBarClock >= STATUS_BAR_CLOCK_ITEMS) {
     SETTINGS.statusBarClock = CrossPointSettings::STATUS_BAR_CLOCK_MODE::STATUS_BAR_CLOCK_HIDE;
+  }
+
+  // Labels never change (unlike the values, which track live SETTINGS
+  // state), so they're set once here rather than every buildScreen() call.
+  for (int i = 0; i < visibleItemCount; i++) {
+    rowItems_[i].label = I18N.get(menuNames[i]);
+    rowItems_[i].actionValue = static_cast<int16_t>(i);
   }
 }
 
@@ -239,25 +247,18 @@ void StatusBarSettingsActivity::buildScreen(UiScreen& screen) {
                                       static_cast<int16_t>(metrics.buttonHintsHeight + previewFooter), 0});
   screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
 
-  // Per-render owned value strings; items point into them for the draw only.
-  std::vector<std::string> values(visibleItemCount);
+  // rowItems_'s labels/actionValue were set once in onEnter(); only the live
+  // value text needs refreshing here, by assigning into the existing
+  // rowValues_ strings (no array growth) rather than building a new
+  // items/values vector on every render.
   for (int i = 0; i < visibleItemCount; i++) {
-    values[i] = rowValueText(i);
-  }
-
-  std::vector<fui::ListItem> items;
-  items.reserve(visibleItemCount);
-  for (int i = 0; i < visibleItemCount; i++) {
-    fui::ListItem item;
-    item.label = I18N.get(menuNames[i]);
-    if (!values[i].empty()) item.value = values[i].c_str();
-    item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
+    rowValues_[i] = rowValueText(i);
+    rowItems_[i].value = rowValues_[i].empty() ? nullptr : rowValues_[i].c_str();
   }
 
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems_;
+  props.count = static_cast<uint16_t>(visibleItemCount);
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   props.valueInset = 8;               // air between the value and the row edge

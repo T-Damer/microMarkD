@@ -5,7 +5,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "KOReaderAuthActivity.h"
 #include "KOReaderCredentialStore.h"
@@ -16,14 +15,21 @@
 namespace fui = freeink::ui;
 
 namespace {
-constexpr int MENU_ITEMS = 8;
-const StrId menuNames[MENU_ITEMS] = {StrId::STR_USERNAME,          StrId::STR_PASSWORD,      StrId::STR_SYNC_SERVER_URL,
-                                     StrId::STR_DOCUMENT_MATCHING, StrId::STR_SEND_METADATA, StrId::STR_SYNC_BEHAVIOR,
-                                     StrId::STR_SIGN_UP,           StrId::STR_AUTHENTICATE};
+const StrId menuNames[KOReaderSettingsActivity::MENU_ITEMS] = {
+    StrId::STR_USERNAME,          StrId::STR_PASSWORD,      StrId::STR_SYNC_SERVER_URL,
+    StrId::STR_DOCUMENT_MATCHING, StrId::STR_SEND_METADATA, StrId::STR_SYNC_BEHAVIOR,
+    StrId::STR_SIGN_UP,           StrId::STR_AUTHENTICATE};
 }  // namespace
 
 KOReaderSettingsActivity::KOReaderSettingsActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
-    : UiListActivity("KOReaderSettings", renderer, mappedInput) {}
+    : UiListActivity("KOReaderSettings", renderer, mappedInput) {
+  // Labels never change (unlike the values, which track live KOREADER_STORE
+  // state), so they're set once here rather than every buildScreen() call.
+  for (int i = 0; i < MENU_ITEMS; i++) {
+    rowItems_[i].label = I18N.get(menuNames[i]);
+    rowItems_[i].actionValue = static_cast<int16_t>(i);
+  }
+}
 
 int KOReaderSettingsActivity::listCount() const { return MENU_ITEMS; }
 
@@ -117,50 +123,44 @@ void KOReaderSettingsActivity::buildScreen(UiScreen& screen) {
                                       static_cast<int16_t>(metrics.buttonHintsHeight), 0});
   screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
 
-  // Per-render owned value strings; items point into them for the draw only.
-  std::vector<std::string> values(MENU_ITEMS);
+  // rowItems_'s labels/actionValue were set once in the constructor; only the
+  // live value text needs refreshing here, by assigning into the existing
+  // rowValues_ strings (no array growth) rather than building a new
+  // items/values vector on every render.
   for (int i = 0; i < MENU_ITEMS; i++) {
     if (i == 0) {
       const auto username = KOREADER_STORE.getUsername();
-      values[i] = username.empty() ? tr(STR_NOT_SET) : username;
+      rowValues_[i] = username.empty() ? tr(STR_NOT_SET) : username;
     } else if (i == 1) {
-      values[i] = KOREADER_STORE.getPassword().empty() ? tr(STR_NOT_SET) : "******";
+      rowValues_[i] = KOREADER_STORE.getPassword().empty() ? tr(STR_NOT_SET) : "******";
     } else if (i == 2) {
-      values[i] = KOREADER_STORE.getServerUrl();
-      if (values[i].empty()) {
+      rowValues_[i] = KOREADER_STORE.getServerUrl();
+      if (rowValues_[i].empty()) {
         // Show which server the default actually is, scheme stripped for space
         std::string defaultUrl = KOREADER_STORE.getBaseUrl();
         const auto schemeEnd = defaultUrl.find("://");
         if (schemeEnd != std::string::npos) {
           defaultUrl.erase(0, schemeEnd + 3);
         }
-        values[i] = std::string(tr(STR_DEFAULT_VALUE)) + ": " + defaultUrl;
+        rowValues_[i] = std::string(tr(STR_DEFAULT_VALUE)) + ": " + defaultUrl;
       }
     } else if (i == 3) {
-      values[i] = KOREADER_STORE.getMatchMethod() == DocumentMatchMethod::FILENAME ? tr(STR_FILENAME) : tr(STR_BINARY);
+      rowValues_[i] =
+          KOREADER_STORE.getMatchMethod() == DocumentMatchMethod::FILENAME ? tr(STR_FILENAME) : tr(STR_BINARY);
     } else if (i == 4) {
-      values[i] = KOREADER_STORE.getSendMetadata() ? tr(STR_STATE_ON) : tr(STR_STATE_OFF);
+      rowValues_[i] = KOREADER_STORE.getSendMetadata() ? tr(STR_STATE_ON) : tr(STR_STATE_OFF);
     } else if (i == 5) {
-      values[i] =
+      rowValues_[i] =
           KOREADER_STORE.getSyncBehavior() == KOReaderSyncBehavior::SMART ? tr(STR_SMART_SYNC) : tr(STR_ASK_EVERY_TIME);
     } else {
-      values[i] = KOREADER_STORE.hasCredentials() ? "" : std::string("[") + tr(STR_SET_CREDENTIALS_FIRST) + "]";
+      rowValues_[i] = KOREADER_STORE.hasCredentials() ? "" : std::string("[") + tr(STR_SET_CREDENTIALS_FIRST) + "]";
     }
-  }
-
-  std::vector<fui::ListItem> items;
-  items.reserve(MENU_ITEMS);
-  for (int i = 0; i < MENU_ITEMS; i++) {
-    fui::ListItem item;
-    item.label = I18N.get(menuNames[i]);
-    if (!values[i].empty()) item.value = values[i].c_str();
-    item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
+    rowItems_[i].value = rowValues_[i].empty() ? nullptr : rowValues_[i].c_str();
   }
 
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems_;
+  props.count = static_cast<uint16_t>(MENU_ITEMS);
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   props.valueInset = 8;               // air between the value and the row edge

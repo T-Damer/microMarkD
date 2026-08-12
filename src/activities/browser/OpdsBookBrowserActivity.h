@@ -29,6 +29,11 @@ class OpdsBookBrowserActivity final : public Activity, private UiAppHost {
   ButtonNavigator buttonNavigator;
   BrowserState state = BrowserState::LOADING;
   std::vector<OpdsEntry> entries;
+  // Row buffer, built whenever entries changes (fetchFeed()/releaseEntries())
+  // so buildBrowsingScreen() reuses it on every repaint instead of rebuilding
+  // a ListItem vector per render.
+  std::vector<freeink::ui::ListItem> rowItems;
+  void rebuildRowItems();
   std::vector<std::string> navigationHistory;
   std::string currentPath;
   std::string searchTemplate;

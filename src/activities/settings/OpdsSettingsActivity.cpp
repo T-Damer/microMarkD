@@ -19,7 +19,18 @@ constexpr int BASE_ITEMS = 4;
 
 OpdsSettingsActivity::OpdsSettingsActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
                                            const int serverIndex)
-    : UiListActivity("OpdsSettings", renderer, mappedInput), serverIndex(serverIndex) {}
+    : UiListActivity("OpdsSettings", renderer, mappedInput), serverIndex(serverIndex) {
+  // Labels never change (unlike the values, which track editServer's fields
+  // live), so they're set once here rather than every buildScreen() call.
+  static constexpr StrId fieldNames[BASE_ITEMS] = {StrId::STR_SERVER_NAME, StrId::STR_OPDS_SERVER_URL,
+                                                    StrId::STR_USERNAME, StrId::STR_PASSWORD};
+  for (int i = 0; i < BASE_ITEMS; i++) {
+    fieldRowItems[i].label = I18N.get(fieldNames[i]);
+    fieldRowItems[i].actionValue = static_cast<int16_t>(i);
+  }
+  fieldRowItems[BASE_ITEMS].label = tr(STR_DELETE_SERVER);
+  fieldRowItems[BASE_ITEMS].actionValue = static_cast<int16_t>(BASE_ITEMS);
+}
 
 int OpdsSettingsActivity::getMenuItemCount() const {
   return isNewServer ? BASE_ITEMS : BASE_ITEMS + 1;  // +1 for Delete
@@ -168,29 +179,17 @@ void OpdsSettingsActivity::buildScreen(UiScreen& screen) {
   screen.target().text(band.inset(fui::Insets{0, pad, 0, pad}), tr(STR_CALIBRE_URL_HINT), screen.theme().smallText);
   screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
 
-  const StrId fieldNames[] = {StrId::STR_SERVER_NAME, StrId::STR_OPDS_SERVER_URL, StrId::STR_USERNAME,
-                              StrId::STR_PASSWORD};
-  const int menuItems = getMenuItemCount();
-  const char* values[BASE_ITEMS] = {
-      editServer.name.empty() ? tr(STR_NOT_SET) : editServer.name.c_str(),
-      editServer.url.empty() ? tr(STR_NOT_SET) : editServer.url.c_str(),
-      editServer.username.empty() ? tr(STR_NOT_SET) : editServer.username.c_str(),
-      editServer.password.empty() ? tr(STR_NOT_SET) : "******",
-  };
-
-  std::vector<fui::ListItem> items;
-  items.reserve(menuItems);
-  for (int i = 0; i < menuItems; i++) {
-    fui::ListItem item;
-    item.label = i < BASE_ITEMS ? I18N.get(fieldNames[i]) : tr(STR_DELETE_SERVER);
-    if (i < BASE_ITEMS) item.value = values[i];
-    item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
-  }
+  // fieldRowItems' labels/actionValue were set once in the constructor; only
+  // the live value pointers (already pointing at editServer's own fields, no
+  // new strings built) need refreshing here.
+  fieldRowItems[0].value = editServer.name.empty() ? tr(STR_NOT_SET) : editServer.name.c_str();
+  fieldRowItems[1].value = editServer.url.empty() ? tr(STR_NOT_SET) : editServer.url.c_str();
+  fieldRowItems[2].value = editServer.username.empty() ? tr(STR_NOT_SET) : editServer.username.c_str();
+  fieldRowItems[3].value = editServer.password.empty() ? tr(STR_NOT_SET) : "******";
 
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = fieldRowItems;
+  props.count = static_cast<uint16_t>(getMenuItemCount());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   props.valueInset = 8;               // air between the value and the row edge

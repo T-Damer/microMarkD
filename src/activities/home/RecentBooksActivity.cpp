@@ -23,7 +23,26 @@ constexpr unsigned long LONG_PRESS_MS = 1000;
 RecentBooksActivity::RecentBooksActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
     : UiListActivity("RecentBooks", renderer, mappedInput, /*wantsTouchLongPress=*/true) {}
 
-void RecentBooksActivity::loadRecentBooks() { recentBooks = RECENT_BOOKS.getBooks(); }
+void RecentBooksActivity::loadRecentBooks() {
+  recentBooks = RECENT_BOOKS.getBooks();
+  rebuildRowItems();
+}
+
+// Derives rowItems from recentBooks. Called whenever recentBooks changes
+// (loadRecentBooks(), i.e. load/removal) so buildScreen() reuses the cached
+// rows on every repaint instead of rebuilding them per render.
+void RecentBooksActivity::rebuildRowItems() {
+  rowItems.clear();
+  rowItems.reserve(recentBooks.size());
+  for (const auto& book : recentBooks) {
+    fui::ListItem item;
+    item.label = book.title.c_str();
+    if (!book.author.empty()) item.subtitle = book.author.c_str();
+    item.icon = listIconFor(UITheme::getFileIcon(book.path), 32);  // subtitle rows carry the larger icon
+    item.actionValue = static_cast<int16_t>(rowItems.size());
+    rowItems.push_back(item);
+  }
+}
 
 void RecentBooksActivity::onEnter() {
   UiListActivity::onEnter();
@@ -127,21 +146,11 @@ void RecentBooksActivity::buildScreen(UiScreen& screen) {
     return;
   }
 
-  // Transient per-render: points into the recentBooks strings.
-  std::vector<fui::ListItem> items;
-  items.reserve(recentBooks.size());
-  for (const auto& book : recentBooks) {
-    fui::ListItem item;
-    item.label = book.title.c_str();
-    if (!book.author.empty()) item.subtitle = book.author.c_str();
-    item.icon = listIconFor(UITheme::getFileIcon(book.path), 32);  // subtitle rows carry the larger icon
-    item.actionValue = static_cast<int16_t>(items.size());
-    items.push_back(item);
-  }
-
+  // rowItems is built in loadRecentBooks() (see rebuildRowItems()) and
+  // reused here on every repaint.
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems.data();
+  props.count = static_cast<uint16_t>(rowItems.size());
   props.action = ACTION_ROW;
   // Tap opens; long-press prompts removal (physical buttons stay in loop()).
   props.inputMask = fui::InputTouch | fui::InputLongPress;

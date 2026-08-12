@@ -10,7 +10,22 @@ namespace fui = freeink::ui;
 
 EpubReaderFootnotesActivity::EpubReaderFootnotesActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
                                                          const std::vector<FootnoteEntry>& footnotes)
-    : UiListActivity("EpubReaderFootnotes", renderer, mappedInput), footnotes(footnotes) {}
+    : UiListActivity("EpubReaderFootnotes", renderer, mappedInput), footnotes(footnotes) {
+  buildRowItems();
+}
+
+// footnotes never changes after construction (no reload path), so this only
+// needs to run once here rather than on every buildScreen() call.
+void EpubReaderFootnotesActivity::buildRowItems() {
+  rowItems.clear();
+  rowItems.reserve(footnotes.size());
+  for (const auto& footnote : footnotes) {
+    fui::ListItem item;
+    item.label = footnote.number[0] ? footnote.number : tr(STR_LINK);
+    item.actionValue = static_cast<int16_t>(rowItems.size());
+    rowItems.push_back(item);
+  }
+}
 
 void EpubReaderFootnotesActivity::activateIndex(const int index) {
   if (index < 0 || index >= listCount()) return;
@@ -54,20 +69,11 @@ void EpubReaderFootnotesActivity::buildScreen(UiScreen& screen) {
     return;
   }
 
-  // Labels point into the footnotes member vector (stable for the activity's
-  // lifetime) or static i18n strings; no per-render copies needed.
-  std::vector<fui::ListItem> items;
-  items.reserve(footnotes.size());
-  for (const auto& footnote : footnotes) {
-    fui::ListItem item;
-    item.label = footnote.number[0] ? footnote.number : tr(STR_LINK);
-    item.actionValue = static_cast<int16_t>(items.size());
-    items.push_back(item);
-  }
-
+  // rowItems is built once in the constructor (see buildRowItems()) and
+  // reused here on every repaint.
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems.data();
+  props.count = static_cast<uint16_t>(rowItems.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   syncListViewport(screen, props);

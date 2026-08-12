@@ -5,9 +5,6 @@
 #include <HalGPIO.h>
 #include <I18n.h>
 
-#include <algorithm>
-#include <iterator>
-
 #include "CrossPointSettings.h"
 #include "ReaderUtils.h"
 // ReaderUtils.h pulls in ActivityManager.h, which only forward-declares Activity while holding
@@ -45,10 +42,34 @@ void EndOfBookOptions::loadOnce(const std::string& currentBookPath) {
     resetUi();
     app.on(ACTION_ROW, &EndOfBookOptions::onRowEvent, this);
     app.setScreen(&EndOfBookOptions::listScreen, this);
+    buildRowItems();
   }
   // Release-publish so the main task, which gates all access on isLoaded, never
-  // observes a partially built list
+  // observes a partially built list (rowItems/rowLabels included)
   isLoaded.store(true, std::memory_order_release);
+}
+
+// Populates rowLabels/rowItems from names + the trailing "Home" row. Called
+// once here since names never changes after loadOnce() completes.
+void EndOfBookOptions::buildRowItems() {
+  rowCount = 0;
+  for (const auto& name : names) {
+    if (rowCount >= MAX_ROWS) break;
+    rowLabels[rowCount] = displayName(name);
+    fui::ListItem item;
+    item.label = rowLabels[rowCount].c_str();
+    item.actionValue = static_cast<int16_t>(rowCount);
+    rowItems[rowCount] = item;
+    rowCount++;
+  }
+  if (rowCount < MAX_ROWS) {
+    rowLabels[rowCount] = tr(STR_EOB_HOME);
+    fui::ListItem item;
+    item.label = rowLabels[rowCount].c_str();
+    item.actionValue = static_cast<int16_t>(rowCount);
+    rowItems[rowCount] = item;
+    rowCount++;
+  }
 }
 
 bool EndOfBookOptions::menuActive() const { return isLoaded.load(std::memory_order_acquire) && !names.empty(); }
@@ -146,26 +167,11 @@ void EndOfBookOptions::buildListScreen(UiScreen& screen) {
       static_cast<int16_t>(renderer.getScreenHeight() - (safe.y + safe.height) + metrics.verticalSpacing),
       static_cast<int16_t>(safe.x)});
 
-  // Transient per-render row labels: ListItem only points at them, and the list is
-  // drawn before this scope exits.
-  std::vector<std::string> labels;
-  labels.reserve(names.size() + 1);
-  std::transform(names.begin(), names.end(), std::back_inserter(labels),
-                 [](const std::string& name) { return displayName(name); });
-  labels.push_back(std::string(tr(STR_EOB_HOME)));
-
-  std::vector<fui::ListItem> items;
-  items.reserve(labels.size());
-  for (const auto& label : labels) {
-    fui::ListItem item;
-    item.label = label.c_str();
-    item.actionValue = static_cast<int16_t>(items.size());
-    items.push_back(item);
-  }
-
+  // rowLabels/rowItems were built once in loadOnce() (see buildRowItems())
+  // and reused here on every repaint.
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems;
+  props.count = static_cast<uint16_t>(rowCount);
   props.selectedIndex = static_cast<int16_t>(selector);
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in handleMenuInput()

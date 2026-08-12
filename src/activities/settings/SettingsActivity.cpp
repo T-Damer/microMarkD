@@ -115,6 +115,7 @@ void SettingsActivity::rebuildSettingsLists() {
       break;
   }
   settingsCount = static_cast<int>(currentSettings->size());
+  rebuildRowItems();
 }
 
 void SettingsActivity::onEnter() {
@@ -149,6 +150,24 @@ void SettingsActivity::selectCategory(const int categoryIndex) {
   }
   settingsCount = static_cast<int>(currentSettings->size());
   activeNav().top = 0;  // category switches start the list at the top (no per-tab memory here)
+  rebuildRowItems();
+}
+
+// Rebuilds rowValues_/rowItems_ (label + actionValue) for *currentSettings.
+// Structural — call only when the active category or a category's setting
+// list changes, never from buildScreen(), which only refreshes rowValues_
+// content and rowItems_[].value pointers in place.
+void SettingsActivity::rebuildRowItems() {
+  const auto& settings = *currentSettings;
+  rowValues_.assign(settings.size(), std::string());
+  rowItems_.clear();
+  rowItems_.reserve(settings.size());
+  for (size_t i = 0; i < settings.size(); i++) {
+    fui::ListItem item;
+    item.label = I18N.get(settings[i].nameId);
+    item.actionValue = static_cast<int16_t>(i);
+    rowItems_.push_back(item);
+  }
 }
 
 void SettingsActivity::onTabAction(const int index) {
@@ -436,23 +455,20 @@ void SettingsActivity::buildScreen(UiScreen& screen) {
 
   buildTabBar(screen);
 
-  // Settings rows. Values are built per render and owned for the draw only.
+  // rowItems_ (label/actionValue) was built by rebuildRowItems() when the
+  // category was last selected/rebuilt; only the live value text needs
+  // refreshing here, by assigning into the existing rowValues_ strings (no
+  // vector growth) rather than building a new items/values vector on every
+  // render.
   const auto& settings = *currentSettings;
-  std::vector<std::string> values(settings.size());
-  std::vector<fui::ListItem> items;
-  items.reserve(settings.size());
   for (size_t i = 0; i < settings.size(); i++) {
-    values[i] = settingValueText(settings[i]);
-    fui::ListItem item;
-    item.label = I18N.get(settings[i].nameId);
-    if (!values[i].empty()) item.value = values[i].c_str();
-    item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
+    rowValues_[i] = settingValueText(settings[i]);
+    rowItems_[i].value = rowValues_[i].empty() ? nullptr : rowValues_[i].c_str();
   }
 
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems_.data();
+  props.count = static_cast<uint16_t>(rowItems_.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   props.valueInset = 8;               // air between the value and the row edge

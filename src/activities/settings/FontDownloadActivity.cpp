@@ -73,6 +73,7 @@ void FontDownloadActivity::onWifiSelectionComplete(const bool success) {
   {
     RenderLock lock(*this);
     state_ = FAMILY_LIST;
+    rowsDirty_ = true;  // families_ just loaded
     nav.selected = 0;
   }
 }
@@ -341,6 +342,7 @@ void FontDownloadActivity::downloadFamily(ManifestFamily& family) {
       {
         RenderLock lock(*this);
         state_ = FAMILY_LIST;
+        rowsDirty_ = true;  // installed/hasUpdate just changed above
       }
       return;
     }
@@ -431,6 +433,10 @@ void FontDownloadActivity::onDeleteConfirmationResult(const ActivityResult& resu
     fontInstaller_.refreshRegistry();
     family.installed = false;
     family.hasUpdate = false;
+    // Unlike the other family_ mutations, this one stays in FAMILY_LIST (no
+    // state_ transition to hang the rebuild off), so it must set the flag
+    // directly.
+    rowsDirty_ = true;
   }
 
   requestUpdate();
@@ -489,20 +495,36 @@ void FontDownloadActivity::buildScreen(UiScreen& screen) {
     return;
   }
 
+  if (rowsDirty_) {
+    rebuildRowItems();
+    rowsDirty_ = false;
+  }
+
+  fui::ListProps props;
+  props.items = rowItems_.data();
+  props.count = static_cast<uint16_t>(rowItems_.size());
+  props.action = ACTION_ROW;
+  props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
+  props.valueInset = 8;               // air between the status and the row edge
+  syncListViewport(screen, props, /*hasSubtitle=*/true);
+  screen.list(props);
+}
+
+// Rebuilds rowLabels_/rowItems_ from families_. Only called when rowsDirty_ is
+// set (families_/state_ changed since the last build), never on every repaint.
+void FontDownloadActivity::rebuildRowItems() {
   const int listSize = listItemCount();
-  // Per-render owned strings for the composed labels; subtitles/values point
-  // at stable family fields and i18n constants.
-  std::vector<std::string> labels(listSize);
-  std::vector<fui::ListItem> items;
-  items.reserve(listSize);
+  rowLabels_.assign(listSize, std::string());
+  rowItems_.clear();
+  rowItems_.reserve(listSize);
   for (int i = 0; i < listSize; i++) {
     fui::ListItem item;
     if (isDownloadAllRow(i)) {
-      labels[i] = std::string(tr(STR_DOWNLOAD_ALL)) + " (" + formatSize(totalDownloadSize()) + ")";
-      item.label = labels[i].c_str();
+      rowLabels_[i] = std::string(tr(STR_DOWNLOAD_ALL)) + " (" + formatSize(totalDownloadSize()) + ")";
+      item.label = rowLabels_[i].c_str();
     } else if (isUpdateAllRow(i)) {
-      labels[i] = std::string(tr(STR_UPDATE_ALL)) + " (" + formatSize(totalUpdateSize()) + ")";
-      item.label = labels[i].c_str();
+      rowLabels_[i] = std::string(tr(STR_UPDATE_ALL)) + " (" + formatSize(totalUpdateSize()) + ")";
+      item.label = rowLabels_[i].c_str();
     } else {
       const auto& family = families_[familyIndexFromList(i)];
       item.label = family.name.c_str();
@@ -517,17 +539,8 @@ void FontDownloadActivity::buildScreen(UiScreen& screen) {
       }
     }
     item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
+    rowItems_.push_back(item);
   }
-
-  fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
-  props.action = ACTION_ROW;
-  props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
-  props.valueInset = 8;               // air between the status and the row edge
-  syncListViewport(screen, props, /*hasSubtitle=*/true);
-  screen.list(props);
 }
 
 // --- Input handling ---
@@ -547,6 +560,7 @@ bool FontDownloadActivity::handleCustomInput() {
       {
         RenderLock lock(*this);
         state_ = FAMILY_LIST;
+        rowsDirty_ = true;  // the completed download changed installed/hasUpdate
       }
       requestUpdate();
     }
@@ -555,6 +569,7 @@ bool FontDownloadActivity::handleCustomInput() {
       {
         RenderLock lock(*this);
         state_ = FAMILY_LIST;
+        rowsDirty_ = true;  // the failed download reset installed/hasUpdate
       }
       requestUpdate();
     } else if (mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
@@ -566,6 +581,7 @@ bool FontDownloadActivity::handleCustomInput() {
         {
           RenderLock lock(*this);
           state_ = FAMILY_LIST;
+          rowsDirty_ = true;
         }
         requestUpdate();
       }
@@ -581,6 +597,7 @@ bool FontDownloadActivity::handleCustomInput() {
         {
           RenderLock lock(*this);
           state_ = FAMILY_LIST;
+          rowsDirty_ = true;
         }
         requestUpdate();
       }

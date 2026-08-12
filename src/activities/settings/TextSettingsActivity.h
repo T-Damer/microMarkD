@@ -62,6 +62,16 @@ class TextSettingsActivity final : public UiTabListActivity {
   bool focusedRowHasNoPreview() const;
   void switchTab(int direction = 1);
 
+  // Row storage for the active tab: rowItems_ (label/actionValue) is
+  // rebuilt only when the tab or its backing data changes (rebuildRowItems(),
+  // called from onEnter()/onTabAction()/switchTab()); rowValues_ holds the
+  // live per-row value text, refreshed every buildScreen() call by assigning
+  // into the existing strings (no vector growth), so steady-state rendering
+  // never allocates/frees row storage.
+  std::vector<std::string> rowValues_;
+  std::vector<freeink::ui::ListItem> rowItems_;
+  void rebuildRowItems();
+
   struct FontEntry {
     std::string name;
     bool isBuiltin;

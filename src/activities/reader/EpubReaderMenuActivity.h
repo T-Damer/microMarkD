@@ -43,6 +43,16 @@ class EpubReaderMenuActivity final : public UiListActivity {
 
   static std::vector<MenuItem> buildMenuItems(bool hasFootnotes, bool hasBookmarks);
 
+  // Row storage: menuItems is at most MAX_MENU_ITEMS (1 fixed + FOOTNOTES +
+  // BOOKMARKS + 11 always-present rows in buildMenuItems()), so a
+  // fixed-capacity array avoids any heap allocation for the row list. Labels
+  // are set once in the constructor (buildMenuRowItems()); buildScreen()
+  // only refreshes the two rows whose value reflects live state (rotation,
+  // page-turn interval).
+  static constexpr size_t MAX_MENU_ITEMS = 14;
+  freeink::ui::ListItem menuRowItems[MAX_MENU_ITEMS]{};
+  void buildMenuRowItems();
+
   int listCount() const override { return static_cast<int>(menuItems.size()); }
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;

@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <iterator>
-#include <vector>
 
 #include "CrossPointSettings.h"
 #include "I18nKeys.h"
@@ -27,6 +26,19 @@ void LanguageSelectActivity::onEnter() {
   const auto* end = std::end(SORTED_LANGUAGE_INDICES);
   const auto* it = std::find(begin, end, currentLang);
   nav.selected = (it != end) ? static_cast<int>(std::distance(begin, it)) : 0;
+
+  // Built once here rather than every buildScreen() call: labels are static,
+  // and the "Selected" marker can't go stale mid-visit since activateIndex()
+  // finishes the activity immediately on selection.
+  for (int i = 0; i < totalItems; ++i) {
+    fui::ListItem item;
+    item.label = I18N.getLanguageName(static_cast<Language>(SORTED_LANGUAGE_INDICES[i]));
+    if (SORTED_LANGUAGE_INDICES[i] == currentLang) {
+      item.value = tr(STR_SELECTED);
+    }
+    item.actionValue = static_cast<int16_t>(i);
+    rowItems[i] = item;
+  }
 }
 
 const char* LanguageSelectActivity::headerTitle() const { return tr(STR_LANGUAGE); }
@@ -60,24 +72,10 @@ void LanguageSelectActivity::buildScreen(UiScreen& screen) {
                                       static_cast<int16_t>(safe.x)});
   screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
 
-  // Transient per-render: sized once via reserve, points at static i18n
-  // strings, freed on scope exit.
-  const auto currentLang = static_cast<uint8_t>(I18N.getLanguage());
-  std::vector<fui::ListItem> items;
-  items.reserve(totalItems);
-  for (int i = 0; i < totalItems; ++i) {
-    fui::ListItem item;
-    item.label = I18N.getLanguageName(static_cast<Language>(SORTED_LANGUAGE_INDICES[i]));
-    if (SORTED_LANGUAGE_INDICES[i] == currentLang) {
-      item.value = tr(STR_SELECTED);
-    }
-    item.actionValue = static_cast<int16_t>(i);
-    items.push_back(item);
-  }
-
+  // rowItems was built once in onEnter() and is reused here on every repaint.
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = rowItems;
+  props.count = static_cast<uint16_t>(totalItems);
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   syncListViewport(screen, props);

@@ -56,6 +56,17 @@ class EndOfBookOptions : private UiAppHost {
   int selector = 0;
   std::atomic<bool> isLoaded{false};
 
+  // Row storage, built once in loadOnce() (same acquire/release publication
+  // point as names — see isLoaded above) rather than per-render in
+  // buildListScreen(): names.size() is capped at MAX_SUGGESTIONS and never
+  // changes afterward, so a fixed-capacity array avoids any heap allocation
+  // for the row list, both at load time and every subsequent repaint.
+  static constexpr size_t MAX_ROWS = MAX_SUGGESTIONS + 1;  // + the trailing "Home" row
+  std::string rowLabels[MAX_ROWS];
+  freeink::ui::ListItem rowItems[MAX_ROWS]{};
+  size_t rowCount = 0;
+  void buildRowItems();
+
   // Row index dispatched by onRowEvent during the current route() call; -1 otherwise.
   int tappedRow = -1;
 

@@ -19,7 +19,21 @@ EpubReaderMenuActivity::EpubReaderMenuActivity(GfxRenderer& renderer, MappedInpu
       pendingOrientation(currentOrientation),
       currentPage(currentPage),
       totalPages(totalPages),
-      bookProgressPercent(bookProgressPercent) {}
+      bookProgressPercent(bookProgressPercent) {
+  buildMenuRowItems();
+}
+
+// Populates menuRowItems's labels/actionValue from menuItems. Called once
+// here since menuItems (and thus which rows exist) never changes after
+// construction; buildScreen() only touches the two rows with a live value.
+void EpubReaderMenuActivity::buildMenuRowItems() {
+  for (size_t i = 0; i < menuItems.size() && i < MAX_MENU_ITEMS; i++) {
+    fui::ListItem item;
+    item.label = I18N.get(menuItems[i].labelId);
+    item.actionValue = static_cast<int16_t>(i);
+    menuRowItems[i] = item;
+  }
+}
 
 std::vector<EpubReaderMenuActivity::MenuItem> EpubReaderMenuActivity::buildMenuItems(bool hasFootnotes,
                                                                                      bool hasBookmarks) {
@@ -153,25 +167,21 @@ void EpubReaderMenuActivity::buildScreen(UiScreen& screen) {
   screen.target().text(band.inset(fui::Insets{0, pad, 0, pad}), progressLine.c_str(), screen.theme().smallText);
   screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
 
-  // Transient per-render: sized once via reserve, points at static i18n
-  // strings, freed on scope exit.
-  std::vector<fui::ListItem> items;
-  items.reserve(menuItems.size());
-  for (const auto& menuItem : menuItems) {
-    fui::ListItem item;
-    item.label = I18N.get(menuItem.labelId);
-    if (menuItem.action == MenuAction::ROTATE_SCREEN) {
-      item.value = I18N.get(orientationLabels[pendingOrientation]);
-    } else if (menuItem.action == MenuAction::AUTO_PAGE_TURN) {
-      item.value = pageTurnLabels[selectedPageTurnOption];
+  // menuRowItems's labels/actionValue were set once in the constructor (see
+  // buildMenuRowItems()); only the two rows with a live value (orientation,
+  // page-turn interval) need refreshing here.
+  for (size_t i = 0; i < menuItems.size(); i++) {
+    const auto action = menuItems[i].action;
+    if (action == MenuAction::ROTATE_SCREEN) {
+      menuRowItems[i].value = I18N.get(orientationLabels[pendingOrientation]);
+    } else if (action == MenuAction::AUTO_PAGE_TURN) {
+      menuRowItems[i].value = pageTurnLabels[selectedPageTurnOption];
     }
-    item.actionValue = static_cast<int16_t>(items.size());
-    items.push_back(item);
   }
 
   fui::ListProps props;
-  props.items = items.data();
-  props.count = static_cast<uint16_t>(items.size());
+  props.items = menuRowItems;
+  props.count = static_cast<uint16_t>(menuItems.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
   props.valueInset = 8;               // air between the value and the row edge
