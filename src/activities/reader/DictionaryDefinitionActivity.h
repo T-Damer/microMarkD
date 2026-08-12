@@ -21,6 +21,8 @@ class DictionaryDefinitionActivity final : public Activity {
   void onEnter() override;
   void loop() override;
   void render(RenderLock&&) override;
+  // Part of the reading flow (opened from the page mid-read), so it follows
+  // the reading surface's night-mode polarity like the word-select overlay.
   bool appliesNightMode() const override { return true; }
 
  private:
