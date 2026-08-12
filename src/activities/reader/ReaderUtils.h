@@ -80,6 +80,18 @@ inline TouchPageTurn detectTouchPageTurn(GfxRenderer& renderer, const MappedInpu
     return result;
   }
 
+  if (SETTINGS.touchReaderControls == CrossPointSettings::TOUCH_READER_SWIPE) {
+    // Horizontal swipes turn pages; taps remain free for the middle reader-menu
+    // zone. A slow swipe never becomes a long-press chapter skip.
+    const auto dir = input.wasSwipe();
+    if (dir == MappedInputManager::SwipeDir::Left) {
+      result.next = true;
+    } else if (dir == MappedInputManager::SwipeDir::Right) {
+      result.prev = true;
+    }
+    return result;
+  }
+
   int x = 0;
   int y = 0;
   if (!input.wasScreenTapped(x, y)) {
@@ -192,12 +204,12 @@ struct BackNavCallback {
 // - with backShortToFileBrowser: go to file browser.
 inline bool handleBackNavigation(const MappedInputManager& mappedInput, ActivityManager& activityManager,
                                  const char* filePath, BackNavCallback goHome) {
-  // The reading surface deliberately has no swipe-to-exit path on any touch
-  // board: the bottom-edge up-swipe already exits, and in swipe page-turn
-  // mode a right swipe must page back instead. Back swipes stay available in menus and other activities; only
-  // this reader-surface handler ignores them. Physical Back buttons are
-  // unaffected: isPressed() is button-only, and this guard skips just the
-  // gesture's own release frame.
+  // The reading surface deliberately has no left-edge swipe-to-exit path: in
+  // swipe page-turn mode a right swipe must page back instead. Home remains
+  // available through the board's dedicated Home gesture/key. Back swipes stay
+  // available in menus and other activities; only this reader-surface handler
+  // ignores them. Physical Back buttons are unaffected: isPressed() is
+  // button-only, and this guard skips just the gesture's own release frame.
   if (mappedInput.wasBackGesture()) {
     return false;
   }

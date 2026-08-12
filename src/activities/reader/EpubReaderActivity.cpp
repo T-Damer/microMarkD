@@ -919,6 +919,13 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
                              });
       break;
     }
+    case EpubReaderMenuActivity::MenuAction::NIGHT_MODE:
+      // Handled in-place by EpubReaderMenuActivity so its On/Off value updates
+      // without closing the menu.
+      break;
+    case EpubReaderMenuActivity::MenuAction::FRONTLIGHT:
+      // Handled in-place by EpubReaderMenuActivity using the live frontlight HAL.
+      break;
     case EpubReaderMenuActivity::MenuAction::GO_TO_PERCENT: {
       float bookProgress = 0.0f;
       if (epub && epub->getBookSize() > 0 && section && section->pageCount > 0) {

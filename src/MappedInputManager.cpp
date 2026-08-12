@@ -3,6 +3,7 @@
 #include <BoardConfig.h>
 #include <FreeInkUICore.h>
 #include <GfxRenderer.h>
+#include <HalFrontlight.h>
 
 #include <algorithm>
 #include <cstdlib>
@@ -277,6 +278,11 @@ bool MappedInputManager::wasMenuGesture() const { return wasTopEdgeDownSwipe(); 
 
 bool MappedInputManager::wasHomeGesture() const {
   return gpio.hasHomeKey() ? gpio.wasHomeKeyTapped() : wasBottomEdgeUpSwipe();
+}
+
+bool MappedInputManager::wasLightPanelGesture() const {
+  // On lightless boards the same edge remains available to the reader menu.
+  return Frontlight.present() && wasTopEdgeDownSwipe();
 }
 
 bool MappedInputManager::wasPressed(const Button button) const {

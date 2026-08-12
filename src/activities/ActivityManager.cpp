@@ -1,10 +1,13 @@
 #include "ActivityManager.h"
 
 #include <FontCacheManager.h>
+#include <HalDisplay.h>
+#include <HalFrontlight.h>
 #include <HalPowerManager.h>
 
 #include <algorithm>
 
+#include "CrossPointSettings.h"
 #include "OpdsServerStore.h"
 #include "boot_sleep/BootActivity.h"
 #include "boot_sleep/SleepActivity.h"
@@ -17,6 +20,7 @@
 #include "reader/ReaderActivity.h"
 #include "settings/OpdsServerListActivity.h"
 #include "settings/SettingsActivity.h"
+#include "util/FrontlightPanelActivity.h"
 #include "util/FullScreenMessageActivity.h"
 
 static portMUX_TYPE activityManagerSpinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -50,6 +54,7 @@ void ActivityManager::renderTaskLoop() {
     RenderLock lock;
     if (currentActivity) {
       HalPowerManager::Lock powerLock;  // Ensure we don't go into low-power mode while rendering
+      display.setInverted(SETTINGS.screenInverted != 0 && currentActivity->appliesNightMode());
       currentActivity->render(std::move(lock));
     }
     // Notify any task blocked in requestUpdateAndWait() that the render is done.
@@ -71,6 +76,11 @@ void ActivityManager::loop() {
         return;
       }
       goHome();
+      return;
+    }
+
+    if (currentActivity->name != "FrontlightPanel" && mappedInput.wasLightPanelGesture()) {
+      pushActivity(std::make_unique<FrontlightPanelActivity>(renderer, mappedInput));
       return;
     }
 

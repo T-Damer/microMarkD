@@ -81,6 +81,9 @@ class MappedInputManager {
   // The reader menu remains on its existing top-edge gesture and middle tap.
   bool wasHomeGesture() const;
   bool wasMenuGesture() const;
+  // Top-edge down-swipe opens the light panel when the active board actually
+  // has a frontlight. ActivityManager consumes it before activity input.
+  bool wasLightPanelGesture() const;
   bool wasAnyPressed() const;
   bool wasAnyReleased() const;
   unsigned long getHeldTime() const;

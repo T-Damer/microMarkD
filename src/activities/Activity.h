@@ -44,6 +44,9 @@ class Activity {
   virtual bool skipLoopDelay() { return false; }
   virtual bool preventAutoSleep() { return false; }
   virtual bool isReaderActivity() const { return false; }
+  // Night Mode is intentionally limited to reading surfaces. ActivityManager
+  // resolves the display polarity before every render.
+  virtual bool appliesNightMode() const { return false; }
   // Returns true when the activity schedules its own forced refresh.
   virtual bool handleForcedRefresh() { return false; }
   virtual bool isHomeActivity() const { return false; }
