@@ -1681,6 +1681,11 @@ void EpubReaderActivity::renderContents(std::unique_ptr<Page> page, const int or
   const bool needsTextGrayscale = SETTINGS.textAntiAliasing;
   const bool needsAnyGrayscale = needsTextGrayscale || pageHasImages;
   const bool tiledGrayscale = needsAnyGrayscale && renderer.supportsStripGrayscale();
+  // Paper Mono only (no other panel combines): defer the B/W base activation so
+  // the gray planes join it in a single waveform. Displaying the base
+  // separately makes the gray pass re-drive the whole text body — a visible
+  // flash on every AA page.
+  const bool combinedGrayscaleBase = tiledGrayscale && !pageHasImages && renderer.combinesGrayscaleBase();
   // Whole-plane buffering only pays when the BW refresh genuinely runs async
   // underneath it; on blocking panels (X3) it would just spend ~50 KB for the
   // identical serial timing. Image pages take the blocking double-FAST path
@@ -1736,6 +1741,17 @@ void EpubReaderActivity::renderContents(std::unique_ptr<Page> page, const int or
     // HALF ghost-cleanup path, which drives every pixel to its target
     // regardless of residue.
     pagesUntilFullRefresh = 1;
+  } else if (combinedGrayscaleBase) {
+    // Stash the base without activating; displayGrayBuffer() below commits
+    // base + grays as one waveform. Same cadence bookkeeping as
+    // ReaderUtils::displayWithRefreshCycle.
+    const auto mode = (pagesUntilFullRefresh <= 1) ? HalDisplay::HALF_REFRESH : HalDisplay::FAST_REFRESH;
+    renderer.displayGrayscaleBase(mode);
+    if (pagesUntilFullRefresh <= 1) {
+      pagesUntilFullRefresh = SETTINGS.getRefreshFrequency();
+    } else {
+      pagesUntilFullRefresh--;
+    }
   } else {
     // Async form: start the waveform and return so the grayscale plane rendering
     // below overlaps the panel's refresh time instead of following it.
@@ -1833,11 +1849,13 @@ void EpubReaderActivity::renderContents(std::unique_ptr<Page> page, const int or
       renderer.waitRefreshComplete();
       if (!scratch) {
         LOG_ERR("ERS", "OOM: grayscale strip scratch (%d bytes); skipping AA this page", gwBytes * STRIP_ROWS);
-        if (overlapRefresh) {
+        if (overlapRefresh || combinedGrayscaleBase) {
           // The BW refresh ran the shadow-free async path, so controller RAM's
           // differential baseline was never rebuilt. Even with AA skipped it must
           // be re-synced from the intact BW framebuffer, or the next differential
-          // update diffs against stale contents.
+          // update diffs against stale contents. On the combined-base path the
+          // base activation is still deferred; this cleanup commits it so the
+          // page reaches the panel even without its grays.
           renderer.cleanupGrayscaleWithFrameBuffer();
         }
       } else {
