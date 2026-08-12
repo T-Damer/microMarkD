@@ -948,8 +948,8 @@ void WifiSelectionActivity::buildListScreen(UiScreen& screen) {
     // many full body-text lines it actually needs, or a long SSID's wrapped
     // second line bleeds into the row below.
     rowHeight = static_cast<int16_t>(metrics.listRowHeight);
-    const int16_t wrappedMin = static_cast<int16_t>(screen.target().lineHeight(props.labelText.font) *
-                                                     props.labelText.maxLines);
+    const int16_t wrappedMin =
+        static_cast<int16_t>(screen.target().lineHeight(props.labelText.font) * props.labelText.maxLines);
     if (wrappedMin > rowHeight) rowHeight = wrappedMin;
     props.rowHeight = rowHeight;
   }

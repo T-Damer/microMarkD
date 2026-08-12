@@ -61,9 +61,8 @@ void FrontlightPanelActivity::onExit() {
   // against SETTINGS here only fires on a genuine user change. lightOn has
   // no such guarantee (see lightOnChanged's declaration), so it's gated on
   // the user actually having touched it this session instead.
-  const bool changed =
-      SETTINGS.frontlightBrightness != brightness || SETTINGS.frontlightWarmth != warmth ||
-      (lightOnChanged && SETTINGS.frontlightOn != (lightOn ? 1 : 0));
+  const bool changed = SETTINGS.frontlightBrightness != brightness || SETTINGS.frontlightWarmth != warmth ||
+                       (lightOnChanged && SETTINGS.frontlightOn != (lightOn ? 1 : 0));
   if (changed) {
     SETTINGS.frontlightBrightness = brightness;
     SETTINGS.frontlightWarmth = warmth;
