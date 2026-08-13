@@ -244,9 +244,9 @@ bool HalGPIO::isXteinkDevice() const {
 }
 
 bool HalGPIO::verifyPowerButtonWakeup(uint16_t requiredDurationMs, bool shortPressAllowed) {
-  // Boards without a power button (or M5Paper's latch circuit) cannot verify a
-  // hold; treat the wake as valid.
-  if (BoardConfig::ACTIVE.input.power < 0) {
+  // X4 Pro wakes on any power-button press; other boards retain the configured
+  // hold-duration verification below.
+  if (BoardConfig::isX4Pro() || BoardConfig::ACTIVE.input.power < 0) {
     return true;
   }
 #if defined(FREEINK_DEVICE_M5PAPER) && FREEINK_DEVICE_M5PAPER
