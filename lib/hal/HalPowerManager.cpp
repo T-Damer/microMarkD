@@ -10,6 +10,7 @@
 
 #include <cassert>
 
+#include "HalFrontlight.h"
 #include "HalGPIO.h"
 
 #if FREEINK_DEVICE_PAPERMONO
@@ -131,7 +132,9 @@ bool HalPowerManager::lightSleep(const HalGPIO& gpio) const {
     return false;
   }
   // Light sleep drops a WiFi association and kills an enumerated USB-CDC link.
-  if (WiFi.getMode() != WIFI_MODE_NULL || gpio.isUsbConnectedCached()) {
+  // It also stops the default LEDC PWM output, visibly flashing ESP-driven
+  // frontlights as the idle loop enters repeated sleep slices.
+  if (WiFi.getMode() != WIFI_MODE_NULL || gpio.isUsbConnectedCached() || (Frontlight.present() && Frontlight.isOn())) {
     return false;
   }
 
@@ -194,9 +197,9 @@ bool HalPowerManager::lightSleep(const HalGPIO& gpio) const {
 }
 
 bool HalPowerManager::onEinkBusyWaitSlice(const int8_t busyPin, const uint8_t busyLevel) {
-  // Same exclusions as lightSleep(): light sleep drops a WiFi association and
-  // kills an enumerated USB-CDC link. No LOG here — this runs ~50x/s mid-refresh.
-  if (WiFi.getMode() != WIFI_MODE_NULL || gpio.isUsbConnectedCached()) {
+  // Same exclusions as lightSleep(): light sleep drops WiFi/USB and suspends
+  // frontlight PWM. No LOG here — this runs ~50x/s mid-refresh.
+  if (WiFi.getMode() != WIFI_MODE_NULL || gpio.isUsbConnectedCached() || (Frontlight.present() && Frontlight.isOn())) {
     return false;
   }
 
