@@ -80,6 +80,8 @@ class MappedInputManager {
   // is intentionally unused. Other boards retain the bottom-edge Home gesture.
   // The reader menu remains on its existing top-edge gesture and middle tap.
   bool wasHomeGesture() const;
+  // A Home-key hold runs the configured long-press action in the reader.
+  bool wasHomeKeyHold() const;
   bool wasMenuGesture() const;
   // Top-edge down-swipe opens the light panel when the active board actually
   // has a frontlight. ActivityManager consumes it before activity input.

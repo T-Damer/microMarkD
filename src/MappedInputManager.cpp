@@ -280,6 +280,8 @@ bool MappedInputManager::wasHomeGesture() const {
   return gpio.hasHomeKey() ? gpio.wasHomeKeyTapped() : wasBottomEdgeUpSwipe();
 }
 
+bool MappedInputManager::wasHomeKeyHold() const { return gpio.hasHomeKey() && gpio.wasHomeKeyLongPressed(); }
+
 bool MappedInputManager::wasLightPanelGesture() const {
   // On lightless boards the same edge remains available to the reader menu.
   return Frontlight.present() && wasTopEdgeDownSwipe();

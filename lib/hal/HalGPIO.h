@@ -117,6 +117,7 @@ class HalGPIO {
   // event fires on release and excludes a long hold.
   bool hasHomeKey() const;
   bool wasHomeKeyTapped() const;
+  bool wasHomeKeyLongPressed() const;
   bool wasTouchTap(float& nx, float& ny) const;
   bool wasTouchDown(float& nx, float& ny) const;
   // Raw release edge, reported even when the contact was not a tap (swipe end,
