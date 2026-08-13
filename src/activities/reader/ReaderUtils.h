@@ -81,7 +81,7 @@ inline TouchPageTurn detectTouchPageTurn(GfxRenderer& renderer, const MappedInpu
   }
 
   if (SETTINGS.touchReaderControls == CrossPointSettings::TOUCH_READER_SWIPE) {
-    // Horizontal swipes turn pages; taps remain free for the middle reader-menu
+    // Horizontal swipes turn pages; taps remain free for the centered reader-menu
     // zone. A slow swipe never becomes a long-press chapter skip.
     const auto dir = input.wasSwipe();
     if (dir == MappedInputManager::SwipeDir::Left) {
@@ -100,7 +100,7 @@ inline TouchPageTurn detectTouchPageTurn(GfxRenderer& renderer, const MappedInpu
 
   const int16_t width = static_cast<int16_t>(renderer.getScreenWidth());
   const int16_t height = static_cast<int16_t>(renderer.getScreenHeight());
-  // Outer thirds only: the middle third is the reader-menu tap
+  // Outer thirds only: the center column contains the reader-menu tap target
   // (isTouchMenuTap below), so it must not double as a page turn.
   const int16_t zoneWidth = width / 3;
   const freeink::ui::TapZone zones[] = {
@@ -118,22 +118,22 @@ inline TouchPageTurn detectTouchPageTurn(GfxRenderer& renderer, const MappedInpu
   return result;
 }
 
-// Tap in the middle third of the screen: the tap path into the reader menu on
-// every touch board. The page-turn tap zones are the outer thirds, so the
-// middle is free in tap mode.
+// Tap in the center third of the screen: the tap path into the reader menu on
+// every touch board. The page-turn tap zones are the outer horizontal thirds,
+// so the centered rectangle remains free in tap mode.
 inline bool isTouchMenuTap(const GfxRenderer& renderer, const MappedInputManager& input) {
   if (!input.hasTouch()) return false;
   int x = 0;
   int y = 0;
   if (!input.wasScreenTapped(x, y)) return false;
   const int width = renderer.getScreenWidth();
-  // Same boundary math as detectTouchPageTurn's outer zones, so the middle
-  // band meets them with no dead column when width % 3 != 0.
+  const int height = renderer.getScreenHeight();
   const int zoneWidth = width / 3;
-  return x >= zoneWidth && x < width - zoneWidth;
+  const int zoneHeight = height / 3;
+  return x >= zoneWidth && x < width - zoneWidth && y >= zoneHeight && y < height - zoneHeight;
 }
 
-// Reader menu opens on the menu edge-swipe or a middle-third tap. On home-key
+// Reader menu opens on the menu edge-swipe or a center-third tap. On home-key
 // boards a long press of the capacitive key runs the user-selected long-press
 // function instead (SETTINGS.longPressMenuFunction), not the menu.
 // With touch reader controls Off the reading surface ignores touch entirely,

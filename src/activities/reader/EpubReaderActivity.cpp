@@ -530,7 +530,7 @@ void EpubReaderActivity::loop() {
   }
 
   // Enter reader menu activity on short-press Confirm, the board's menu edge-swipe, or a
-  // middle-third tap (see ReaderUtils::isTouchMenuGesture). A long-press
+  // center-third tap (see ReaderUtils::isTouchMenuGesture). A long-press
   // that fired a bound function (bookmark or KOReader sync) sets ignoreNextConfirmRelease so the release
   // following the hold does not also open the menu.
   if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) ||
