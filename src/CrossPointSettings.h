@@ -293,6 +293,9 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t tiltPageTurn = TILT_OFF;
   // Touch screen reader zones/gestures on boards with a touch controller.
   uint8_t touchReaderControls = TOUCH_READER_ON;
+  // Center-third tap opens the reader menu (0 = disabled, 1 = enabled). Only
+  // surfaced on home-key boards, where the menu stays reachable without it.
+  uint8_t tapForReaderMenu = 1;
   // Frontlight quick-panel state. Category-less SettingsList entries persist
   // these without adding them to the regular Settings screen.
   uint8_t frontlightBrightness = 60;

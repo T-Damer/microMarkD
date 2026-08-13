@@ -120,9 +120,12 @@ inline TouchPageTurn detectTouchPageTurn(GfxRenderer& renderer, const MappedInpu
 
 // Tap in the center third of the screen: the tap path into the reader menu on
 // every touch board. The page-turn tap zones are the outer horizontal thirds,
-// so the centered rectangle remains free in tap mode.
+// so the centered rectangle remains free in tap mode. The opt-out is only
+// surfaced on home-key boards (SettingsList), where the menu stays reachable
+// through the key's long-press function.
 inline bool isTouchMenuTap(const GfxRenderer& renderer, const MappedInputManager& input) {
   if (!input.hasTouch()) return false;
+  if (!SETTINGS.tapForReaderMenu) return false;
   int x = 0;
   int y = 0;
   if (!input.wasScreenTapped(x, y)) return false;

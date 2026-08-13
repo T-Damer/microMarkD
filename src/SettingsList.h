@@ -295,6 +295,8 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
         // Reader category, since it does not affect the rest of the UI.
         SettingInfo::Toggle(StrId::STR_NIGHT_MODE, &CrossPointSettings::screenInverted, "screenInverted",
                             StrId::STR_CAT_READER),
+        SettingInfo::Toggle(StrId::STR_TAP_FOR_READER_MENU, &CrossPointSettings::tapForReaderMenu, "tapForReaderMenu",
+                            StrId::STR_CAT_READER),
         // --- Controls ---
         SettingInfo::Enum(StrId::STR_SIDE_BTN_LAYOUT, &CrossPointSettings::sideButtonLayout,
                           {StrId::STR_PREV_NEXT, StrId::STR_NEXT_PREV, StrId::STR_DISABLED}, "sideButtonLayout",
@@ -455,6 +457,14 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
   if (!BoardConfig::hasTouch()) {
     v.erase(std::remove_if(v.begin(), v.end(),
                            [](const SettingInfo& s) { return s.nameId == StrId::STR_TOUCH_READER_CONTROLS; }),
+            v.end());
+  }
+  // The tap-for-menu opt-out only makes sense where the menu stays reachable
+  // without the tap (the capacitive Home key); everywhere else the tap is the
+  // primary path and stays on.
+  if (!BoardConfig::hasHomeKey()) {
+    v.erase(std::remove_if(v.begin(), v.end(),
+                           [](const SettingInfo& s) { return s.nameId == StrId::STR_TAP_FOR_READER_MENU; }),
             v.end());
   }
   if (BoardConfig::hasTouch()) {
