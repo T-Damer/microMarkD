@@ -643,6 +643,17 @@ void loop() {
     return;
   }
 
+#if FREEINK_CAP_TOUCH
+  // A single X4 Pro power click becomes Confirm only after the frontlight
+  // double-click window expires without a second click.
+  mappedInputManager.setPowerConfirmClickFrame(false);
+  if (SETTINGS.shortPwrBtn == CrossPointSettings::SHORT_PWRBTN::PWR_CONFIRM && BoardConfig::isX4Pro() &&
+      lastX4ProPowerClickAt != 0 && millis() - lastX4ProPowerClickAt > X4PRO_POWER_DOUBLE_CLICK_MS) {
+    lastX4ProPowerClickAt = 0;
+    mappedInputManager.setPowerConfirmClickFrame(true);
+  }
+#endif
+
   const unsigned long sleepTimeoutMs = SETTINGS.getSleepTimeoutMs();
   if (sleepTimeoutMs > 0 && millis() - lastActivityTime >= sleepTimeoutMs) {
     LOG_DBG("SLP", "Auto-sleep triggered after %lu ms of inactivity", sleepTimeoutMs);

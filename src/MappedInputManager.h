@@ -40,6 +40,11 @@ class MappedInputManager {
   MappedInputManager(HalGPIO& gpio, const GfxRenderer& renderer) : gpio(gpio), renderer(renderer) {}
 
   void update() const { gpio.update(); }
+#if FREEINK_CAP_TOUCH
+  // X4 Pro delays a single power click until its frontlight double-click window
+  // expires. The main loop supplies that one-frame event here.
+  void setPowerConfirmClickFrame(const bool clicked) { powerConfirmClickFrame = clicked; }
+#endif
   bool wasPressed(Button button) const;
   bool wasReleased(Button button) const;
   bool isPressed(Button button) const;
@@ -123,9 +128,15 @@ class MappedInputManager {
   bool wasBottomEdgeUpSwipe() const;
   // Fetch the pending swipe (if any) and map both endpoints to logical screen coords
   bool decodeSwipe(int& sx, int& sy, int& ex, int& ey) const;
+#if FREEINK_CAP_TOUCH
+  bool wasPowerConfirmClick() const;
+#endif
   void rememberTouchHeldTime() const;
 
   mutable bool touchHeldOverrideValid = false;
   mutable unsigned long touchHeldOverrideMs = 0;
   mutable unsigned long touchHeldOverrideAt = 0;
+#if FREEINK_CAP_TOUCH
+  bool powerConfirmClickFrame = false;
+#endif
 };

@@ -287,13 +287,29 @@ bool MappedInputManager::wasLightPanelGesture() const {
   return Frontlight.present() && wasTopEdgeDownSwipe();
 }
 
+#if FREEINK_CAP_TOUCH
+bool MappedInputManager::wasPowerConfirmClick() const {
+  if (!gpio.hasTouch() || SETTINGS.shortPwrBtn != CrossPointSettings::SHORT_PWRBTN::PWR_CONFIRM) return false;
+  // Wait out the X4 Pro's frontlight double-click window before treating its
+  // first release as Confirm. Other touch boards can use the release directly.
+  if (BoardConfig::isX4Pro()) return powerConfirmClickFrame;
+  return gpio.wasReleased(HalGPIO::BTN_POWER) && gpio.getPowerButtonHeldTime() <= SETTINGS.getPowerButtonDuration();
+}
+#endif
+
 bool MappedInputManager::wasPressed(const Button button) const {
   if (button == Button::Back && wasBackGesture()) return true;
+#if FREEINK_CAP_TOUCH
+  if (button == Button::Confirm && wasPowerConfirmClick()) return true;
+#endif
   return mapButton(button, &HalGPIO::wasPressed);
 }
 
 bool MappedInputManager::wasReleased(const Button button) const {
   if (button == Button::Back && wasBackGesture()) return true;
+#if FREEINK_CAP_TOUCH
+  if (button == Button::Confirm && wasPowerConfirmClick()) return true;
+#endif
   return mapButton(button, &HalGPIO::wasReleased);
 }
 
