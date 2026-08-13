@@ -49,6 +49,8 @@ static unsigned long lastX4ProPowerClickAt = 0;
 namespace {
 constexpr unsigned long X4PRO_POWER_DOUBLE_CLICK_MS = 500;
 constexpr unsigned long X4PRO_POWER_CLICK_MAX_HOLD_MS = 300;
+constexpr unsigned long X4PRO_RECOVERY_SETTLE_MS = 20;
+constexpr unsigned long DEFAULT_RECOVERY_SETTLE_MS = 500;
 }  // namespace
 
 // A wake hold must never become an in-app power-button action.  Boot may continue
@@ -350,6 +352,27 @@ void setup() {
   // data-only cable). See HalGPIO::pollUsbState().
   gpio.pollUsbState();
 
+  const auto wakeupReason = gpio.getWakeupReason();
+
+  // Latch the recovery chord before SD and settings I/O. X4 Pro uses a plain
+  // digital button with 5 ms debounce; other Xteink inputs retain their legacy
+  // settling window. BTN_DOWN avoids the X4 Pro's GPIO0 boot-strap pin.
+  bool recoveryFirmwareMode = false;
+  if (wakeupReason == HalGPIO::WakeupReason::PowerButton) {
+    const unsigned long settleMs = BoardConfig::isX4Pro() ? X4PRO_RECOVERY_SETTLE_MS : DEFAULT_RECOVERY_SETTLE_MS;
+    const unsigned long settleStart = millis();
+    while (millis() - settleStart < settleMs) {
+      gpio.update();
+      delay(10);
+    }
+
+    const uint8_t recoveryButton = BoardConfig::isX4Pro() ? HalGPIO::BTN_DOWN : HalGPIO::BTN_UP;
+    if (gpio.isPressed(recoveryButton)) {
+      recoveryFirmwareMode = true;
+      LOG_INF("MAIN", "Recovery firmware mode (%s + POWER held at boot)", BoardConfig::isX4Pro() ? "DOWN" : "UP");
+    }
+  }
+
   // Light-sleep through the render task's e-ink BUSY wait (0.3-2 s of pure pin
   // polling) in short slices, waking exactly on the BUSY pin's completion level
   // (falls back to plain polling when WiFi/USB blocks light sleep)
@@ -389,7 +412,6 @@ void setup() {
   const bool restoreLightOn = SETTINGS.frontlightOn != 0 && (SETTINGS.frontlightRestoreOnWake != 0 || isSilentReboot);
   Frontlight.begin(SETTINGS.frontlightBrightness, SETTINGS.frontlightWarmth, restoreLightOn);
 
-  const auto wakeupReason = gpio.getWakeupReason();
   switch (wakeupReason) {
     case HalGPIO::WakeupReason::PowerButton:
       LOG_DBG("MAIN", "Verifying power button press duration");
@@ -415,25 +437,6 @@ void setup() {
     case HalGPIO::WakeupReason::Other:
     default:
       break;
-  }
-
-  // Recovery firmware mode: hold left side button (BTN_UP) together with the power button at
-  // boot to skip directly to the SD-card firmware update screen. Useful on devices where USB
-  // flashing has been locked down (e.g. recent X3 firmware).
-  bool recoveryFirmwareMode = false;
-  if (wakeupReason == HalGPIO::WakeupReason::PowerButton) {
-    // Refresh the cached button state a few times — isPressed() needs ~half a second to settle
-    // after boot per the HalGPIO contract. Use a millis-based deadline so we always wait the full
-    // settle window even if the loop body takes longer than expected on slow boots.
-    const unsigned long settleStart = millis();
-    while (millis() - settleStart < 500) {
-      gpio.update();
-      delay(10);
-    }
-    if (gpio.isPressed(HalGPIO::BTN_UP)) {
-      recoveryFirmwareMode = true;
-      LOG_INF("MAIN", "Recovery firmware mode (UP + POWER held at boot)");
-    }
   }
 
   // First serial output only here to avoid timing inconsistencies for power button press duration verification
