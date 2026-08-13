@@ -103,9 +103,11 @@ inline TouchPageTurn detectTouchPageTurn(GfxRenderer& renderer, const MappedInpu
   // Outer thirds only: the center column contains the reader-menu tap target
   // (isTouchMenuTap below), so it must not double as a page turn.
   const int16_t zoneWidth = width / 3;
+  const bool inverted = SETTINGS.touchReaderControls == CrossPointSettings::TOUCH_READER_INVERTED_TAP;
   const freeink::ui::TapZone zones[] = {
-      {freeink::ui::Rect{0, 0, zoneWidth, height}, READER_TOUCH_PREV},
-      {freeink::ui::Rect{static_cast<int16_t>(width - zoneWidth), 0, zoneWidth, height}, READER_TOUCH_NEXT},
+      {freeink::ui::Rect{0, 0, zoneWidth, height}, inverted ? READER_TOUCH_NEXT : READER_TOUCH_PREV},
+      {freeink::ui::Rect{static_cast<int16_t>(width - zoneWidth), 0, zoneWidth, height},
+       inverted ? READER_TOUCH_PREV : READER_TOUCH_NEXT},
   };
 
   for (const auto& zone : zones) {
