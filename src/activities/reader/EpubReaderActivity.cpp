@@ -573,6 +573,10 @@ void EpubReaderActivity::loop() {
           return;
         }
         break;
+      case CrossPointSettings::LP_MENU_READER_MENU:
+        // Confirm already opens the menu on release. This option exists for
+        // boards whose capacitive Home key supplies the long-press action.
+        break;
       case CrossPointSettings::LP_MENU_DISABLED:
       default:
         break;
@@ -599,6 +603,9 @@ void EpubReaderActivity::loop() {
         if (!showDictionaryMessage) {
           openDictionaryWordSelect();
         }
+        return;
+      case CrossPointSettings::LP_MENU_READER_MENU:
+        openReaderMenu();
         return;
       case CrossPointSettings::LP_MENU_DISABLED:
       default:
