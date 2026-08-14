@@ -346,7 +346,7 @@ void CrossPointWebServerActivity::loop() {
           mappedInput.update();
           // This update consumes the one-shot Home event before ActivityManager
           // can see it, so handle Home here alongside Back.
-          if (mappedInput.wasPressed(MappedInputManager::Button::Back) || mappedInput.wasHomeGesture()) {
+          if (mappedInput.wasReleased(MappedInputManager::Button::Back) || mappedInput.wasHomeGesture()) {
             onGoHome();
             return;
           }
@@ -356,7 +356,7 @@ void CrossPointWebServerActivity::loop() {
     }
 
     // Also check outside the request-processing loop.
-    if (mappedInput.wasPressed(MappedInputManager::Button::Back) || mappedInput.wasHomeGesture()) {
+    if (mappedInput.wasReleased(MappedInputManager::Button::Back) || mappedInput.wasHomeGesture()) {
       onGoHome();
       return;
     }

@@ -241,23 +241,15 @@ inline bool handleBackNavigation(const MappedInputManager& mappedInput, Activity
     return false;
   }
 
-  if (mappedInput.isPressed(MappedInputManager::Button::Back) && mappedInput.getHeldTime() >= GO_BACK_OR_HOME_MS) {
-    if (SETTINGS.backShortToFileBrowser) {
-      goHome.fn(goHome.ctx);
-    } else {
-      activityManager.goToFileBrowser(filePath);
-    }
-    return true;
+  if (!mappedInput.wasReleased(MappedInputManager::Button::Back)) return false;
+
+  const bool longPress = mappedInput.getHeldTime() >= GO_BACK_OR_HOME_MS;
+  if (longPress != SETTINGS.backShortToFileBrowser) {
+    activityManager.goToFileBrowser(filePath);
+  } else {
+    goHome.fn(goHome.ctx);
   }
-  if (mappedInput.wasReleased(MappedInputManager::Button::Back) && mappedInput.getHeldTime() < GO_BACK_OR_HOME_MS) {
-    if (SETTINGS.backShortToFileBrowser) {
-      activityManager.goToFileBrowser(filePath);
-    } else {
-      goHome.fn(goHome.ctx);
-    }
-    return true;
-  }
-  return false;
+  return true;
 }
 
 }  // namespace ReaderUtils
