@@ -312,10 +312,12 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
       const char* text = rawLine.c_str();
       EpdFontFamily::Style style = EpdFontFamily::REGULAR;
       int indent = 0;
+#ifdef MICROMARKD_APP
       bool forceLeft = false;
       bool drawBullet = false;
       bool drawQuote = false;
       bool drawSeparator = false;
+#endif
 
 #ifdef MICROMARKD_APP
       const micromarkd::ParsedLine* markdownLine = nullptr;
@@ -357,14 +359,19 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
       }
 #endif
 
+#ifdef MICROMARKD_APP
       if (drawSeparator) {
         renderer.drawLine(cachedOrientedMarginLeft, y + lineHeight / 2, cachedOrientedMarginLeft + contentWidth,
                           y + lineHeight / 2, true);
-      } else if (text[0] != '\0') {
+      } else
+#endif
+          if (text[0] != '\0') {
         int x = cachedOrientedMarginLeft + indent;
         const bool lineIsRtl = BidiUtils::startsWithRtl(text, BidiUtils::RTL_PARAGRAPH_PROBE_DEPTH);
         uint8_t effectiveAlignment = cachedParagraphAlignment;
+#ifdef MICROMARKD_APP
         if (forceLeft) effectiveAlignment = CrossPointSettings::LEFT_ALIGN;
+#endif
         if (lineIsRtl && (effectiveAlignment == CrossPointSettings::LEFT_ALIGN ||
                           effectiveAlignment == CrossPointSettings::JUSTIFIED)) {
           effectiveAlignment = CrossPointSettings::RIGHT_ALIGN;
@@ -389,12 +396,16 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
             break;
         }
 
+#ifdef MICROMARKD_APP
         if (drawQuote) {
           renderer.drawLine(cachedOrientedMarginLeft + 3, y, cachedOrientedMarginLeft + 3, y + lineHeight - 3, 2, true);
         }
+#endif
+#ifdef MICROMARKD_APP
         if (drawBullet) {
           renderer.drawText(cachedFontId, cachedOrientedMarginLeft + 4, y, "-", true, EpdFontFamily::BOLD);
         }
+#endif
         renderer.drawText(cachedFontId, x, y, text, true, style);
 
 #ifdef MICROMARKD_APP
