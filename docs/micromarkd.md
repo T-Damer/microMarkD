@@ -6,17 +6,27 @@ hardware support rather than as a feature of the focused reader firmware.
 
 ## Current bootstrap
 
-The first vertical slice intentionally stays small:
+The first usable vertical slice intentionally stays small:
 
 - a dedicated `micromarkd-x4pro` PlatformIO environment;
 - a standalone microMarkD home activity;
 - five product entry points: Vault, Recent notes, Search, New note, and Git sync;
 - the Vault entry opens `/vault` through the existing SD-card browser;
+- `.md` and `.markdown` files open in the streaming text reader with Markdown
+  headings, quotes, lists, separators, and simple inline markers rendered;
+- `[[wikilinks]]` and `[[target|labels]]` are underlined and tappable;
+- relative links resolve beside the current note, then from the vault root;
+- the reader keeps an in-session note history so Back returns through followed
+  wikilinks before leaving the reader;
 - the remaining entries expose the planned product surface and are wired in
   follow-up changes.
 
 Default CrossPoint environments do not define `MICROMARKD_APP` and keep their
 existing home screen and behavior.
+
+The Markdown layer deliberately reuses the TXT reader's chunked pagination and
+SD-backed page index. It parses only the visible page, so opening a large vault
+note does not require loading the whole document into RAM.
 
 ## Build
 
@@ -45,7 +55,7 @@ so later indexing, graph, and sync code can share stable boundaries.
 
 ## Planned milestones
 
-1. Vault index and Markdown reader with `[[wikilinks]]`.
+1. Extend the current Markdown reader with a vault-wide index and heading anchors.
 2. Source editor and atomic note writes.
 3. Backlinks, tags, and full-text search.
 4. Zoom-dependent tiled graph navigation.

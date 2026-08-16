@@ -2,6 +2,7 @@
 
 #include <BidiUtils.h>
 #include <FontCacheManager.h>
+#include <FsHelpers.h>
 #include <GfxRenderer.h>
 #include <HalStorage.h>
 #include <I18n.h>
@@ -9,10 +10,14 @@
 #include <Serialization.h>
 #include <Utf8.h>
 
+#include <algorithm>
+
 #include "CrossPointSettings.h"
+#include "CrossPointState.h"
 #include "ProgressFile.h"
 #include "ReaderActivity.h"
 #include "ReaderUtils.h"
+#include "RecentBooksStore.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 
@@ -34,6 +39,12 @@ bool TxtReaderActivity::loadBook() {
     return false;
   }
   txt->setupCacheDir();
+#ifdef MICROMARKD_APP
+  markdownMode = FsHelpers::hasMarkdownExtension(bookPath);
+  currentMarkdownLines.reserve(64);
+  markdownLinkHits.reserve(24);
+  markdownHistory.reserve(8);
+#endif
   return true;
 }
 
@@ -75,6 +86,13 @@ void TxtReaderActivity::initializeReader(GfxRenderer& renderer) {
 
   // Load saved progress
   loadProgress();
+
+#ifdef MICROMARKD_APP
+  if (pendingMarkdownPage >= 0) {
+    currentPage = std::min(pendingMarkdownPage, std::max(totalPages - 1, 0));
+    pendingMarkdownPage = -1;
+  }
+#endif
 
   initialized = true;
 }
@@ -263,6 +281,15 @@ void TxtReaderActivity::renderBook() {
   currentPageLines.clear();
   loadPageAtOffset(renderer, offset, currentPageLines, nextOffset);
 
+#ifdef MICROMARKD_APP
+  if (markdownMode) {
+    rebuildMarkdownLines();
+  } else {
+    currentMarkdownLines.clear();
+    markdownLinkHits.clear();
+  }
+#endif
+
   renderer.clearScreen();
   renderPage(renderer);
 
@@ -275,18 +302,75 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
   const int contentWidth = viewportWidth;
 
   // Render text lines with alignment
-  auto renderLines = [&]() {
+  auto renderLines = [&](const bool recordLinks) {
+#ifdef MICROMARKD_APP
+    if (recordLinks) markdownLinkHits.clear();
+#endif
     int y = cachedOrientedMarginTop;
-    for (const auto& line : currentPageLines) {
-      if (!line.empty()) {
-        int x = cachedOrientedMarginLeft;
-        const bool lineIsRtl = BidiUtils::startsWithRtl(line.c_str(), BidiUtils::RTL_PARAGRAPH_PROBE_DEPTH);
+    for (size_t lineIndex = 0; lineIndex < currentPageLines.size(); lineIndex++) {
+      const auto& rawLine = currentPageLines[lineIndex];
+      const char* text = rawLine.c_str();
+      EpdFontFamily::Style style = EpdFontFamily::REGULAR;
+      int indent = 0;
+      bool forceLeft = false;
+      bool drawBullet = false;
+      bool drawQuote = false;
+      bool drawSeparator = false;
+
+#ifdef MICROMARKD_APP
+      const micromarkd::ParsedLine* markdownLine = nullptr;
+      if (markdownMode && lineIndex < currentMarkdownLines.size()) {
+        markdownLine = &currentMarkdownLines[lineIndex];
+        text = markdownLine->text.c_str();
+        if (markdownLine->bold) {
+          style = EpdFontFamily::BOLD;
+        } else if (markdownLine->italic) {
+          style = EpdFontFamily::ITALIC;
+        }
+
+        switch (markdownLine->block) {
+          case micromarkd::BlockKind::Heading:
+            forceLeft = true;
+            break;
+          case micromarkd::BlockKind::Quote:
+            indent = 16;
+            forceLeft = true;
+            drawQuote = true;
+            break;
+          case micromarkd::BlockKind::Bullet:
+            indent = 22;
+            forceLeft = true;
+            drawBullet = true;
+            break;
+          case micromarkd::BlockKind::OrderedList:
+          case micromarkd::BlockKind::Code:
+            indent = 12;
+            forceLeft = true;
+            break;
+          case micromarkd::BlockKind::Separator:
+            forceLeft = true;
+            drawSeparator = true;
+            break;
+          case micromarkd::BlockKind::Paragraph:
+            break;
+        }
+      }
+#endif
+
+      if (drawSeparator) {
+        renderer.drawLine(cachedOrientedMarginLeft, y + lineHeight / 2, cachedOrientedMarginLeft + contentWidth,
+                          y + lineHeight / 2, true);
+      } else if (text[0] != '\0') {
+        int x = cachedOrientedMarginLeft + indent;
+        const bool lineIsRtl = BidiUtils::startsWithRtl(text, BidiUtils::RTL_PARAGRAPH_PROBE_DEPTH);
         uint8_t effectiveAlignment = cachedParagraphAlignment;
+        if (forceLeft) effectiveAlignment = CrossPointSettings::LEFT_ALIGN;
         if (lineIsRtl && (effectiveAlignment == CrossPointSettings::LEFT_ALIGN ||
                           effectiveAlignment == CrossPointSettings::JUSTIFIED)) {
           effectiveAlignment = CrossPointSettings::RIGHT_ALIGN;
         }
-        const int textWidth = renderer.getTextAdvanceX(cachedFontId, line.c_str(), EpdFontFamily::REGULAR);
+        const int textWidth = renderer.getTextAdvanceX(cachedFontId, text, style);
+        const int availableWidth = contentWidth - indent;
 
         // Apply text alignment
         switch (effectiveAlignment) {
@@ -294,7 +378,7 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
           default:
             break;
           case CrossPointSettings::CENTER_ALIGN: {
-            x = cachedOrientedMarginLeft + (contentWidth - textWidth) / 2;
+            x = cachedOrientedMarginLeft + indent + (availableWidth - textWidth) / 2;
             break;
           }
           case CrossPointSettings::RIGHT_ALIGN: {
@@ -305,7 +389,33 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
             break;
         }
 
-        renderer.drawText(cachedFontId, x, y, line.c_str());
+        if (drawQuote) {
+          renderer.drawLine(cachedOrientedMarginLeft + 3, y, cachedOrientedMarginLeft + 3, y + lineHeight - 3, 2, true);
+        }
+        if (drawBullet) {
+          renderer.drawText(cachedFontId, cachedOrientedMarginLeft + 4, y, "-", true, EpdFontFamily::BOLD);
+        }
+        renderer.drawText(cachedFontId, x, y, text, true, style);
+
+#ifdef MICROMARKD_APP
+        if (markdownMode && recordLinks && markdownLine != nullptr) {
+          for (uint8_t linkIndex = 0; linkIndex < markdownLine->linkCount; linkIndex++) {
+            const auto& link = markdownLine->links[linkIndex];
+            if (link.end <= link.start || link.end > markdownLine->text.size()) continue;
+
+            const std::string prefix = markdownLine->text.substr(0, link.start);
+            const std::string label = markdownLine->text.substr(link.start, link.end - link.start);
+            const int linkX = x + renderer.getTextAdvanceX(cachedFontId, prefix.c_str(), style);
+            const int linkWidth = renderer.getTextAdvanceX(cachedFontId, label.c_str(), style);
+            if (linkWidth <= 0) continue;
+
+            renderer.drawLine(linkX, y + lineHeight - 2, linkX + linkWidth, y + lineHeight - 2, true);
+            if (markdownLinkHits.size() < 32) {
+              markdownLinkHits.push_back({linkX - 2, y - 2, linkWidth + 4, lineHeight + 4, link.target});
+            }
+          }
+        }
+#endif
       }
       y += lineHeight;
     }
@@ -314,20 +424,137 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
   // Font prewarm: scan pass accumulates text, then prewarm, then real render
   auto* fcm = renderer.getFontCacheManager();
   auto scope = fcm->createPrewarmScope();
-  renderLines();  // scan pass
+  renderLines(false);  // scan pass
   scope.endScanAndPrewarm();
 
   // BW rendering
-  renderLines();
+  renderLines(true);
   renderStatusBar();
 
   if (SETTINGS.textAntiAliasing) {
     ReaderUtils::displayBaseWithRefreshCycle(renderer, pagesUntilFullRefresh);
-    ReaderUtils::renderAntiAliased(renderer, [&renderLines]() { renderLines(); });
+    ReaderUtils::renderAntiAliased(renderer, [&renderLines]() { renderLines(false); });
   } else {
     ReaderUtils::displayWithRefreshCycle(renderer, pagesUntilFullRefresh);
   }
 }
+
+bool TxtReaderActivity::handleFormatInput() {
+#ifdef MICROMARKD_APP
+  if (!markdownMode) return false;
+
+  if (!markdownHistory.empty() && mappedInput.wasReleased(MappedInputManager::Button::Back)) {
+    const auto previous = markdownHistory.back();
+    if (openMarkdownFile(previous.path, previous.page, false)) markdownHistory.pop_back();
+    return true;
+  }
+
+  int tapX = 0;
+  int tapY = 0;
+  if (!mappedInput.wasScreenTapped(tapX, tapY)) return false;
+
+  std::string target;
+  {
+    RenderLock lock(*this);
+    for (const auto& hit : markdownLinkHits) {
+      if (tapX >= hit.x && tapX < hit.x + hit.width && tapY >= hit.y && tapY < hit.y + hit.height) {
+        target = hit.target;
+        break;
+      }
+    }
+  }
+
+  if (target.empty()) return false;
+  const std::string path = resolveWikiLink(target);
+  if (path.empty()) {
+    LOG_INF("MD", "Wikilink target not found: %s", target.c_str());
+    return true;
+  }
+
+  if (path != bookPath) openMarkdownFile(path, -1, true);
+  return true;
+#else
+  return false;
+#endif
+}
+
+#ifdef MICROMARKD_APP
+void TxtReaderActivity::rebuildMarkdownLines() {
+  currentMarkdownLines.clear();
+  currentMarkdownLines.reserve(currentPageLines.size());
+  for (const auto& line : currentPageLines) currentMarkdownLines.push_back(micromarkd::parseMarkdownLine(line));
+}
+
+bool TxtReaderActivity::openMarkdownFile(const std::string& path, const int page, const bool rememberCurrent) {
+  if (!Storage.exists(path.c_str()) || !FsHelpers::hasMarkdownExtension(path)) return false;
+
+  auto nextTxt = makeUniqueNoThrow<Txt>(path, "/.crosspoint");
+  if (!nextTxt || !nextTxt->load()) {
+    LOG_ERR("MD", "Failed to open wikilink target: %s", path.c_str());
+    return false;
+  }
+  nextTxt->setupCacheDir();
+
+  if (rememberCurrent) {
+    saveProgress();
+    if (markdownHistory.size() >= 16) markdownHistory.erase(markdownHistory.begin());
+    markdownHistory.push_back({bookPath, currentPage});
+  }
+
+  {
+    RenderLock lock(*this);
+    txt = std::move(nextTxt);
+    bookPath = path;
+    currentPage = 0;
+    totalPages = 1;
+    pageOffsets.clear();
+    currentPageLines.clear();
+    currentMarkdownLines.clear();
+    markdownLinkHits.clear();
+    pendingMarkdownPage = page;
+    initialized = false;
+    markdownMode = true;
+    endOfBookOptions.reset();
+    endOfBookOptionsReady.store(false, std::memory_order_release);
+  }
+
+  APP_STATE.openEpubPath = bookPath;
+  APP_STATE.saveToFile();
+  RECENT_BOOKS.addBook(bookPath, txt->getTitle(), "", "");
+  requestUpdate();
+  return true;
+}
+
+std::string TxtReaderActivity::resolveWikiLink(const std::string& rawTarget) const {
+  std::string target = micromarkd::wikiTargetPathPart(rawTarget);
+  if (target.empty()) return {};
+  std::replace(target.begin(), target.end(), '\\', '/');
+
+  const auto tryCandidate = [](const std::string& rawPath) -> std::string {
+    const std::string normalised = FsHelpers::normalisePath(rawPath);
+    if (normalised.empty()) return {};
+    const std::string path = "/" + normalised;
+    if (path != "/vault" && path.rfind("/vault/", 0) != 0) return {};
+
+    if (FsHelpers::hasMarkdownExtension(path)) {
+      return Storage.exists(path.c_str()) ? path : std::string{};
+    }
+
+    const std::string mdPath = path + ".md";
+    if (Storage.exists(mdPath.c_str())) return mdPath;
+    const std::string markdownPath = path + ".markdown";
+    if (Storage.exists(markdownPath.c_str())) return markdownPath;
+    return {};
+  };
+
+  if (target.front() == '/') return tryCandidate("/vault/" + target.substr(1));
+
+  const std::string folder = FsHelpers::extractFolderPath(bookPath);
+  std::string resolved = tryCandidate(folder + "/" + target);
+  if (!resolved.empty()) return resolved;
+  return tryCandidate("/vault/" + target);
+}
+#endif
 
 void TxtReaderActivity::renderStatusBar() const {
   const float progress = totalPages > 0 ? (currentPage + 1) * 100.0f / totalPages : 0;
