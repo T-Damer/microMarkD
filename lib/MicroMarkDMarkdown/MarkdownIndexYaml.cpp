@@ -1,9 +1,9 @@
-#include "MarkdownIndex.h"
-
 #include <algorithm>
 #include <cctype>
 #include <string>
 #include <utility>
+
+#include "MarkdownIndex.h"
 
 namespace micromarkd {
 namespace {
@@ -111,7 +111,8 @@ std::string_view stripYamlComment(std::string_view value) {
       continue;
     }
     const bool commentBoundary = index == 0 || isAsciiWhitespace(static_cast<unsigned char>(value[index - 1]));
-    const bool commentText = index + 1 == value.size() || isAsciiWhitespace(static_cast<unsigned char>(value[index + 1]));
+    const bool commentText =
+        index + 1 == value.size() || isAsciiWhitespace(static_cast<unsigned char>(value[index + 1]));
     if (ch == '#' && quote == 0 && commentBoundary && commentText) return trim(value.substr(0, index));
   }
   return trim(value);
@@ -174,15 +175,12 @@ std::string normaliseTag(std::string value) {
   value = std::string(trim(value));
   while (!value.empty() && value.front() == '#') value.erase(value.begin());
   while (!value.empty() && (value.back() == ',' || value.back() == ';')) value.pop_back();
-  if (std::any_of(value.begin(), value.end(), [](const char ch) {
-        return isAsciiWhitespace(static_cast<unsigned char>(ch));
-      })) {
+  if (std::any_of(value.begin(), value.end(),
+                  [](const char ch) { return isAsciiWhitespace(static_cast<unsigned char>(ch)); })) {
     return {};
   }
   return value;
 }
-
-
 }  // namespace
 
 void MarkdownIndexBuilder::parseFrontmatterLine(const std::string_view rawLine) {
@@ -228,6 +226,4 @@ void MarkdownIndexBuilder::parseFrontmatterLine(const std::string_view rawLine) 
     });
   }
 }
-
-
 }  // namespace micromarkd

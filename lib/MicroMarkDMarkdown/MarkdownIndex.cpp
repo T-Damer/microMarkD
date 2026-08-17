@@ -149,9 +149,9 @@ void addWikiReference(MarkdownIndexMetadata& metadata, const std::string_view bo
   }
   if (link.target.empty() && link.heading.empty()) return;
 
-  const auto duplicate = std::find_if(metadata.links.begin(), metadata.links.end(), [&](const MarkdownIndexLink& value) {
-    return value.target == link.target && value.heading == link.heading;
-  });
+  const auto duplicate = std::find_if(
+      metadata.links.begin(), metadata.links.end(),
+      [&](const MarkdownIndexLink& value) { return value.target == link.target && value.heading == link.heading; });
   if (duplicate != metadata.links.end()) return;
   if (metadata.links.size() >= MAX_INDEX_LINKS) {
     metadata.truncated = true;
@@ -160,13 +160,9 @@ void addWikiReference(MarkdownIndexMetadata& metadata, const std::string_view bo
   metadata.links.push_back(std::move(link));
 }
 
-bool validTagStart(const unsigned char ch) {
-  return ch >= 0x80 || std::isalnum(ch) != 0 || ch == '_';
-}
+bool validTagStart(const unsigned char ch) { return ch >= 0x80 || std::isalnum(ch) != 0 || ch == '_'; }
 
-bool validTagContinuation(const unsigned char ch) {
-  return validTagStart(ch) || ch == '-' || ch == '/';
-}
+bool validTagContinuation(const unsigned char ch) { return validTagStart(ch) || ch == '-' || ch == '/'; }
 
 void parseLinksAndTags(MarkdownIndexMetadata& metadata, const std::string_view line) {
   bool inlineCode = false;
@@ -214,8 +210,6 @@ void parseLinksAndTags(MarkdownIndexMetadata& metadata, const std::string_view l
     index = end;
   }
 }
-
-
 
 }  // namespace
 
@@ -267,7 +261,5 @@ void MarkdownIndexBuilder::parseContentLine(const std::string_view line, const s
   }
   parseLinksAndTags(metadata_, line);
 }
-
-
 
 }  // namespace micromarkd

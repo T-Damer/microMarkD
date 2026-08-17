@@ -1,10 +1,10 @@
-#include "MarkdownIndex.h"
-
 #include <algorithm>
 #include <charconv>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "MarkdownIndex.h"
 
 namespace micromarkd {
 namespace {
@@ -200,8 +200,7 @@ bool consumeRecordLine(const std::vector<std::string_view>& fields, MarkdownInde
           !unescapeField(fields[3], text) || text.empty()) {
         return false;
       }
-      record.metadata.headings.push_back(
-          MarkdownIndexHeading{static_cast<uint8_t>(level), offset, std::move(text)});
+      record.metadata.headings.push_back(MarkdownIndexHeading{static_cast<uint8_t>(level), offset, std::move(text)});
       return true;
     }
     case 'L': {
@@ -218,8 +217,6 @@ bool consumeRecordLine(const std::vector<std::string_view>& fields, MarkdownInde
       return false;
   }
 }
-
-
 }  // namespace
 
 uint64_t updateMarkdownFingerprint(uint64_t fingerprint, const std::string_view bytes) {
@@ -283,8 +280,8 @@ bool decodeMarkdownIndexRecord(const std::string_view encoded, MarkdownIndexReco
     } else if (!ended) {
       if (line == "E") {
         ended = true;
-      } else if (line.empty() || !consumeRecordLine(splitFields(line), parsed, hasPath, hasSize, hasFingerprint,
-                                                    hasTruncated)) {
+      } else if (line.empty() ||
+                 !consumeRecordLine(splitFields(line), parsed, hasPath, hasSize, hasFingerprint, hasTruncated)) {
         return false;
       }
     } else if (!line.empty()) {
@@ -300,6 +297,4 @@ bool decodeMarkdownIndexRecord(const std::string_view encoded, MarkdownIndexReco
   record = std::move(parsed);
   return true;
 }
-
-
 }  // namespace micromarkd

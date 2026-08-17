@@ -16,8 +16,7 @@ TEST(MarkdownIndex, ExtractsFrontmatterAliasesAndTags) {
   builder.addLine("---", 132);
 
   const auto& metadata = builder.metadata();
-  EXPECT_EQ(metadata.aliases,
-            (std::vector<std::string>{"MiniMed", "Medical notes", "Child's notes"}));
+  EXPECT_EQ(metadata.aliases, (std::vector<std::string>{"MiniMed", "Medical notes", "Child's notes"}));
   EXPECT_EQ(metadata.tags, (std::vector<std::string>{"medicine", "offline", "pediatrics"}));
   EXPECT_FALSE(metadata.truncated);
 }
@@ -113,19 +112,17 @@ TEST(MarkdownIndex, RejectsUnknownOrMalformedRecordVersions) {
       "MMDIDX\t1\nP\t/vault/Test.md\nS\tnot-a-number\nF\t0000000000000000\nX\t0\nE\n", record));
   EXPECT_FALSE(micromarkd::decodeMarkdownIndexRecord(
       "MMDIDX\t1\nP\t/vault/Test.md\nS\t1\nF\t0000000000000000\nX\t0\nA\tbad\\qescape\nE\n", record));
-  EXPECT_FALSE(micromarkd::decodeMarkdownIndexRecord(
-      "MMDIDX\t1\nP\t/vault/Test.md\nS\t1\nF\t0000000000000000\nX\t0\n", record));
+  EXPECT_FALSE(
+      micromarkd::decodeMarkdownIndexRecord("MMDIDX\t1\nP\t/vault/Test.md\nS\t1\nF\t0000000000000000\nX\t0\n", record));
 }
 
 TEST(MarkdownIndex, UsesStableIncrementalFingerprintAndCacheKey) {
   uint64_t incremental = micromarkd::updateMarkdownFingerprint(micromarkd::MARKDOWN_FINGERPRINT_SEED, "ab");
   incremental = micromarkd::updateMarkdownFingerprint(incremental, "c");
-  const uint64_t complete =
-      micromarkd::updateMarkdownFingerprint(micromarkd::MARKDOWN_FINGERPRINT_SEED, "abc");
+  const uint64_t complete = micromarkd::updateMarkdownFingerprint(micromarkd::MARKDOWN_FINGERPRINT_SEED, "abc");
 
   EXPECT_EQ(incremental, complete);
   EXPECT_EQ(complete, 0xE71FA2190541574BULL);
   EXPECT_EQ(micromarkd::markdownIndexCacheKey("/vault/Plan.md"), "aa57d9ca23a4b993.midx");
-  EXPECT_EQ(micromarkd::markdownIndexCachePath("/vault/Plan.md"),
-            "/.micromarkd/index/aa57d9ca23a4b993.midx");
+  EXPECT_EQ(micromarkd::markdownIndexCachePath("/vault/Plan.md"), "/.micromarkd/index/aa57d9ca23a4b993.midx");
 }
