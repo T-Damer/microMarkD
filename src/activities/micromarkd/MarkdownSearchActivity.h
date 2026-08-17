@@ -2,11 +2,13 @@
 
 #ifdef MICROMARKD_APP
 
+#include <HalStorage.h>
+#include <MarkdownSearch.h>
+
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
-
-#include <MarkdownSearch.h>
 
 #include "activities/UiListActivity.h"
 #include "components/OptionPopup.h"
@@ -17,6 +19,7 @@ class MarkdownSearchActivity final : public UiListActivity {
 
   void onEnter() override;
   void onExit() override;
+  void loop() override;
   void render(RenderLock&&) override;
 
  private:
@@ -30,6 +33,7 @@ class MarkdownSearchActivity final : public UiListActivity {
   struct SearchReport {
     size_t directoriesScanned = 0;
     size_t directoriesSkipped = 0;
+    size_t filesQueued = 0;
     size_t filesScanned = 0;
     size_t filesTruncated = 0;
     size_t bytesScanned = 0;
@@ -44,13 +48,17 @@ class MarkdownSearchActivity final : public UiListActivity {
     }
   };
 
+  enum class SearchPhase : uint8_t { Idle, Enumerating, Scanning, Complete };
+
   static constexpr size_t READ_CHUNK_BYTES = 1024;
+  static constexpr size_t READ_BYTES_PER_STEP = 4 * 1024;
   static constexpr size_t MAX_DIRECTORIES = 512;
   static constexpr size_t MAX_FILES = 256;
   static constexpr size_t MAX_RESULTS = 100;
   static constexpr size_t MAX_BYTES_PER_NOTE = 256 * 1024;
   static constexpr size_t MAX_TOTAL_BYTES = 4 * 1024 * 1024;
   static constexpr size_t MAX_SNIPPET_BYTES = 170;
+  static constexpr size_t PROGRESS_UPDATE_INTERVAL = 8;
 
   std::string queryText_;
   micromarkd::SearchQuery query_;
@@ -60,6 +68,23 @@ class MarkdownSearchActivity final : public UiListActivity {
   std::vector<freeink::ui::ListItem> rowItems_;
   OptionPopup popup_;
   SearchReport report_;
+  SearchPhase phase_ = SearchPhase::Idle;
+
+  std::vector<std::string> directories_;
+  size_t directoryIndex_ = 0;
+  std::vector<std::string> notePaths_;
+  size_t noteIndex_ = 0;
+
+  HalFile activeFile_;
+  std::string activePath_;
+  std::string activeTitle_;
+  std::string activeFolder_;
+  std::string activeSnippet_;
+  std::string activeOverlap_;
+  micromarkd::SearchTermMatches activeMatches_{};
+  size_t activeBytes_ = 0;
+  bool activeMetadataMatch_ = false;
+  bool activeFileOpen_ = false;
 
   int listCount() const override;
   void buildScreen(UiScreen& screen) override;
@@ -69,12 +94,19 @@ class MarkdownSearchActivity final : public UiListActivity {
   const char* headerTitle() const override;
   void drawFooter() override;
 
-  void runSearch();
-  bool scanNote(const std::string& path, SearchResult& result);
+  void beginSearch();
+  void advanceSearch();
+  void enumerateNextDirectory();
+  void beginNextNote();
+  void scanActiveNoteStep();
+  void finishActiveNote();
+  void finishSearch();
+  void updateProgress(bool force = false);
   void rebuildRows();
   void showResultActions(int index);
   void editNote(const std::string& path);
   void buildEmptyMessage();
+  void closeActiveFile();
 
   static std::string joinPath(const std::string& directory, const std::string& name);
   static std::string overlapTail(const std::string& text, size_t bytes);

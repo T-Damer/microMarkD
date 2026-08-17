@@ -126,18 +126,18 @@ void MicroMarkDActivity::activateIndex(const int index) {
 
 void MicroMarkDActivity::startSearch() {
   rowItems_[SEARCH_INDEX].subtitle = tr(STR_MICROMARKD_SEARCH_DESC);
-  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "Search vault", "",
-                                                                 MAX_SEARCH_QUERY_BYTES, InputType::Text),
-                         [this](const ActivityResult& result) {
-                           if (result.isCancelled) return;
-                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
-                           if (!keyboard) return;
+  startActivityForResult(
+      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "Search vault", "", MAX_SEARCH_QUERY_BYTES,
+                                              InputType::Text),
+      [this](const ActivityResult& result) {
+        if (result.isCancelled) return;
+        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+        if (!keyboard) return;
 
-                           const std::string query = micromarkd::trimNoteTitle(keyboard->text);
-                           if (query.empty()) return;
-                           activityManager.pushActivity(
-                               std::make_unique<MarkdownSearchActivity>(renderer, mappedInput, query));
-                         });
+        const std::string query = micromarkd::trimNoteTitle(keyboard->text);
+        if (query.empty()) return;
+        activityManager.pushActivity(std::make_unique<MarkdownSearchActivity>(renderer, mappedInput, query));
+      });
 }
 
 void MicroMarkDActivity::startNewNote() {
