@@ -16,6 +16,7 @@
 #include "activities/micromarkd/MarkdownEditorActivity.h"
 #include "activities/micromarkd/MarkdownRecentActivity.h"
 #include "activities/micromarkd/MarkdownRecovery.h"
+#include "activities/micromarkd/MarkdownSearchActivity.h"
 #include "activities/micromarkd/MarkdownVaultActivity.h"
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
@@ -37,9 +38,11 @@ constexpr UIIcon menuIcons[MicroMarkDActivity::MENU_ITEM_COUNT] = {UIIcon::Folde
 
 constexpr int VAULT_INDEX = 0;
 constexpr int RECENT_INDEX = 1;
+constexpr int SEARCH_INDEX = 2;
 constexpr int NEW_NOTE_INDEX = 3;
 constexpr char VAULT_ROOT[] = "/vault";
 constexpr size_t MAX_NOTE_TITLE_BYTES = 96;
+constexpr size_t MAX_SEARCH_QUERY_BYTES = 96;
 }  // namespace
 
 MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
@@ -107,6 +110,11 @@ void MicroMarkDActivity::activateIndex(const int index) {
     return;
   }
 
+  if (index == SEARCH_INDEX) {
+    startSearch();
+    return;
+  }
+
   if (index == NEW_NOTE_INDEX) {
     startNewNote();
     return;
@@ -114,6 +122,22 @@ void MicroMarkDActivity::activateIndex(const int index) {
 
   rowItems_[index].subtitle = tr(STR_MICROMARKD_PLANNED);
   requestUpdate();
+}
+
+void MicroMarkDActivity::startSearch() {
+  rowItems_[SEARCH_INDEX].subtitle = tr(STR_MICROMARKD_SEARCH_DESC);
+  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "Search vault", "",
+                                                                 MAX_SEARCH_QUERY_BYTES, InputType::Text),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) return;
+                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+                           if (!keyboard) return;
+
+                           const std::string query = micromarkd::trimNoteTitle(keyboard->text);
+                           if (query.empty()) return;
+                           activityManager.pushActivity(
+                               std::make_unique<MarkdownSearchActivity>(renderer, mappedInput, query));
+                         });
 }
 
 void MicroMarkDActivity::startNewNote() {

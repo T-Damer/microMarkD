@@ -22,6 +22,7 @@ class MicroMarkDActivity final : public UiListActivity {
   const char* headerTitle() const override;
 
   void startNewNote();
+  void startSearch();
   void openNewNoteEditor(const std::string& title);
   std::string uniqueNotePath(const std::string& filename) const;
   void showCreateError();
