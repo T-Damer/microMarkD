@@ -5,6 +5,7 @@
 #include <HalStorage.h>
 #include <I18n.h>
 #include <MarkdownDocument.h>
+#include <MarkdownRecoveryPlan.h>
 
 #include <memory>
 #include <string>
@@ -13,6 +14,7 @@
 #include <vector>
 
 #include "activities/micromarkd/MarkdownEditorActivity.h"
+#include "activities/micromarkd/MarkdownRecovery.h"
 #include "activities/micromarkd/MarkdownVaultActivity.h"
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
@@ -47,6 +49,39 @@ MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager
     item.icon = listIconFor(menuIcons[i], 32);
     item.actionValue = static_cast<int16_t>(i);
     rowItems_[i] = item;
+  }
+}
+
+void MicroMarkDActivity::onEnter() {
+  recoverInterruptedSaves();
+  UiListActivity::onEnter();
+}
+
+void MicroMarkDActivity::recoverInterruptedSaves() {
+  static bool recoveryComplete = false;
+  if (recoveryComplete) return;
+
+  const MarkdownRecoveryReport report = recoverMarkdownVault(VAULT_ROOT);
+  recoveryComplete = report.complete();
+
+  if (report.recoveredNotes() > 0) {
+    vaultStatus_ = "Recovered ";
+    vaultStatus_ += std::to_string(report.recoveredNotes());
+    vaultStatus_ += report.recoveredNotes() == 1 ? " interrupted save" : " interrupted saves";
+    if (!report.complete()) vaultStatus_ += "; some files need attention";
+    rowItems_[VAULT_INDEX].subtitle = vaultStatus_.c_str();
+  } else if (report.discardedIncompleteTemporary > 0) {
+    vaultStatus_ = "Discarded ";
+    vaultStatus_ += std::to_string(report.discardedIncompleteTemporary);
+    vaultStatus_ += report.discardedIncompleteTemporary == 1 ? " incomplete save" : " incomplete saves";
+    if (!report.complete()) vaultStatus_ += "; some files need attention";
+    rowItems_[VAULT_INDEX].subtitle = vaultStatus_.c_str();
+  } else if (!report.complete()) {
+    vaultStatus_ = "Interrupted-save recovery needs attention";
+    rowItems_[VAULT_INDEX].subtitle = vaultStatus_.c_str();
+  } else if (!vaultStatus_.empty()) {
+    vaultStatus_.clear();
+    rowItems_[VAULT_INDEX].subtitle = tr(STR_MICROMARKD_VAULT_DESC);
   }
 }
 
@@ -88,8 +123,10 @@ void MicroMarkDActivity::startNewNote() {
 
 std::string MicroMarkDActivity::uniqueNotePath(const std::string& filename) const {
   const auto isAvailable = [](const std::string& path) {
-    return !Storage.exists(path.c_str()) && !Storage.exists((path + ".tmp").c_str()) &&
-           !Storage.exists((path + ".bak").c_str());
+    return !Storage.exists(path.c_str()) &&
+           !Storage.exists((path + micromarkd::NOTE_TEMPORARY_SUFFIX).c_str()) &&
+           !Storage.exists((path + micromarkd::NOTE_BACKUP_SUFFIX).c_str()) &&
+           !Storage.exists((path + micromarkd::NOTE_READY_SUFFIX).c_str());
   };
 
   std::string candidate = std::string(VAULT_ROOT) + "/" + filename;

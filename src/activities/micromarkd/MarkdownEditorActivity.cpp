@@ -7,6 +7,7 @@
 #include <HalStorage.h>
 #include <I18n.h>
 #include <Logging.h>
+#include <MarkdownRecoveryPlan.h>
 #include <Txt.h>
 
 #include <algorithm>
@@ -168,18 +169,39 @@ bool MarkdownEditorActivity::writeTemporaryFile(const std::string& temporaryPath
   return file.close();
 }
 
+bool MarkdownEditorActivity::writeReadyMarker(const std::string& readyPath) const {
+  HalFile marker;
+  if (!Storage.openFileForWrite(MODULE, readyPath, marker)) {
+    LOG_ERR(MODULE, "Failed to open temporary-note completion marker: %s", readyPath.c_str());
+    return false;
+  }
+
+  if (marker.write(micromarkd::NOTE_READY_MAGIC, micromarkd::NOTE_READY_MAGIC_BYTES) !=
+      micromarkd::NOTE_READY_MAGIC_BYTES) {
+    LOG_ERR(MODULE, "Short write creating temporary-note completion marker: %s", readyPath.c_str());
+    marker.close();
+    return false;
+  }
+
+  marker.flush();
+  return marker.close();
+}
+
 bool MarkdownEditorActivity::saveDocumentAtomic() {
   if (documentSize() > MAX_FILE_BYTES) {
     errorMessage_ = "Note exceeds editor limits";
     return false;
   }
 
-  const std::string temporaryPath = path_ + ".tmp";
-  const std::string backupPath = path_ + ".bak";
+  const std::string temporaryPath = path_ + micromarkd::NOTE_TEMPORARY_SUFFIX;
+  const std::string backupPath = path_ + micromarkd::NOTE_BACKUP_SUFFIX;
+  const std::string readyPath = path_ + micromarkd::NOTE_READY_SUFFIX;
   Storage.remove(temporaryPath.c_str());
+  Storage.remove(readyPath.c_str());
 
-  if (!writeTemporaryFile(temporaryPath)) {
+  if (!writeTemporaryFile(temporaryPath) || !writeReadyMarker(readyPath)) {
     Storage.remove(temporaryPath.c_str());
+    Storage.remove(readyPath.c_str());
     return false;
   }
 
@@ -188,19 +210,27 @@ bool MarkdownEditorActivity::saveDocumentAtomic() {
   if (hadOriginal && !Storage.rename(path_.c_str(), backupPath.c_str())) {
     LOG_ERR(MODULE, "Failed to move original note to backup: %s", path_.c_str());
     Storage.remove(temporaryPath.c_str());
+    Storage.remove(readyPath.c_str());
     return false;
   }
 
   if (!Storage.rename(temporaryPath.c_str(), path_.c_str())) {
     LOG_ERR(MODULE, "Failed to move temporary note into place: %s", path_.c_str());
-    Storage.remove(temporaryPath.c_str());
-    if (hadOriginal && !Storage.rename(backupPath.c_str(), path_.c_str())) {
-      LOG_ERR(MODULE, "Failed to restore note backup: %s", backupPath.c_str());
+    if (hadOriginal) {
+      if (!Storage.rename(backupPath.c_str(), path_.c_str())) {
+        LOG_ERR(MODULE, "Failed to restore note backup: %s", backupPath.c_str());
+      } else {
+        Storage.remove(temporaryPath.c_str());
+        Storage.remove(readyPath.c_str());
+      }
     }
     return false;
   }
 
   if (hadOriginal) Storage.remove(backupPath.c_str());
+  if (!Storage.remove(readyPath.c_str())) {
+    LOG_ERR(MODULE, "Saved note but failed to remove completion marker: %s", readyPath.c_str());
+  }
 
   Txt note(path_, "/.crosspoint");
   if (!note.clearCache()) {

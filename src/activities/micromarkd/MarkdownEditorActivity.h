@@ -51,6 +51,7 @@ class MarkdownEditorActivity final : public UiListActivity {
   bool loadDocument();
   bool saveDocumentAtomic();
   bool writeTemporaryFile(const std::string& temporaryPath) const;
+  bool writeReadyMarker(const std::string& readyPath) const;
   size_t documentSize() const;
 
   void rebuildRows();

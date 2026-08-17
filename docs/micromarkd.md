@@ -18,6 +18,7 @@ The first usable vertical slice intentionally stays small:
   `/vault`, and opens a line-oriented source editor before any file is created;
 - the editor supports line replacement, insertion above or below, deletion,
   appending, explicit save, and a save/discard prompt for unsaved changes;
+- interrupted saves are recovered once when the microMarkD home screen starts;
 - `.md` and `.markdown` files open in the streaming text reader with Markdown
   headings, quotes, lists, separators, and simple inline markers rendered;
 - Markdown is parsed before line wrapping, and visible fragments are measured
@@ -54,7 +55,7 @@ line longer than the 8 KiB streaming window is deliberately treated as
 sequential fragments; Markdown constructs spanning that boundary are not
 preserved in this bootstrap.
 
-## Editor and save model
+## Editor, save, and recovery model
 
 The source editor keeps one bounded note in memory as individual UTF-8 lines.
 The initial implementation accepts notes up to 128 KiB, 1024 lines, and 1024
@@ -63,16 +64,35 @@ on the device; exceeding one fails closed without modifying the note.
 
 Saving never truncates the canonical note in place:
 
-1. write and flush `<note>.tmp`;
-2. rename the previous note to `<note>.bak`, when it exists;
-3. rename the complete temporary file to the canonical `.md` path;
-4. restore the backup if the final rename fails;
-5. remove the backup and the disposable reading cache after success.
+1. write, flush, and close `<note>.tmp`;
+2. write and close `<note>.tmp.ready` containing a fixed completion marker;
+3. rename the previous note to `<note>.bak`, when it exists;
+4. rename the complete temporary file to the canonical `.md` path;
+5. restore the backup if the final rename fails;
+6. remove the completion marker, backup, and disposable reading cache after
+   success.
+
+The marker distinguishes a fully closed temporary file from a partial file left
+by a power loss during a new-note write. Recovery scans ordinary, non-hidden
+folders below `/vault` and follows these deterministic rules:
+
+- a canonical note always wins; stale sidecars are removed;
+- when the canonical note is absent, a temporary file is promoted only when its
+  completion marker is valid;
+- otherwise an available backup is restored;
+- an incomplete temporary file without a canonical note or backup is discarded
+  rather than exposed as a valid Markdown note;
+- unreadable markers and failed filesystem operations are left for a later
+  retry and reported in the Vault subtitle.
+
+The startup scan is bounded to 512 directories so a corrupted or unexpectedly
+large directory tree cannot grow memory use without limit. Explicit note
+deletion removes all recovery sidecars first, preventing a deleted note from
+being resurrected on the next boot.
 
 FAT directory updates are not transactional, but this sequence prevents a
 power loss during content writing from leaving the canonical note half-written.
-New-note cancellation leaves no empty file behind. Startup recovery for stale
-`.tmp` and `.bak` files is still a planned step.
+New-note cancellation leaves no empty file behind.
 
 ## Build
 
@@ -101,8 +121,8 @@ so later indexing, graph, and sync code can share stable boundaries.
 
 ## Planned milestones
 
-1. Recover stale `.tmp` / `.bak` note files and add heading anchors.
-2. Vault-wide index, aliases, recent notes, and richer source navigation.
+1. Add heading-anchor navigation and aliases.
+2. Vault-wide index, recent notes, and richer source navigation.
 3. Backlinks, tags, and full-text search.
 4. Zoom-dependent tiled graph navigation.
 5. Constrained Git proof of concept: one remote, one branch, shallow fetch,

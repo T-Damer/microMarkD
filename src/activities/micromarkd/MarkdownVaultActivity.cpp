@@ -16,6 +16,7 @@
 #include <variant>
 
 #include "activities/micromarkd/MarkdownEditorActivity.h"
+#include "activities/micromarkd/MarkdownRecovery.h"
 #include "activities/util/ConfirmationActivity.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
@@ -199,6 +200,10 @@ void MarkdownVaultActivity::confirmDelete(const std::string& entry, const std::s
                          [this, notePath](const ActivityResult& result) {
                            if (result.isCancelled) return;
 
+                           if (!removeMarkdownRecoverySidecars(notePath)) {
+                             LOG_ERR("MDV", "Failed to remove note recovery sidecars: %s", notePath.c_str());
+                             return;
+                           }
                            clearBookCache(notePath);
                            if (!Storage.remove(notePath.c_str())) {
                              LOG_ERR("MDV", "Failed to delete note: %s", notePath.c_str());

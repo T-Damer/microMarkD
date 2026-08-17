@@ -12,6 +12,7 @@ class MicroMarkDActivity final : public UiListActivity {
 
   explicit MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
+  void onEnter() override;
   bool isHomeActivity() const override { return true; }
 
  private:
@@ -24,8 +25,10 @@ class MicroMarkDActivity final : public UiListActivity {
   void openNewNoteEditor(const std::string& title);
   std::string uniqueNotePath(const std::string& filename) const;
   void showCreateError();
+  void recoverInterruptedSaves();
 
   freeink::ui::ListItem rowItems_[MENU_ITEM_COUNT]{};
+  std::string vaultStatus_;
 };
 
 #endif  // MICROMARKD_APP
