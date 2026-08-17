@@ -11,7 +11,9 @@ The first usable vertical slice intentionally stays small:
 - a dedicated `micromarkd-x4pro` PlatformIO environment;
 - a standalone microMarkD home activity;
 - five product entry points: Vault, Recent notes, Search, New note, and Git sync;
-- the Vault entry opens `/vault` through the existing SD-card browser;
+- the Vault entry opens a dedicated Markdown-only browser rooted at `/vault`;
+- tapping a note opens it, while a long press offers Open, Edit, and Delete;
+- the vault browser navigates nested folders but cannot escape the vault root;
 - New note asks for a title, derives a FAT-safe unique `.md` path under
   `/vault`, and opens a line-oriented source editor before any file is created;
 - the editor supports line replacement, insertion above or below, deletion,
@@ -69,7 +71,8 @@ Saving never truncates the canonical note in place:
 
 FAT directory updates are not transactional, but this sequence prevents a
 power loss during content writing from leaving the canonical note half-written.
-New-note cancellation leaves no empty file behind.
+New-note cancellation leaves no empty file behind. Startup recovery for stale
+`.tmp` and `.bak` files is still a planned step.
 
 ## Build
 
@@ -98,8 +101,8 @@ so later indexing, graph, and sync code can share stable boundaries.
 
 ## Planned milestones
 
-1. Vault-wide index, aliases, and heading anchors.
-2. Existing-note edit entry points and richer source navigation.
+1. Recover stale `.tmp` / `.bak` note files and add heading anchors.
+2. Vault-wide index, aliases, recent notes, and richer source navigation.
 3. Backlinks, tags, and full-text search.
 4. Zoom-dependent tiled graph navigation.
 5. Constrained Git proof of concept: one remote, one branch, shallow fetch,

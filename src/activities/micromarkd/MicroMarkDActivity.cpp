@@ -12,8 +12,8 @@
 #include <variant>
 #include <vector>
 
-#include "activities/home/FileBrowserActivity.h"
 #include "activities/micromarkd/MarkdownEditorActivity.h"
+#include "activities/micromarkd/MarkdownVaultActivity.h"
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
@@ -61,7 +61,7 @@ void MicroMarkDActivity::activateIndex(const int index) {
   nav.selected = index;
 
   if (index == VAULT_INDEX) {
-    activityManager.pushActivity(std::make_unique<FileBrowserActivity>(renderer, mappedInput, VAULT_ROOT));
+    activityManager.pushActivity(std::make_unique<MarkdownVaultActivity>(renderer, mappedInput, VAULT_ROOT));
     return;
   }
 
