@@ -205,13 +205,21 @@ bool MarkdownEditorActivity::saveDocumentAtomic() {
     return false;
   }
 
-  Storage.remove(backupPath.c_str());
   const bool hadOriginal = Storage.exists(path_.c_str());
-  if (hadOriginal && !Storage.rename(path_.c_str(), backupPath.c_str())) {
-    LOG_ERR(MODULE, "Failed to move original note to backup: %s", path_.c_str());
-    Storage.remove(temporaryPath.c_str());
-    Storage.remove(readyPath.c_str());
-    return false;
+  const bool hadBackup = Storage.exists(backupPath.c_str());
+  if (hadOriginal) {
+    if (hadBackup && !Storage.remove(backupPath.c_str())) {
+      LOG_ERR(MODULE, "Failed to remove stale note backup: %s", backupPath.c_str());
+      Storage.remove(temporaryPath.c_str());
+      Storage.remove(readyPath.c_str());
+      return false;
+    }
+    if (!Storage.rename(path_.c_str(), backupPath.c_str())) {
+      LOG_ERR(MODULE, "Failed to move original note to backup: %s", path_.c_str());
+      Storage.remove(temporaryPath.c_str());
+      Storage.remove(readyPath.c_str());
+      return false;
+    }
   }
 
   if (!Storage.rename(temporaryPath.c_str(), path_.c_str())) {
@@ -227,7 +235,9 @@ bool MarkdownEditorActivity::saveDocumentAtomic() {
     return false;
   }
 
-  if (hadOriginal) Storage.remove(backupPath.c_str());
+  if ((hadOriginal || hadBackup) && !Storage.remove(backupPath.c_str())) {
+    LOG_ERR(MODULE, "Saved note but failed to remove backup: %s", backupPath.c_str());
+  }
   if (!Storage.remove(readyPath.c_str())) {
     LOG_ERR(MODULE, "Saved note but failed to remove completion marker: %s", readyPath.c_str());
   }

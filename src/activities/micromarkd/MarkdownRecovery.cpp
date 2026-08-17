@@ -74,8 +74,7 @@ void recoverNote(const std::string& canonicalPath, MarkdownRecoveryReport& repor
     }
   }
   const bool temporaryComplete = markerState == ReadyMarkerState::Valid;
-  const auto plan =
-      micromarkd::planNoteRecovery(canonicalExists, temporaryExists, temporaryComplete, backupExists);
+  const auto plan = micromarkd::planNoteRecovery(canonicalExists, temporaryExists, temporaryComplete, backupExists);
 
   switch (plan.source) {
     case micromarkd::NoteRecoverySource::Canonical:

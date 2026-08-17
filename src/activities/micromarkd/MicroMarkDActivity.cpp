@@ -123,8 +123,7 @@ void MicroMarkDActivity::startNewNote() {
 
 std::string MicroMarkDActivity::uniqueNotePath(const std::string& filename) const {
   const auto isAvailable = [](const std::string& path) {
-    return !Storage.exists(path.c_str()) &&
-           !Storage.exists((path + micromarkd::NOTE_TEMPORARY_SUFFIX).c_str()) &&
+    return !Storage.exists(path.c_str()) && !Storage.exists((path + micromarkd::NOTE_TEMPORARY_SUFFIX).c_str()) &&
            !Storage.exists((path + micromarkd::NOTE_BACKUP_SUFFIX).c_str()) &&
            !Storage.exists((path + micromarkd::NOTE_READY_SUFFIX).c_str());
   };

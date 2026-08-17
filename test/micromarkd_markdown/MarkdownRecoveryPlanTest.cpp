@@ -35,8 +35,8 @@ TEST(MarkdownRecoveryPlan, CoversCanonicalTemporaryMarkerAndBackupStates) {
   }};
 
   for (const auto& recoveryCase : cases) {
-    const auto plan = planNoteRecovery(recoveryCase.canonical, recoveryCase.temporary,
-                                       recoveryCase.temporaryComplete, recoveryCase.backup);
+    const auto plan = planNoteRecovery(recoveryCase.canonical, recoveryCase.temporary, recoveryCase.temporaryComplete,
+                                       recoveryCase.backup);
     EXPECT_EQ(plan.source, recoveryCase.source);
     EXPECT_EQ(plan.removeTemporary, recoveryCase.removeTemporary);
     EXPECT_EQ(plan.removeBackup, recoveryCase.removeBackup);

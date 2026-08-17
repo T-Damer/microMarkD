@@ -18,8 +18,8 @@ bool endsWithAsciiCaseInsensitive(const std::string_view value, const std::strin
 
 }  // namespace
 
-NoteRecoveryPlan planNoteRecovery(const bool canonicalExists, const bool temporaryExists,
-                                  const bool temporaryComplete, const bool backupExists) {
+NoteRecoveryPlan planNoteRecovery(const bool canonicalExists, const bool temporaryExists, const bool temporaryComplete,
+                                  const bool backupExists) {
   NoteRecoveryPlan plan;
   if (canonicalExists) {
     plan.source = NoteRecoverySource::Canonical;
