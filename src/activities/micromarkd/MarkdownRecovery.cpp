@@ -50,10 +50,11 @@ ReadyMarkerState readReadyMarker(const std::string& path, const bool exists) {
   }
 
   std::array<char, micromarkd::NOTE_READY_MAGIC_BYTES> marker{};
-  const bool valid = file.read(marker.data(), marker.size()) == static_cast<int>(marker.size()) &&
-                     std::memcmp(marker.data(), micromarkd::NOTE_READY_MAGIC, marker.size()) == 0;
+  const int bytesRead = file.read(marker.data(), marker.size());
   file.close();
-  return valid ? ReadyMarkerState::Valid : ReadyMarkerState::Invalid;
+  if (bytesRead != static_cast<int>(marker.size())) return ReadyMarkerState::Unreadable;
+  return std::memcmp(marker.data(), micromarkd::NOTE_READY_MAGIC, marker.size()) == 0 ? ReadyMarkerState::Valid
+                                                                                     : ReadyMarkerState::Invalid;
 }
 
 void recoverNote(const std::string& canonicalPath, MarkdownRecoveryReport& report) {

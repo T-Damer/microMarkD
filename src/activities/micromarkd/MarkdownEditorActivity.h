@@ -14,6 +14,7 @@ class MarkdownEditorActivity final : public UiListActivity {
   explicit MarkdownEditorActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, std::string path);
   MarkdownEditorActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, std::string path,
                          std::vector<std::string> initialLines, bool trailingNewline);
+  ~MarkdownEditorActivity() override;
 
   void onEnter() override;
   void render(RenderLock&&) override;
