@@ -3,10 +3,14 @@ add_executable(MicroMarkDMarkdownTest
   MarkdownDocumentTest.cpp
   MarkdownRecoveryPlanTest.cpp
   MarkdownSearchTest.cpp
+  MarkdownIndexTest.cpp
   ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownLineParser.cpp
   ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownDocument.cpp
   ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownRecoveryPlan.cpp
   ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownSearch.cpp
+  ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownIndex.cpp
+  ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownIndexYaml.cpp
+  ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownIndexCodec.cpp
 )
 
 target_include_directories(MicroMarkDMarkdownTest PRIVATE
