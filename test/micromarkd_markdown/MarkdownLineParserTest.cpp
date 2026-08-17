@@ -51,3 +51,33 @@ TEST(MarkdownLineParser, ExtractsWikiPathWithoutAliasOrHeading) {
   EXPECT_EQ(micromarkd::wikiTargetPathPart(" Projects/Note#Details | label "), "Projects/Note");
   EXPECT_TRUE(micromarkd::wikiTargetPathPart("#Local heading").empty());
 }
+
+TEST(MarkdownLineParser, SlicesLinkMetadataAcrossWrappedFragments) {
+  const auto parsed = parseMarkdownLine("Before [[Target|linked label]] after");
+
+  const auto first = micromarkd::sliceParsedLine(parsed, 7, 6);
+  EXPECT_TRUE(first.continuation);
+  ASSERT_EQ(first.linkCount, 1);
+  EXPECT_EQ(first.text, "linked");
+  EXPECT_EQ(first.links[0].start, 0);
+  EXPECT_EQ(first.links[0].end, 6);
+  EXPECT_EQ(first.links[0].target, "Target");
+
+  const auto second = micromarkd::sliceParsedLine(parsed, 14, 5);
+  EXPECT_TRUE(second.continuation);
+  ASSERT_EQ(second.linkCount, 1);
+  EXPECT_EQ(second.text, "label");
+  EXPECT_EQ(second.links[0].start, 0);
+  EXPECT_EQ(second.links[0].end, 5);
+}
+
+TEST(MarkdownLineParser, PreservesBlockStyleWhenSlicing) {
+  const auto parsed = parseMarkdownLine("## A measured heading");
+  const auto fragment = micromarkd::sliceParsedLine(parsed, 2, 8);
+
+  EXPECT_EQ(fragment.block, BlockKind::Heading);
+  EXPECT_EQ(fragment.headingLevel, 2);
+  EXPECT_TRUE(fragment.bold);
+  EXPECT_TRUE(fragment.continuation);
+  EXPECT_EQ(fragment.text, "measured");
+}

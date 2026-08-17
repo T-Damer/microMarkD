@@ -42,10 +42,14 @@ class TxtReaderActivity final : public ReaderActivity {
   bool markdownMode = false;
   int pendingMarkdownPage = -1;
   std::vector<micromarkd::ParsedLine> currentMarkdownLines;
+  std::vector<size_t> markdownPageTextOffsets;
   std::vector<MarkdownLinkHit> markdownLinkHits;
   std::vector<MarkdownHistoryEntry> markdownHistory;
 
-  void rebuildMarkdownLines();
+  bool loadMarkdownPageAtCursor(GfxRenderer& renderer, size_t sourceOffset, size_t textOffset,
+                                std::vector<std::string>& outLines,
+                                std::vector<micromarkd::ParsedLine>& outMarkdownLines, size_t& nextSourceOffset,
+                                size_t& nextTextOffset);
   bool openMarkdownFile(const std::string& path, int page, bool rememberCurrent);
   std::string resolveWikiLink(const std::string& target) const;
 #endif

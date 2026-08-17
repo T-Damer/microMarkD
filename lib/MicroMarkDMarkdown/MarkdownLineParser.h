@@ -24,11 +24,13 @@ struct ParsedLine {
   uint8_t headingLevel = 0;
   bool bold = false;
   bool italic = false;
+  bool continuation = false;
   std::array<WikiLink, MAX_WIKI_LINKS_PER_LINE> links{};
   uint8_t linkCount = 0;
 };
 
 ParsedLine parseMarkdownLine(std::string_view source);
+ParsedLine sliceParsedLine(const ParsedLine& source, size_t start, size_t length);
 std::string wikiTargetPathPart(std::string_view target);
 
 }  // namespace micromarkd

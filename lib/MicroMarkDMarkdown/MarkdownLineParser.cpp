@@ -57,6 +57,34 @@ void appendWikiLink(ParsedLine& parsed, std::string_view target, std::string_vie
 
 }  // namespace
 
+ParsedLine sliceParsedLine(const ParsedLine& source, const size_t start, const size_t length) {
+  ParsedLine result;
+  result.block = source.block;
+  result.headingLevel = source.headingLevel;
+  result.bold = source.bold;
+  result.italic = source.italic;
+  result.continuation = source.continuation || start > 0;
+
+  if (start >= source.text.size() || length == 0) return result;
+
+  const size_t end = std::min(source.text.size(), start + length);
+  result.text = source.text.substr(start, end - start);
+
+  for (uint8_t index = 0; index < source.linkCount && index < source.links.size(); index++) {
+    const auto& link = source.links[index];
+    const size_t linkStart = link.start;
+    const size_t linkEnd = link.end;
+    if (linkEnd <= start || linkStart >= end || result.linkCount >= result.links.size()) continue;
+
+    auto& sliced = result.links[result.linkCount++];
+    sliced.start = static_cast<uint16_t>(std::max(linkStart, start) - start);
+    sliced.end = static_cast<uint16_t>(std::min(linkEnd, end) - start);
+    sliced.target = link.target;
+  }
+
+  return result;
+}
+
 std::string wikiTargetPathPart(std::string_view target) {
   target = trim(target);
   const size_t alias = target.find('|');

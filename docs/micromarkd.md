@@ -14,6 +14,10 @@ The first usable vertical slice intentionally stays small:
 - the Vault entry opens `/vault` through the existing SD-card browser;
 - `.md` and `.markdown` files open in the streaming text reader with Markdown
   headings, quotes, lists, separators, and simple inline markers rendered;
+- Markdown is parsed before line wrapping, and visible fragments are measured
+  with their actual font style and block indentation before pages are indexed;
+- long Markdown blocks can continue across pages without losing their style,
+  list indentation, or wikilink hit regions;
 - `[[wikilinks]]` and `[[target|labels]]` are underlined and tappable;
 - relative links resolve beside the current note, then from the vault root;
 - the reader keeps an in-session note history so Back returns through followed
@@ -24,9 +28,26 @@ The first usable vertical slice intentionally stays small:
 Default CrossPoint environments do not define `MICROMARKD_APP` and keep their
 existing home screen and behavior.
 
-The Markdown layer deliberately reuses the TXT reader's chunked pagination and
-SD-backed page index. It parses only the visible page, so opening a large vault
-note does not require loading the whole document into RAM.
+## Pagination and memory model
+
+Markdown uses a separate measured page index rather than the TXT reader's raw
+line index. The reader processes bounded sequential windows from the SD card,
+parses source lines before wrapping, and never loads the entire note into RAM.
+Each indexed page stores two cursors:
+
+1. the byte offset of the source line in the Markdown file;
+2. the byte offset inside that line's parsed, visible text.
+
+This allows a heading, list item, quote, or wikilink label to continue on the
+next page without reparsing an already wrapped fragment as new Markdown. Link
+ranges are sliced together with the visible text, so every displayed fragment
+of a wrapped wikilink remains tappable.
+
+The disposable `markdown-index.bin` cache is validated against the note size,
+viewport width, lines per page, font, margin, and paragraph alignment. A source
+line longer than the 8 KiB streaming window is deliberately treated as
+sequential fragments; Markdown constructs spanning that boundary are not
+preserved in this bootstrap.
 
 ## Build
 
@@ -55,7 +76,7 @@ so later indexing, graph, and sync code can share stable boundaries.
 
 ## Planned milestones
 
-1. Extend the current Markdown reader with a vault-wide index and heading anchors.
+1. Vault-wide index, aliases, and heading anchors.
 2. Source editor and atomic note writes.
 3. Backlinks, tags, and full-text search.
 4. Zoom-dependent tiled graph navigation.
