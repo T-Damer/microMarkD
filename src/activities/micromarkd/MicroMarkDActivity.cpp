@@ -2,11 +2,19 @@
 
 #ifdef MICROMARKD_APP
 
+#include <HalStorage.h>
 #include <I18n.h>
+#include <MarkdownDocument.h>
 
 #include <memory>
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
 
 #include "activities/home/FileBrowserActivity.h"
+#include "activities/micromarkd/MarkdownEditorActivity.h"
+#include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
 
@@ -24,7 +32,10 @@ constexpr StrId menuDescriptions[MicroMarkDActivity::MENU_ITEM_COUNT] = {
 constexpr UIIcon menuIcons[MicroMarkDActivity::MENU_ITEM_COUNT] = {UIIcon::Folder, UIIcon::Recent, UIIcon::Text,
                                                                    UIIcon::File, UIIcon::Transfer};
 
+constexpr int VAULT_INDEX = 0;
+constexpr int NEW_NOTE_INDEX = 3;
 constexpr char VAULT_ROOT[] = "/vault";
+constexpr size_t MAX_NOTE_TITLE_BYTES = 96;
 }  // namespace
 
 MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
@@ -49,12 +60,89 @@ void MicroMarkDActivity::activateIndex(const int index) {
   app.clearTapFlash();
   nav.selected = index;
 
-  if (index == 0) {
+  if (index == VAULT_INDEX) {
     activityManager.pushActivity(std::make_unique<FileBrowserActivity>(renderer, mappedInput, VAULT_ROOT));
     return;
   }
 
+  if (index == NEW_NOTE_INDEX) {
+    startNewNote();
+    return;
+  }
+
   rowItems_[index].subtitle = tr(STR_MICROMARKD_PLANNED);
+  requestUpdate();
+}
+
+void MicroMarkDActivity::startNewNote() {
+  rowItems_[NEW_NOTE_INDEX].subtitle = tr(STR_MICROMARKD_NEW_NOTE_DESC);
+  startActivityForResult(
+      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "New note title", "",
+                                              MAX_NOTE_TITLE_BYTES, InputType::Text),
+      [this](const ActivityResult& result) {
+        if (result.isCancelled) return;
+        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+        if (!keyboard) return;
+        openNewNoteEditor(keyboard->text);
+      });
+}
+
+std::string MicroMarkDActivity::uniqueNotePath(const std::string& filename) const {
+  const auto isAvailable = [](const std::string& path) {
+    return !Storage.exists(path.c_str()) && !Storage.exists((path + ".tmp").c_str()) &&
+           !Storage.exists((path + ".bak").c_str());
+  };
+
+  std::string candidate = std::string(VAULT_ROOT) + "/" + filename;
+  if (isAvailable(candidate)) return candidate;
+
+  const size_t extension = filename.size() >= 3 ? filename.size() - 3 : filename.size();
+  const std::string stem = filename.substr(0, extension);
+  for (int suffix = 2; suffix < 10000; suffix++) {
+    candidate = std::string(VAULT_ROOT) + "/" + stem + " " + std::to_string(suffix) + ".md";
+    if (isAvailable(candidate)) return candidate;
+  }
+  return {};
+}
+
+void MicroMarkDActivity::openNewNoteEditor(const std::string& rawTitle) {
+  if (Storage.exists(VAULT_ROOT)) {
+    auto vault = Storage.open(VAULT_ROOT);
+    if (!vault || !vault.isDirectory()) {
+      showCreateError();
+      return;
+    }
+  } else if (!Storage.mkdir(VAULT_ROOT, true)) {
+    showCreateError();
+    return;
+  }
+
+  std::string title = micromarkd::trimNoteTitle(rawTitle);
+  if (title.empty()) title = "Untitled";
+  const std::string path = uniqueNotePath(micromarkd::safeNoteFilename(title));
+  if (path.empty()) {
+    showCreateError();
+    return;
+  }
+
+  std::vector<std::string> lines;
+  lines.reserve(2);
+  lines.push_back("# " + title);
+  lines.emplace_back();
+
+  startActivityForResult(
+      std::make_unique<MarkdownEditorActivity>(renderer, mappedInput, path, std::move(lines),
+                                               /*trailingNewline=*/true),
+      [](const ActivityResult& result) {
+        if (result.isCancelled) return;
+        const auto* file = std::get_if<FilePathResult>(&result.data);
+        if (!file || file->path.empty()) return;
+        activityManager.goToReader(file->path);
+      });
+}
+
+void MicroMarkDActivity::showCreateError() {
+  rowItems_[NEW_NOTE_INDEX].subtitle = "Could not create note";
   requestUpdate();
 }
 

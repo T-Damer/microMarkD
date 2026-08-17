@@ -12,6 +12,10 @@ The first usable vertical slice intentionally stays small:
 - a standalone microMarkD home activity;
 - five product entry points: Vault, Recent notes, Search, New note, and Git sync;
 - the Vault entry opens `/vault` through the existing SD-card browser;
+- New note asks for a title, derives a FAT-safe unique `.md` path under
+  `/vault`, and opens a line-oriented source editor before any file is created;
+- the editor supports line replacement, insertion above or below, deletion,
+  appending, explicit save, and a save/discard prompt for unsaved changes;
 - `.md` and `.markdown` files open in the streaming text reader with Markdown
   headings, quotes, lists, separators, and simple inline markers rendered;
 - Markdown is parsed before line wrapping, and visible fragments are measured
@@ -22,8 +26,7 @@ The first usable vertical slice intentionally stays small:
 - relative links resolve beside the current note, then from the vault root;
 - the reader keeps an in-session note history so Back returns through followed
   wikilinks before leaving the reader;
-- the remaining entries expose the planned product surface and are wired in
-  follow-up changes.
+- Recent notes, Search, and Git sync remain planned product surfaces.
 
 Default CrossPoint environments do not define `MICROMARKD_APP` and keep their
 existing home screen and behavior.
@@ -48,6 +51,25 @@ viewport width, lines per page, font, margin, and paragraph alignment. A source
 line longer than the 8 KiB streaming window is deliberately treated as
 sequential fragments; Markdown constructs spanning that boundary are not
 preserved in this bootstrap.
+
+## Editor and save model
+
+The source editor keeps one bounded note in memory as individual UTF-8 lines.
+The initial implementation accepts notes up to 128 KiB, 1024 lines, and 1024
+bytes per line. Those limits keep the row previews and keyboard field bounded
+on the device; exceeding one fails closed without modifying the note.
+
+Saving never truncates the canonical note in place:
+
+1. write and flush `<note>.tmp`;
+2. rename the previous note to `<note>.bak`, when it exists;
+3. rename the complete temporary file to the canonical `.md` path;
+4. restore the backup if the final rename fails;
+5. remove the backup and the disposable reading cache after success.
+
+FAT directory updates are not transactional, but this sequence prevents a
+power loss during content writing from leaving the canonical note half-written.
+New-note cancellation leaves no empty file behind.
 
 ## Build
 
@@ -77,7 +99,7 @@ so later indexing, graph, and sync code can share stable boundaries.
 ## Planned milestones
 
 1. Vault-wide index, aliases, and heading anchors.
-2. Source editor and atomic note writes.
+2. Existing-note edit entry points and richer source navigation.
 3. Backlinks, tags, and full-text search.
 4. Zoom-dependent tiled graph navigation.
 5. Constrained Git proof of concept: one remote, one branch, shallow fetch,

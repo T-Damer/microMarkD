@@ -2,6 +2,8 @@
 
 #ifdef MICROMARKD_APP
 
+#include <string>
+
 #include "activities/UiListActivity.h"
 
 class MicroMarkDActivity final : public UiListActivity {
@@ -17,6 +19,11 @@ class MicroMarkDActivity final : public UiListActivity {
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;
   const char* headerTitle() const override;
+
+  void startNewNote();
+  void openNewNoteEditor(const std::string& title);
+  std::string uniqueNotePath(const std::string& filename) const;
+  void showCreateError();
 
   freeink::ui::ListItem rowItems_[MENU_ITEM_COUNT]{};
 };

@@ -1,6 +1,8 @@
 add_executable(MicroMarkDMarkdownTest
   MarkdownLineParserTest.cpp
+  MarkdownDocumentTest.cpp
   ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownLineParser.cpp
+  ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownDocument.cpp
 )
 
 target_include_directories(MicroMarkDMarkdownTest PRIVATE
