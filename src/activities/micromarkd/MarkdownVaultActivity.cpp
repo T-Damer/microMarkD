@@ -6,6 +6,7 @@
 #include <GfxRenderer.h>
 #include <HalStorage.h>
 #include <I18n.h>
+#include <Logging.h>
 
 #include <algorithm>
 #include <cstring>
@@ -161,16 +162,15 @@ void MarkdownVaultActivity::openDirectory(const std::string& entry) {
 void MarkdownVaultActivity::openNote(const std::string& notePath) { onSelectBook(notePath); }
 
 void MarkdownVaultActivity::editNote(const std::string& notePath) {
-  startActivityForResult(
-      std::make_unique<MarkdownEditorActivity>(renderer, mappedInput, notePath),
-      [this](const ActivityResult& result) {
-        if (result.isCancelled) return;
-        const auto* file = std::get_if<FilePathResult>(&result.data);
-        if (!file || file->path.empty()) return;
+  startActivityForResult(std::make_unique<MarkdownEditorActivity>(renderer, mappedInput, notePath),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) return;
+                           const auto* file = std::get_if<FilePathResult>(&result.data);
+                           if (!file || file->path.empty()) return;
 
-        loadEntries();
-        activityManager.goToReader(file->path);
-      });
+                           loadEntries();
+                           activityManager.goToReader(file->path);
+                         });
 }
 
 void MarkdownVaultActivity::showNoteActions(const std::string& entry, const std::string& notePath) {
@@ -195,26 +195,25 @@ void MarkdownVaultActivity::showNoteActions(const std::string& entry, const std:
 
 void MarkdownVaultActivity::confirmDelete(const std::string& entry, const std::string& notePath) {
   std::string heading = tr(STR_DELETE) + std::string("? ");
-  startActivityForResult(
-      std::make_unique<ConfirmationActivity>(renderer, mappedInput, heading, entry),
-      [this, notePath](const ActivityResult& result) {
-        if (result.isCancelled) return;
+  startActivityForResult(std::make_unique<ConfirmationActivity>(renderer, mappedInput, heading, entry),
+                         [this, notePath](const ActivityResult& result) {
+                           if (result.isCancelled) return;
 
-        clearBookCache(notePath);
-        if (!Storage.remove(notePath.c_str())) {
-          LOG_ERR("MDV", "Failed to delete note: %s", notePath.c_str());
-          return;
-        }
+                           clearBookCache(notePath);
+                           if (!Storage.remove(notePath.c_str())) {
+                             LOG_ERR("MDV", "Failed to delete note: %s", notePath.c_str());
+                             return;
+                           }
 
-        loadEntries();
-        if (entries_.empty()) {
-          nav.selected = 0;
-        } else if (nav.selected >= listCount()) {
-          nav.selected = listCount() - 1;
-        }
-        nav.follow(listCount());
-        requestUpdate(true);
-      });
+                           loadEntries();
+                           if (entries_.empty()) {
+                             nav.selected = 0;
+                           } else if (nav.selected >= listCount()) {
+                             nav.selected = listCount() - 1;
+                           }
+                           nav.follow(listCount());
+                           requestUpdate(true);
+                         });
 }
 
 bool MarkdownVaultActivity::handleCustomInput() {
@@ -287,9 +286,9 @@ void MarkdownVaultActivity::buildScreen(UiScreen& screen) {
 }
 
 void MarkdownVaultActivity::drawFooter() {
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), entries_.empty() ? "" : tr(STR_OPEN),
-                                            entries_.empty() ? "" : tr(STR_DIR_UP),
-                                            entries_.empty() ? "" : tr(STR_DIR_DOWN));
+  const auto labels =
+      mappedInput.mapLabels(tr(STR_BACK), entries_.empty() ? "" : tr(STR_OPEN), entries_.empty() ? "" : tr(STR_DIR_UP),
+                            entries_.empty() ? "" : tr(STR_DIR_DOWN));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 }
 
