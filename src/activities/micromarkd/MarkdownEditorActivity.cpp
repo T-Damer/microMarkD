@@ -24,14 +24,11 @@ constexpr char VAULT_PREFIX[] = "/vault/";
 constexpr char MODULE[] = "MDE";
 }  // namespace
 
-MarkdownEditorActivity::MarkdownEditorActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
-                                               std::string path)
-    : UiListActivity("MarkdownEditor", renderer, mappedInput, /*wantsTouchLongPress=*/true),
-      path_(std::move(path)) {}
+MarkdownEditorActivity::MarkdownEditorActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, std::string path)
+    : UiListActivity("MarkdownEditor", renderer, mappedInput, /*wantsTouchLongPress=*/true), path_(std::move(path)) {}
 
-MarkdownEditorActivity::MarkdownEditorActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
-                                               std::string path, std::vector<std::string> initialLines,
-                                               const bool trailingNewline)
+MarkdownEditorActivity::MarkdownEditorActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, std::string path,
+                                               std::vector<std::string> initialLines, const bool trailingNewline)
     : UiListActivity("MarkdownEditor", renderer, mappedInput, /*wantsTouchLongPress=*/true),
       path_(std::move(path)),
       lines_(std::move(initialLines)),
@@ -80,7 +77,6 @@ bool MarkdownEditorActivity::loadDocument() {
   std::string currentLine;
   currentLine.reserve(128);
   bool swallowLineFeed = false;
-  bool sawAnyByte = false;
   trailingNewline_ = false;
 
   uint8_t buffer[512];
@@ -94,7 +90,6 @@ bool MarkdownEditorActivity::loadDocument() {
 
     for (int i = 0; i < read; i++) {
       const char ch = static_cast<char>(buffer[i]);
-      sawAnyByte = true;
 
       if (swallowLineFeed) {
         swallowLineFeed = false;
@@ -102,15 +97,15 @@ bool MarkdownEditorActivity::loadDocument() {
       }
 
       if (ch == '\r' || ch == '\n') {
+        if (lines_.size() >= MAX_LINES) {
+          errorMessage_ = "Note exceeds editor limits";
+          return false;
+        }
         lines_.push_back(std::move(currentLine));
         currentLine.clear();
         currentLine.reserve(128);
         trailingNewline_ = true;
         swallowLineFeed = ch == '\r';
-        if (lines_.size() > MAX_LINES) {
-          errorMessage_ = "Note exceeds editor limits";
-          return false;
-        }
         continue;
       }
 
@@ -123,8 +118,14 @@ bool MarkdownEditorActivity::loadDocument() {
     }
   }
 
-  if (!trailingNewline_) lines_.push_back(std::move(currentLine));
-  if (!sawAnyByte || lines_.empty()) lines_.emplace_back();
+  if (!trailingNewline_) {
+    if (lines_.size() >= MAX_LINES) {
+      errorMessage_ = "Note exceeds editor limits";
+      return false;
+    }
+    lines_.push_back(std::move(currentLine));
+  }
+  if (lines_.empty()) lines_.emplace_back();
   dirty_ = false;
   return true;
 }
@@ -273,20 +274,19 @@ void MarkdownEditorActivity::editLine(const size_t index) {
   prompt += " ";
   prompt += std::to_string(index + 1);
 
-  startActivityForResult(
-      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, std::move(prompt), lines_[index], MAX_LINE_BYTES,
-                                              InputType::Text),
-      [this, index](const ActivityResult& result) {
-        if (result.isCancelled) return;
-        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
-        if (!keyboard || index >= lines_.size()) return;
+  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, std::move(prompt),
+                                                                 lines_[index], MAX_LINE_BYTES, InputType::Text),
+                         [this, index](const ActivityResult& result) {
+                           if (result.isCancelled) return;
+                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+                           if (!keyboard || index >= lines_.size()) return;
 
-        RenderLock lock(*this);
-        lines_[index] = keyboard->text;
-        markChanged();
-        nav.selected = static_cast<int>(index);
-        nav.follow(listCount());
-      });
+                           RenderLock lock(*this);
+                           lines_[index] = keyboard->text;
+                           markChanged();
+                           nav.selected = static_cast<int>(index);
+                           nav.follow(listCount());
+                         });
 }
 
 void MarkdownEditorActivity::insertLine(const size_t index, const bool editImmediately) {

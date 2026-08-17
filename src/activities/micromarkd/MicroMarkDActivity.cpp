@@ -76,15 +76,14 @@ void MicroMarkDActivity::activateIndex(const int index) {
 
 void MicroMarkDActivity::startNewNote() {
   rowItems_[NEW_NOTE_INDEX].subtitle = tr(STR_MICROMARKD_NEW_NOTE_DESC);
-  startActivityForResult(
-      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "New note title", "",
-                                              MAX_NOTE_TITLE_BYTES, InputType::Text),
-      [this](const ActivityResult& result) {
-        if (result.isCancelled) return;
-        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
-        if (!keyboard) return;
-        openNewNoteEditor(keyboard->text);
-      });
+  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "New note title", "",
+                                                                 MAX_NOTE_TITLE_BYTES, InputType::Text),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) return;
+                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+                           if (!keyboard) return;
+                           openNewNoteEditor(keyboard->text);
+                         });
 }
 
 std::string MicroMarkDActivity::uniqueNotePath(const std::string& filename) const {
@@ -130,15 +129,14 @@ void MicroMarkDActivity::openNewNoteEditor(const std::string& rawTitle) {
   lines.push_back("# " + title);
   lines.emplace_back();
 
-  startActivityForResult(
-      std::make_unique<MarkdownEditorActivity>(renderer, mappedInput, path, std::move(lines),
-                                               /*trailingNewline=*/true),
-      [](const ActivityResult& result) {
-        if (result.isCancelled) return;
-        const auto* file = std::get_if<FilePathResult>(&result.data);
-        if (!file || file->path.empty()) return;
-        activityManager.goToReader(file->path);
-      });
+  startActivityForResult(std::make_unique<MarkdownEditorActivity>(renderer, mappedInput, path, std::move(lines),
+                                                                  /*trailingNewline=*/true),
+                         [](const ActivityResult& result) {
+                           if (result.isCancelled) return;
+                           const auto* file = std::get_if<FilePathResult>(&result.data);
+                           if (!file || file->path.empty()) return;
+                           activityManager.goToReader(file->path);
+                         });
 }
 
 void MicroMarkDActivity::showCreateError() {
