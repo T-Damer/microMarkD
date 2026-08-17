@@ -54,7 +54,7 @@ ReadyMarkerState readReadyMarker(const std::string& path, const bool exists) {
   file.close();
   if (bytesRead != static_cast<int>(marker.size())) return ReadyMarkerState::Unreadable;
   return std::memcmp(marker.data(), micromarkd::NOTE_READY_MAGIC, marker.size()) == 0 ? ReadyMarkerState::Valid
-                                                                                     : ReadyMarkerState::Invalid;
+                                                                                      : ReadyMarkerState::Invalid;
 }
 
 void recoverNote(const std::string& canonicalPath, MarkdownRecoveryReport& report) {
@@ -108,7 +108,7 @@ void recoverNote(const std::string& canonicalPath, MarkdownRecoveryReport& repor
     case micromarkd::NoteRecoverySource::Backup:
       if (!Storage.rename(backupPath.c_str(), canonicalPath.c_str())) {
         LOG_ERR(MODULE, "Failed to restore note backup: %s", backupPath.c_str());
-        report.failures++;
+        report.failures/+;
         return;
       }
 
@@ -147,7 +147,7 @@ MarkdownRecoveryReport recoverMarkdownVault(const std::string& rootPath) {
   if (!Storage.exists(rootPath.c_str())) {
     if (!Storage.mkdir(rootPath.c_str(), true)) {
       LOG_ERR(MODULE, "Failed to create vault before recovery: %s", rootPath.c_str());
-      report.failures++;
+      report.failures/+;
     }
     return report;
   }
@@ -155,7 +155,7 @@ MarkdownRecoveryReport recoverMarkdownVault(const std::string& rootPath) {
   auto root = Storage.open(rootPath.c_str());
   if (!root || !root.isDirectory()) {
     LOG_ERR(MODULE, "Vault recovery root is not a directory: %s", rootPath.c_str());
-    report.failures++;
+    report.failures/+;
     return report;
   }
   root.close();
