@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "activities/micromarkd/MarkdownEditorActivity.h"
+#include "activities/micromarkd/MarkdownRecentActivity.h"
 #include "activities/micromarkd/MarkdownRecovery.h"
 #include "activities/micromarkd/MarkdownVaultActivity.h"
 #include "activities/util/KeyboardEntryActivity.h"
@@ -35,6 +36,7 @@ constexpr UIIcon menuIcons[MicroMarkDActivity::MENU_ITEM_COUNT] = {UIIcon::Folde
                                                                    UIIcon::File, UIIcon::Transfer};
 
 constexpr int VAULT_INDEX = 0;
+constexpr int RECENT_INDEX = 1;
 constexpr int NEW_NOTE_INDEX = 3;
 constexpr char VAULT_ROOT[] = "/vault";
 constexpr size_t MAX_NOTE_TITLE_BYTES = 96;
@@ -97,6 +99,11 @@ void MicroMarkDActivity::activateIndex(const int index) {
 
   if (index == VAULT_INDEX) {
     activityManager.pushActivity(std::make_unique<MarkdownVaultActivity>(renderer, mappedInput, VAULT_ROOT));
+    return;
+  }
+
+  if (index == RECENT_INDEX) {
+    activityManager.pushActivity(std::make_unique<MarkdownRecentActivity>(renderer, mappedInput));
     return;
   }
 

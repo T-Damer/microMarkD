@@ -155,6 +155,49 @@ std::string safeNoteFilename(const std::string_view title, const size_t maxBytes
   return safe + ".md";
 }
 
+bool isVaultMarkdownPath(const std::string_view path) {
+  constexpr std::string_view prefix = "/vault/";
+  if (!path.starts_with(prefix) || path.size() <= prefix.size()) return false;
+  if (!endsWithAsciiCaseInsensitive(path, ".md") && !endsWithAsciiCaseInsensitive(path, ".markdown")) return false;
+
+  const std::string_view relative = path.substr(prefix.size());
+  size_t componentStart = 0;
+  while (componentStart < relative.size()) {
+    const size_t slash = relative.find('/', componentStart);
+    const size_t componentEnd = slash == std::string_view::npos ? relative.size() : slash;
+    const std::string_view component = relative.substr(componentStart, componentEnd - componentStart);
+    if (component.empty() || component == "." || component == ".." || component.find('\\') != std::string_view::npos) {
+      return false;
+    }
+    if (slash == std::string_view::npos) break;
+    componentStart = slash + 1;
+  }
+  return true;
+}
+
+std::string vaultNoteDisplayName(const std::string_view path) {
+  if (!isVaultMarkdownPath(path)) return {};
+
+  const size_t slash = path.find_last_of('/');
+  std::string filename(path.substr(slash + 1));
+  if (endsWithAsciiCaseInsensitive(filename, ".markdown")) {
+    filename.resize(filename.size() - 9);
+  } else {
+    filename.resize(filename.size() - 3);
+  }
+  return filename;
+}
+
+std::string vaultNoteFolderLabel(const std::string_view path) {
+  if (!isVaultMarkdownPath(path)) return {};
+
+  constexpr std::string_view prefix = "/vault/";
+  const std::string_view relative = path.substr(prefix.size());
+  const size_t slash = relative.find_last_of('/');
+  if (slash == std::string_view::npos) return "Vault";
+  return std::string(relative.substr(0, slash));
+}
+
 std::vector<std::string> splitMarkdownLines(const std::string_view content, bool& trailingNewline) {
   std::vector<std::string> lines;
   trailingNewline = false;

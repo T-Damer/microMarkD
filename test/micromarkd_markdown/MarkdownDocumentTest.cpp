@@ -20,6 +20,30 @@ TEST(MarkdownDocument, TruncatesFilenameAtUtf8Boundary) {
   EXPECT_EQ(filename.size(), 24u);
 }
 
+TEST(MarkdownDocument, RecognisesOnlyCanonicalMarkdownPathsInsideVault) {
+  EXPECT_TRUE(micromarkd::isVaultMarkdownPath("/vault/Inbox.md"));
+  EXPECT_TRUE(micromarkd::isVaultMarkdownPath("/vault/Projects/MiniMed.MarkDown"));
+
+  EXPECT_FALSE(micromarkd::isVaultMarkdownPath("/vault"));
+  EXPECT_FALSE(micromarkd::isVaultMarkdownPath("/vault/"));
+  EXPECT_FALSE(micromarkd::isVaultMarkdownPath("/vault/Inbox.txt"));
+  EXPECT_FALSE(micromarkd::isVaultMarkdownPath("/other/Inbox.md"));
+  EXPECT_FALSE(micromarkd::isVaultMarkdownPath("/vault/../Inbox.md"));
+  EXPECT_FALSE(micromarkd::isVaultMarkdownPath("/vault/Projects/./Inbox.md"));
+  EXPECT_FALSE(micromarkd::isVaultMarkdownPath("/vault/Projects//Inbox.md"));
+  EXPECT_FALSE(micromarkd::isVaultMarkdownPath("/vault/Projects\\Inbox.md"));
+}
+
+TEST(MarkdownDocument, DerivesRecentNoteLabelsFromVaultPath) {
+  EXPECT_EQ(micromarkd::vaultNoteDisplayName("/vault/Inbox.md"), "Inbox");
+  EXPECT_EQ(micromarkd::vaultNoteFolderLabel("/vault/Inbox.md"), "Vault");
+  EXPECT_EQ(micromarkd::vaultNoteDisplayName("/vault/Projects/MiniMed.markdown"), "MiniMed");
+  EXPECT_EQ(micromarkd::vaultNoteFolderLabel("/vault/Projects/MiniMed.markdown"), "Projects");
+  EXPECT_EQ(micromarkd::vaultNoteFolderLabel("/vault/Projects/Active/MiniMed.md"), "Projects/Active");
+  EXPECT_TRUE(micromarkd::vaultNoteDisplayName("/outside/Note.md").empty());
+  EXPECT_TRUE(micromarkd::vaultNoteFolderLabel("/outside/Note.md").empty());
+}
+
 TEST(MarkdownDocument, NormalisesLineEndingsAndPreservesTrailingNewline) {
   bool trailingNewline = false;
   const auto lines = micromarkd::splitMarkdownLines("one\r\ntwo\rthree\n\n", trailingNewline);
