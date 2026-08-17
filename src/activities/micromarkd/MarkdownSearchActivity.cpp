@@ -238,7 +238,8 @@ void MarkdownSearchActivity::scanActiveNoteStep() {
     text.append(reinterpret_cast<const char*>(buffer.data()), readSize);
     const auto before = activeMatches_;
     micromarkd::matchSearchTerms(query_, text, activeMatches_);
-    if (activeSnippet_.empty() && before != activeMatches_ && micromarkd::anySearchTermMatched(query_, activeMatches_)) {
+    if (activeSnippet_.empty() && before != activeMatches_ &&
+        micromarkd::anySearchTermMatched(query_, activeMatches_)) {
       activeSnippet_ = micromarkd::makeSearchSnippet(text, query_, MAX_SNIPPET_BYTES);
     }
     if (micromarkd::allSearchTermsMatched(query_, activeMatches_)) break;
@@ -291,8 +292,8 @@ void MarkdownSearchActivity::finishActiveNote() {
   activeBytes_ = 0;
   activeMetadataMatch_ = false;
 
-  const bool forceUpdate = (resultAdded && results_.size() == 1) ||
-                           report_.filesScanned % PROGRESS_UPDATE_INTERVAL == 0;
+  const bool forceUpdate =
+      (resultAdded && results_.size() == 1) || report_.filesScanned % PROGRESS_UPDATE_INTERVAL == 0;
   updateProgress(forceUpdate);
   if (noteIndex_ >= notePaths_.size() || report_.resultLimitReached || report_.byteLimitReached) finishSearch();
 }
@@ -323,8 +324,8 @@ void MarkdownSearchActivity::updateProgress(const bool force) {
     header_ = "Indexing " + std::to_string(report_.filesQueued) + ": " + queryText_;
     emptyMessage_ = "Scanning vault...";
   } else if (phase_ == SearchPhase::Scanning) {
-    header_ = "Searching " + std::to_string(std::min(noteIndex_ + (activeFileOpen_ ? 1 : 0), notePaths_.size())) +
-              "/" + std::to_string(notePaths_.size()) + ": " + queryText_;
+    header_ = "Searching " + std::to_string(std::min(noteIndex_ + (activeFileOpen_ ? 1 : 0), notePaths_.size())) + "/" +
+              std::to_string(notePaths_.size()) + ": " + queryText_;
     emptyMessage_ = "Searching notes...";
   }
   rebuildRows();
