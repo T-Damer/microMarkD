@@ -1,223 +1,350 @@
 #include "ActivityManager.h"
 
-#include <Arduino.h>
-#include <GfxRenderer.h>
+#include <FontCacheManager.h>
+#include <FsHelpers.h>
+#include <HalDisplay.h>
 #include <HalPowerManager.h>
-#include <Logging.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
-#include <freertos/task.h>
+#include <Memory.h>
 
-#include <cassert>
-#include <memory>
-#include <utility>
+#include <algorithm>
 
-#include "CrossPointState.h"
-#include "MappedInputManager.h"
-#include "activities/Activity.h"
-#include "activities/boot_sleep/BootActivity.h"
-#include "activities/home/FileBrowserActivity.h"
-#include "activities/home/HomeActivity.h"
-#include "activities/reader/EpubReaderActivity.h"
-#include "activities/reader/ImageReaderActivity.h"
-#include "activities/reader/TxtReaderActivity.h"
-#include "activities/reader/XtcReaderActivity.h"
+#include "CrossPointSettings.h"
+#include "OpdsServerStore.h"
+#include "boot_sleep/BootActivity.h"
+#include "boot_sleep/SleepActivity.h"
+#include "browser/OpdsBookBrowserActivity.h"
+#include "home/CrashActivity.h"
+#include "home/FileBrowserActivity.h"
+#include "home/HomeActivity.h"
 #ifdef MICROMARKD_APP
-#include "activities/micromarkd/MicroMarkDActivity.h"
+#include "micromarkd/MicroMarkDActivity.h"
 #endif
-#include "activities/settings/SettingsActivity.h"
-#include "components/UiAppHost.h"
+#include "home/RecentBooksActivity.h"
+#include "network/CrossPointWebServerActivity.h"
+#include "reader/ReaderActivity.h"
+#include "settings/OpdsServerListActivity.h"
+#include "settings/SettingsActivity.h"
+#include "util/BmpViewerActivity.h"
+#include "util/FrontlightPanelActivity.h"
+#include "util/FullScreenMessageActivity.h"
 
-static const char* TAG = "ActivityManager";
+static portMUX_TYPE activityManagerSpinlock = portMUX_INITIALIZER_UNLOCKED;
 
-ActivityManager activityManager;
-
-ActivityManager::ActivityManager() {
-  renderingMutex = xSemaphoreCreateRecursiveMutex();
-  assert(renderingMutex != nullptr);
+void ActivityManager::begin() {
+#if defined(configNUM_CORES) && configNUM_CORES > 1
+  constexpr BaseType_t renderTaskCore = 1;
+#else
+  constexpr BaseType_t renderTaskCore = 0;
+#endif
+  xTaskCreatePinnedToCore(&renderTaskTrampoline, "ActivityManagerRender",
+                          8192,               // Stack size
+                          this,               // Parameters
+                          1,                  // Priority
+                          &renderTaskHandle,  // Task handle
+                          renderTaskCore  // Keep long renders/cover decodes off CPU 0's idle watchdog when available
+  );
+  assert(renderTaskHandle != nullptr && "Failed to create render task");
 }
 
-void ActivityManager::setup(GfxRenderer* renderer, MappedInputManager* mappedInput) {
-  this->renderer = renderer;
-  this->mappedInput = mappedInput;
+void ActivityManager::renderTaskTrampoline(void* param) {
+  auto* self = static_cast<ActivityManager*>(param);
+  self->renderTaskLoop();
 }
 
-void ActivityManager::start() {
-  assert(renderer != nullptr);
-  assert(mappedInput != nullptr);
-  assert(activityStack.empty());
-
-  pushActivity(std::make_unique<BootActivity>(*renderer, *mappedInput));
+void ActivityManager::renderTaskLoop() {
+  while (true) {
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    // Acquire the lock before reading currentActivity to avoid a TOCTOU race
+    // where the main task deletes the activity between the null-check and render().
+    RenderLock lock;
+    if (currentActivity) {
+      HalPowerManager::Lock powerLock;  // Ensure we don't go into low-power mode while rendering
+      // Night mode inverts only the reading surfaces (appliesNightMode):
+      // resolving the output polarity here, per render, means menus, popups,
+      // and every other activity revert to normal automatically.
+      display.setInverted(SETTINGS.screenInverted != 0 && currentActivity->appliesNightMode());
+      currentActivity->render(std::move(lock));
+    }
+    // Notify any task blocked in requestUpdateAndWait() that the render is done.
+    TaskHandle_t waiter = nullptr;
+    taskENTER_CRITICAL(&activityManagerSpinlock);
+    waiter = waitingTaskHandle;
+    waitingTaskHandle = nullptr;
+    taskEXIT_CRITICAL(&activityManagerSpinlock);
+    if (waiter) {
+      xTaskNotify(waiter, 1, eIncrement);
+    }
+  }
 }
 
 void ActivityManager::loop() {
-  if (activityStack.empty()) return;
+  if (currentActivity) {
+    if (!currentActivity->isHomeActivity() && mappedInput.wasHomeGesture()) {
+      if (currentActivity->handleHomeGesture()) {
+        return;
+      }
+      goHome();
+      return;
+    }
 
-  Activity* current = activityStack.back().activity.get();
-  current->loop();
+    if (currentActivity->name != "FrontlightPanel" && mappedInput.wasLightPanelGesture()) {
+      pushActivity(std::make_unique<FrontlightPanelActivity>(renderer, mappedInput));
+      return;
+    }
 
-  if (current != activityStack.back().activity.get()) return;
+    // Note: do not hold a lock here, the loop() method must be responsible for acquire one if needed
+    currentActivity->loop();
+  }
 
-  if (current->isFinished()) {
-    finishTopActivity();
+  while (pendingAction != PendingAction::None) {
+    if (pendingAction == PendingAction::Pop) {
+      RenderLock lock;
+
+      if (!currentActivity) {
+        // Should never happen in practice
+        LOG_ERR("ACT", "Pop set but currentActivity is null; ignoring pop request");
+        pendingAction = PendingAction::None;
+        continue;
+      }
+
+      ActivityResult pendingResult = std::move(currentActivity->result);
+
+      // Destroy the current activity
+      exitActivity(lock);
+      pendingAction = PendingAction::None;
+
+      if (stackActivities.empty()) {
+        LOG_DBG("ACT", "No more activities on stack, going home");
+        lock.unlock();  // goHome may acquire its own lock
+        goHome();
+        continue;  // Will launch goHome immediately
+
+      } else {
+        currentActivity = std::move(stackActivities.back());
+        stackActivities.pop_back();
+        LOG_DBG("ACT", "Popped from activity stack, new size = %zu", stackActivities.size());
+        // Handle result if necessary
+        if (currentActivity->resultHandler) {
+          LOG_DBG("ACT", "Handling result for popped activity");
+
+          // Move it here to avoid the case where handler calling another startActivityForResult()
+          auto handler = std::move(currentActivity->resultHandler);
+          currentActivity->resultHandler = nullptr;
+          lock.unlock();  // Handler may acquire its own lock
+          handler(pendingResult);
+        }
+
+        // Request an update to ensure the popped activity gets re-rendered
+        if (pendingAction == PendingAction::None) {
+          requestUpdate();
+        }
+
+        // Handler may request another pending action, we will handle it in the next loop iteration
+        continue;
+      }
+
+    } else if (pendingActivity) {
+      // Current activity has requested a new activity to be launched
+      RenderLock lock;
+
+      if (pendingAction == PendingAction::Replace) {
+        // Destroy the current activity
+        exitActivity(lock);
+        // Clear the stack
+        while (!stackActivities.empty()) {
+          stackActivities.back()->onExit();
+          stackActivities.pop_back();
+        }
+      } else if (pendingAction == PendingAction::Push) {
+        // Move current activity to stack
+        stackActivities.push_back(std::move(currentActivity));
+        LOG_DBG("ACT", "Pushed to activity stack, new size = %zu", stackActivities.size());
+      }
+      pendingAction = PendingAction::None;
+      currentActivity = std::move(pendingActivity);
+
+      lock.unlock();  // onEnter may acquire its own lock
+      currentActivity->onEnter();
+
+      // onEnter may request another pending action, we will handle it in the next loop iteration
+      continue;
+    }
+  }
+
+  if (requestedUpdate.exchange(false)) {
+    // Using direct notification to signal the render task to update
+    // Increment counter so multiple rapid calls won't be lost
+    if (renderTaskHandle) {
+      xTaskNotify(renderTaskHandle, 1, eIncrement);
+    }
   }
 }
 
-void ActivityManager::handleInput() {
-  if (activityStack.empty()) return;
-
-  Activity* current = activityStack.back().activity.get();
-  current->handleInput();
-}
-
-void ActivityManager::render() {
-  if (activityStack.empty()) return;
-
-  Activity* current = activityStack.back().activity.get();
-  current->render(RenderLock(*current));
-}
-
-void ActivityManager::pushActivity(std::unique_ptr<Activity> activity) {
-  assert(activity != nullptr);
-  assert(renderer != nullptr);
-  assert(mappedInput != nullptr);
-
-  if (!activityStack.empty()) activityStack.back().activity->onPause();
-
-  ActivityStackEntry entry;
-  entry.activity = std::move(activity);
-  activityStack.push_back(std::move(entry));
-  activityStack.back().activity->onEnter();
-  requestUpdate();
-}
-
-void ActivityManager::startActivityForResult(std::unique_ptr<Activity> activity, ActivityResultCallback callback) {
-  assert(activity != nullptr);
-  assert(callback != nullptr);
-  assert(renderer != nullptr);
-  assert(mappedInput != nullptr);
-
-  if (!activityStack.empty()) activityStack.back().activity->onPause();
-
-  ActivityStackEntry entry;
-  entry.activity = std::move(activity);
-  entry.callback = std::move(callback);
-  activityStack.push_back(std::move(entry));
-  activityStack.back().activity->onEnter();
-  requestUpdate();
-}
-
-void ActivityManager::finishTopActivity() {
-  if (activityStack.empty()) return;
-
-  ActivityStackEntry entry = std::move(activityStack.back());
-  activityStack.pop_back();
-  entry.activity->onExit();
-
-  if (entry.callback) entry.callback(entry.activity->getResult());
-
-  if (!activityStack.empty()) {
-    activityStack.back().activity->onResume();
-    requestUpdate();
+void ActivityManager::exitActivity(const RenderLock& lock) {
+  // Note: lock must be held by the caller
+  if (currentActivity) {
+    currentActivity->onExit();
+    currentActivity.reset();
   }
 }
 
-void ActivityManager::finishAllActivities() {
-  while (!activityStack.empty()) {
-    ActivityStackEntry entry = std::move(activityStack.back());
-    activityStack.pop_back();
-    entry.activity->onExit();
-  }
-}
-
-void ActivityManager::goHome() {
-  finishAllActivities();
-#ifdef MICROMARKD_APP
-  pushActivity(std::make_unique<MicroMarkDActivity>(*renderer, *mappedInput));
-#else
-  pushActivity(std::make_unique<HomeActivity>(*renderer, *mappedInput));
-#endif
-}
-
-void ActivityManager::goToFileBrowser(const std::string& initialPath) {
-  pushActivity(std::make_unique<FileBrowserActivity>(*renderer, *mappedInput, initialPath));
-}
-
-void ActivityManager::goToReader(const std::string& path) {
-  if (path.empty()) return;
-
-  if (FsHelpers::hasEpubExtension(path)) {
-    pushActivity(std::make_unique<EpubReaderActivity>(*renderer, *mappedInput, path));
-  } else if (FsHelpers::hasXtcExtension(path)) {
-    pushActivity(std::make_unique<XtcReaderActivity>(*renderer, *mappedInput, path));
-  } else if (FsHelpers::hasImageExtension(path)) {
-    pushActivity(std::make_unique<ImageReaderActivity>(*renderer, *mappedInput, path));
-  } else if (FsHelpers::hasTxtExtension(path) || FsHelpers::hasMarkdownExtension(path)) {
-    pushActivity(std::make_unique<TxtReaderActivity>(*renderer, *mappedInput, path));
+void ActivityManager::replaceActivity(std::unique_ptr<Activity>&& newActivity) {
+  // Note: no lock here, this is usually called by loop() and we may run into deadlock
+  if (currentActivity) {
+    // Defer launch if we're currently in an activity, to avoid deleting the current activity
+    // leading to the "delete this" problem
+    pendingActivity = std::move(newActivity);
+    pendingAction = PendingAction::Replace;
   } else {
-    LOG_ERR(TAG, "Unsupported reader file: %s", path.c_str());
+    // No current activity, safe to launch immediately
+    currentActivity = std::move(newActivity);
+    currentActivity->onEnter();
   }
 }
 
-void ActivityManager::goToSettings() { pushActivity(std::make_unique<SettingsActivity>(*renderer, *mappedInput)); }
-
-void ActivityManager::onHomePressed() {
-  if (activityStack.empty()) return;
-
-  // Ignore Home while already at an activity explicitly marked as Home.
-  if (activityStack.back().activity->isHomeActivity()) return;
-
-  goHome();
+void ActivityManager::goToFileTransfer() {
+  replaceActivity(std::make_unique<CrossPointWebServerActivity>(renderer, mappedInput));
 }
 
-void ActivityManager::requestUpdate(const bool force) {
-  if (activityStack.empty()) return;
+void ActivityManager::goToSettings() { replaceActivity(std::make_unique<SettingsActivity>(renderer, mappedInput)); }
 
-  activityStack.back().activity->requestUpdate(force);
+void ActivityManager::goToFileBrowser(std::string path) {
+  replaceActivity(std::make_unique<FileBrowserActivity>(renderer, mappedInput, std::move(path)));
 }
 
-bool ActivityManager::needsUpdate() const {
-  if (activityStack.empty()) return false;
-  return activityStack.back().activity->needsUpdate();
+void ActivityManager::goToRecentBooks() {
+  replaceActivity(std::make_unique<RecentBooksActivity>(renderer, mappedInput));
 }
 
-bool ActivityManager::needsForceUpdate() const {
-  if (activityStack.empty()) return false;
-  return activityStack.back().activity->needsForceUpdate();
+void ActivityManager::goToBrowser() {
+  const auto& servers = OPDS_STORE.getServers();
+  // Skip the server picker when there's only one server configured
+  if (servers.size() == 1) {
+    replaceActivity(std::make_unique<OpdsBookBrowserActivity>(renderer, mappedInput, servers[0]));
+  } else {
+    replaceActivity(std::make_unique<OpdsServerListActivity>(renderer, mappedInput, true));
+  }
 }
 
-void ActivityManager::clearUpdateRequest() {
-  if (activityStack.empty()) return;
-  activityStack.back().activity->clearUpdateRequest();
+void ActivityManager::goToReader(std::string path, const bool allowFastInitialRefresh) {
+  if (path.empty()) {
+    goToFileBrowser("/");
+    return;
+  }
+
+  if (FsHelpers::hasBmpExtension(path) || FsHelpers::hasPngExtension(path)) {
+    auto activity = makeUniqueNoThrow<BmpViewerActivity>(renderer, mappedInput, std::move(path));
+    if (!activity) {
+      LOG_ERR("ACT", "OOM: bitmap viewer activity");
+      return;
+    }
+    replaceActivity(std::move(activity));
+    return;
+  }
+
+  auto activity = ReaderActivity::create(renderer, mappedInput, std::move(path), allowFastInitialRefresh);
+  if (activity) {
+    replaceActivity(std::move(activity));
+  }
 }
 
-void ActivityManager::setRenderTaskHandle(TaskHandle_t handle) { renderTaskHandle = handle; }
-
-TaskHandle_t ActivityManager::getRenderTaskHandle() const { return renderTaskHandle; }
-
-void ActivityManager::notifyRenderComplete() {
-  TaskHandle_t waiting = nullptr;
-  taskENTER_CRITICAL(&activityManagerSpinlock);
-  waiting = waitingTaskHandle;
-  waitingTaskHandle = nullptr;
-  taskEXIT_CRITICAL(&activityManagerSpinlock);
-
-  if (waiting != nullptr) xTaskNotifyGive(waiting);
+void ActivityManager::goToSleep(bool fromTimeout) {
+  replaceActivity(std::make_unique<SleepActivity>(renderer, mappedInput, fromTimeout));
+  loop();  // Important: sleep screen must be rendered immediately, the caller will go to sleep right after this returns
 }
 
+void ActivityManager::goToBoot() { replaceActivity(std::make_unique<BootActivity>(renderer, mappedInput)); }
+
+void ActivityManager::goToFullScreenMessage(std::string message, EpdFontFamily::Style style) {
+  replaceActivity(std::make_unique<FullScreenMessageActivity>(renderer, mappedInput, std::move(message), style));
+}
+
+void ActivityManager::goHome(HomeMenuItem initialMenuItem) {
+#ifdef MICROMARKD_APP
+  (void)initialMenuItem;
+  replaceActivity(std::make_unique<MicroMarkDActivity>(renderer, mappedInput));
+  return;
+#endif
+
+  if (initialMenuItem == HomeMenuItem::NONE && currentActivity) {
+    const auto& activityName = currentActivity->name;
+    if (activityName == "FileBrowser") {
+      initialMenuItem = HomeMenuItem::FILE_BROWSER;
+    } else if (activityName == "RecentBooks") {
+      initialMenuItem = HomeMenuItem::RECENTS;
+    } else if (activityName == "OpdsBookBrowser") {
+      initialMenuItem = HomeMenuItem::OPDS_BROWSER;
+    } else if (activityName == "CrossPointWebServer") {
+      initialMenuItem = HomeMenuItem::FILE_TRANSFER;
+    } else if (activityName == "Settings") {
+      initialMenuItem = HomeMenuItem::SETTINGS_MENU;
+    }
+  }
+  replaceActivity(std::make_unique<HomeActivity>(renderer, mappedInput, initialMenuItem));
+}
+void ActivityManager::goToCrashReport() { replaceActivity(std::make_unique<CrashActivity>(renderer, mappedInput)); }
+
+void ActivityManager::pushActivity(std::unique_ptr<Activity>&& activity) {
+  if (pendingActivity) {
+    // Should never happen in practice
+    LOG_ERR("ACT", "pendingActivity while pushActivity is not expected");
+    pendingActivity.reset();
+  }
+  pendingActivity = std::move(activity);
+  pendingAction = PendingAction::Push;
+}
+
+void ActivityManager::popActivity() {
+  if (pendingActivity) {
+    // Should never happen in practice
+    LOG_ERR("ACT", "pendingActivity while popActivity is not expected");
+    pendingActivity.reset();
+  }
+  pendingAction = PendingAction::Pop;
+}
+
+bool ActivityManager::preventAutoSleep() const { return currentActivity && currentActivity->preventAutoSleep(); }
+
+bool ActivityManager::isReaderActivity() const {
+  return std::any_of(stackActivities.begin(), stackActivities.end(),
+                     [](const auto& activity) { return activity->isReaderActivity(); }) ||
+         (currentActivity && currentActivity->isReaderActivity());
+}
+
+bool ActivityManager::handleForcedRefresh() { return currentActivity && currentActivity->handleForcedRefresh(); }
+
+bool ActivityManager::skipLoopDelay() const { return currentActivity && currentActivity->skipLoopDelay(); }
+
+ScreenshotInfo ActivityManager::getScreenshotInfo() const {
+  if (currentActivity) {
+    return currentActivity->getScreenshotInfo();
+  }
+  return {};
+}
+
+void ActivityManager::requestUpdate(bool immediate) {
+  if (immediate) {
+    if (renderTaskHandle) {
+      xTaskNotify(renderTaskHandle, 1, eIncrement);
+    }
+  } else {
+    // Deferring the update until current loop is finished
+    // This is to avoid multiple updates being requested in the same loop
+    requestedUpdate = true;
+  }
+}
 void ActivityManager::requestUpdateAndWait() {
-  requestUpdate();
+  if (!renderTaskHandle) {
+    return;
+  }
 
-  if (renderTaskHandle == nullptr) return;
-
-  const TaskHandle_t currTaskHandler = xTaskGetCurrentTaskHandle();
-  bool isRenderTask = false;
-  bool alreadyWaiting = false;
-  bool holdingRenderLock = false;
+  // Atomic section to perform checks
   taskENTER_CRITICAL(&activityManagerSpinlock);
-  isRenderTask = (currTaskHandler == renderTaskHandle);
-  alreadyWaiting = (waitingTaskHandle != nullptr);
-  holdingRenderLock = (mutexHolder == currTaskHandler);
+  auto currTaskHandler = xTaskGetCurrentTaskHandle();
+  auto mutexHolder = xSemaphoreGetMutexHolder(renderingMutex);
+  bool isRenderTask = (currTaskHandler == renderTaskHandle);
+  bool alreadyWaiting = (waitingTaskHandle != nullptr);
+  bool holdingRenderLock = (mutexHolder == currTaskHandler);
   if (!alreadyWaiting && !isRenderTask && !holdingRenderLock) {
     waitingTaskHandle = currTaskHandler;
   }
@@ -257,19 +384,24 @@ RenderLock::RenderLock([[maybe_unused]] Activity&) {
 }
 
 RenderLock::~RenderLock() {
-  if (isLocked) xSemaphoreGive(activityManager.renderingMutex);
-}
-
-RenderLock::RenderLock(RenderLock&& other) noexcept {
-  isLocked = other.isLocked;
-  other.isLocked = false;
-}
-
-RenderLock& RenderLock::operator=(RenderLock&& other) noexcept {
-  if (this != &other) {
-    if (isLocked) xSemaphoreGive(activityManager.renderingMutex);
-    isLocked = other.isLocked;
-    other.isLocked = false;
+  if (isLocked) {
+    xSemaphoreGive(activityManager.renderingMutex);
+    isLocked = false;
   }
-  return *this;
 }
+
+void RenderLock::unlock() {
+  if (isLocked) {
+    xSemaphoreGive(activityManager.renderingMutex);
+    isLocked = false;
+  }
+}
+
+/**
+ *
+ * Checks if renderingMutex is busy.
+ *
+ * @return true if renderingMutex is busy, otherwise false.
+ *
+ */
+bool RenderLock::peek() { return xQueuePeek(activityManager.renderingMutex, NULL, 0) != pdTRUE; };
