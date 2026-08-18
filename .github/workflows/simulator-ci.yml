@@ -1,21 +1,12 @@
 name: microMarkD Simulator CI
 
 on:
-  push:
-    branches:
-      - agent/micromarkd-bootstrap
-    paths:
-      - '.github/workflows/simulator-ci.yml'
-      - 'platformio.simulator.ini'
-      - 'scripts/simulator_host_flags.py'
-      - 'scripts/run_x4pro_simulator.py'
-      - 'lib/**'
-      - 'src/**'
   pull_request:
     paths:
       - '.github/workflows/simulator-ci.yml'
       - 'platformio.simulator.ini'
       - 'scripts/simulator_host_flags.py'
+      - 'scripts/run_x4pro_simulator.py'
       - 'lib/**'
       - 'src/**'
 
