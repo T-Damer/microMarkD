@@ -24,9 +24,7 @@ bool ensureIndexRoot() {
   return valid;
 }
 
-bool removeIfPresent(const std::string& path) {
-  return !Storage.exists(path.c_str()) || Storage.remove(path.c_str());
-}
+bool removeIfPresent(const std::string& path) { return !Storage.exists(path.c_str()) || Storage.remove(path.c_str()); }
 
 void discardInvalidRecord(const std::string& cachePath, const char* reason) {
   LOG_ERR(MODULE, "Discarding Markdown index (%s): %s", reason, cachePath.c_str());

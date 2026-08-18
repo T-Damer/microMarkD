@@ -94,8 +94,7 @@ TEST(MarkdownIndex, PreservesMissingAndEmptyFinalNewlineLayouts) {
   const std::vector<std::string> lines = {"# One", "tail"};
   const auto noTrailing = micromarkd::buildMarkdownIndexRecord("/vault/NoTrailing.md", lines, false);
   const auto trailing = micromarkd::buildMarkdownIndexRecord("/vault/Trailing.md", lines, true);
-  const auto emptyTrailing =
-      micromarkd::buildMarkdownIndexRecord("/vault/Empty.md", std::vector<std::string>{}, true);
+  const auto emptyTrailing = micromarkd::buildMarkdownIndexRecord("/vault/Empty.md", std::vector<std::string>{}, true);
 
   EXPECT_EQ(noTrailing.sourceSize, 10u);
   EXPECT_EQ(noTrailing.sourceFingerprint,
