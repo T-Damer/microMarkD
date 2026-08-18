@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "MicroMarkDMarkdown/MarkdownIndex.h"
+#include "MicroMarkDMarkdown/MarkdownIndexDocument.h"
 
 TEST(MarkdownIndex, ExtractsFrontmatterAliasesAndTags) {
   micromarkd::MarkdownIndexBuilder builder;
@@ -70,6 +71,41 @@ TEST(MarkdownIndex, EnforcesBoundedMetadataCollections) {
   const auto& metadata = builder.metadata();
   EXPECT_EQ(metadata.aliases.size(), micromarkd::MAX_INDEX_ALIASES);
   EXPECT_TRUE(metadata.truncated);
+}
+
+TEST(MarkdownIndex, BuildsRecordUsingExactEditorByteLayout) {
+  const std::vector<std::string> lines = {"# First", "Body [[Other]] #tag", "## Second"};
+  const auto record = micromarkd::buildMarkdownIndexRecord("/vault/Test.md", lines, true);
+
+  EXPECT_EQ(record.path, "/vault/Test.md");
+  EXPECT_EQ(record.sourceSize, 38u);
+  EXPECT_EQ(record.sourceFingerprint, 0x7019EDD40B611B5FULL);
+  EXPECT_EQ(record.metadata.tags, (std::vector<std::string>{"tag"}));
+  ASSERT_EQ(record.metadata.headings.size(), 2u);
+  EXPECT_EQ(record.metadata.headings[0].sourceOffset, 0u);
+  EXPECT_EQ(record.metadata.headings[0].text, "First");
+  EXPECT_EQ(record.metadata.headings[1].sourceOffset, 28u);
+  EXPECT_EQ(record.metadata.headings[1].text, "Second");
+  ASSERT_EQ(record.metadata.links.size(), 1u);
+  EXPECT_EQ(record.metadata.links[0].target, "Other");
+}
+
+TEST(MarkdownIndex, PreservesMissingAndEmptyFinalNewlineLayouts) {
+  const std::vector<std::string> lines = {"# One", "tail"};
+  const auto noTrailing = micromarkd::buildMarkdownIndexRecord("/vault/NoTrailing.md", lines, false);
+  const auto trailing = micromarkd::buildMarkdownIndexRecord("/vault/Trailing.md", lines, true);
+  const auto emptyTrailing =
+      micromarkd::buildMarkdownIndexRecord("/vault/Empty.md", std::vector<std::string>{}, true);
+
+  EXPECT_EQ(noTrailing.sourceSize, 10u);
+  EXPECT_EQ(noTrailing.sourceFingerprint,
+            micromarkd::updateMarkdownFingerprint(micromarkd::MARKDOWN_FINGERPRINT_SEED, "# One\ntail"));
+  EXPECT_EQ(trailing.sourceSize, 11u);
+  EXPECT_EQ(trailing.sourceFingerprint,
+            micromarkd::updateMarkdownFingerprint(micromarkd::MARKDOWN_FINGERPRINT_SEED, "# One\ntail\n"));
+  EXPECT_EQ(emptyTrailing.sourceSize, 1u);
+  EXPECT_EQ(emptyTrailing.sourceFingerprint,
+            micromarkd::updateMarkdownFingerprint(micromarkd::MARKDOWN_FINGERPRINT_SEED, "\n"));
 }
 
 TEST(MarkdownIndex, RoundTripsVersionedDisposableRecord) {

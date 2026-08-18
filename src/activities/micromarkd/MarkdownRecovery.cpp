@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "util/BookCacheUtils.h"
 
 namespace {
@@ -65,6 +66,11 @@ void recoverNote(const std::string& canonicalPath, MarkdownRecoveryReport& repor
   const bool temporaryExists = Storage.exists(temporaryPath.c_str());
   const bool backupExists = Storage.exists(backupPath.c_str());
   const bool readyExists = Storage.exists(readyPath.c_str());
+  if ((temporaryExists || backupExists || readyExists) && !removeMarkdownIndexRecord(canonicalPath)) {
+    LOG_ERR(MODULE, "Failed to invalidate metadata index before note recovery: %s", canonicalPath.c_str());
+    report.failures++;
+  }
+
   ReadyMarkerState markerState = ReadyMarkerState::Missing;
   if (!canonicalExists && temporaryExists) {
     markerState = readReadyMarker(readyPath, readyExists);

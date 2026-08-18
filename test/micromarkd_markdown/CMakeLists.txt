@@ -11,6 +11,7 @@ add_executable(MicroMarkDMarkdownTest
   ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownIndex.cpp
   ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownIndexYaml.cpp
   ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownIndexCodec.cpp
+  ${REPO_ROOT}/lib/MicroMarkDMarkdown/MarkdownIndexDocument.cpp
 )
 
 target_include_directories(MicroMarkDMarkdownTest PRIVATE

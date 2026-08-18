@@ -16,6 +16,7 @@
 #include <variant>
 
 #include "activities/micromarkd/MarkdownEditorActivity.h"
+#include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "activities/micromarkd/MarkdownRecovery.h"
 #include "activities/util/ConfirmationActivity.h"
 #include "components/UITheme.h"
@@ -208,6 +209,10 @@ void MarkdownVaultActivity::confirmDelete(const std::string& entry, const std::s
                            if (!Storage.remove(notePath.c_str())) {
                              LOG_ERR("MDV", "Failed to delete note: %s", notePath.c_str());
                              return;
+                           }
+                           if (!removeMarkdownIndexRecord(notePath)) {
+                             LOG_ERR("MDV", "Deleted note but failed to remove its metadata index: %s",
+                                     notePath.c_str());
                            }
 
                            loadEntries();

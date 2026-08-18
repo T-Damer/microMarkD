@@ -7,6 +7,7 @@
 #include <HalStorage.h>
 #include <I18n.h>
 #include <Logging.h>
+#include <MarkdownIndexDocument.h>
 #include <MarkdownRecoveryPlan.h>
 #include <Txt.h>
 
@@ -15,6 +16,7 @@
 #include <utility>
 #include <variant>
 
+#include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 
@@ -245,6 +247,11 @@ bool MarkdownEditorActivity::saveDocumentAtomic() {
   Txt note(path_, "/.crosspoint");
   if (!note.clearCache()) {
     LOG_ERR(MODULE, "Saved note but failed to clear its reading cache: %s", path_.c_str());
+  }
+
+  const auto indexRecord = micromarkd::buildMarkdownIndexRecord(path_, lines_, trailingNewline_);
+  if (!writeMarkdownIndexRecord(indexRecord)) {
+    LOG_ERR(MODULE, "Saved note but failed to update its metadata index: %s", path_.c_str());
   }
   return true;
 }
