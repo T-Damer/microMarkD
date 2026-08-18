@@ -19,6 +19,10 @@ on:
       - 'lib/**'
       - 'src/**'
 
+concurrency:
+  group: micromarkd-simulator-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
