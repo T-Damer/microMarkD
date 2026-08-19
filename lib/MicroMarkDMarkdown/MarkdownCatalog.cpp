@@ -67,7 +67,6 @@ std::string normalizeRelativePath(const std::string_view base, const std::string
         } else {
           parts.emplace_back(part);
         }
-
       }
       if (end == path.size()) break;
       start = end + 1;
