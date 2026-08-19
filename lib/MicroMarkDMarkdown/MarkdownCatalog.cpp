@@ -67,6 +67,7 @@ std::string normalizeRelativePath(const std::string_view base, const std::string
         } else {
           parts.emplace_back(part);
         }
+
       }
       if (end == path.size()) break;
       start = end + 1;
@@ -81,10 +82,6 @@ std::string normalizeRelativePath(const std::string_view base, const std::string
     result += parts[index];
   }
   return stripMarkdownExtension(result);
-}
-
-bool sameCatalogKey(const std::string_view left, const std::string_view right) {
-  return normalizeCatalogKey(left) == normalizeCatalogKey(right);
 }
 
 bool noteHasTag(const MarkdownCatalogNote& note, const std::string_view tag) {
@@ -176,12 +173,13 @@ std::string MarkdownCatalog::resolveTarget(const std::string_view sourcePath, co
   target = trimNoteTitle(target);
   if (target.empty()) return {};
   std::replace(target.begin(), target.end(), '\\', '/');
+  const bool rootOnly = !target.empty() && target.front() == '/';
   while (!target.empty() && target.front() == '/') target.erase(target.begin());
   target = stripMarkdownExtension(target);
   if (target.empty()) return {};
 
   const std::string sourceFolder = sourceFolderRelative(sourcePath);
-  const std::string relativeCandidate = normalizeRelativePath(sourceFolder, target);
+  const std::string relativeCandidate = rootOnly ? std::string{} : normalizeRelativePath(sourceFolder, target);
   const std::string rootCandidate = normalizeRelativePath({}, target);
 
   const auto findPath = [this](const std::string& candidate) -> std::string {
@@ -202,7 +200,7 @@ std::string MarkdownCatalog::resolveTarget(const std::string_view sourcePath, co
     if (!resolved.empty()) return resolved;
   }
 
-  if (target.find('/') != std::string::npos) return {};
+  if (rootOnly || target.find('/') != std::string::npos) return {};
 
   const std::string targetKey = normalizeCatalogKey(target);
   std::string resolved;

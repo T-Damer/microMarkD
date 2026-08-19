@@ -38,7 +38,7 @@ TEST(MarkdownCatalog, ResolvesCurrentFolderBeforeVaultRoot) {
   catalog.finalize();
 
   EXPECT_EQ(catalog.resolveTarget("/vault/Projects/Source.md", "Plan"), "/vault/Projects/Plan.md");
-  EXPECT_EQ(catalog.resolveTarget("/vault/Projects/Source.md", "/Plan"), "/vault/Projects/Plan.md");
+  EXPECT_EQ(catalog.resolveTarget("/vault/Projects/Source.md", "/Plan"), "/vault/Plan.md");
   EXPECT_EQ(catalog.resolveTarget("/vault/Projects/Source.md", "../Plan"), "/vault/Plan.md");
 }
 
@@ -79,6 +79,7 @@ TEST(MarkdownCatalog, RejectsTraversalOutsideVault) {
   catalog.finalize();
 
   EXPECT_TRUE(catalog.resolveTarget("/vault/Folder/Source.md", "../../Safe").empty());
+  EXPECT_TRUE(catalog.resolveTarget("/vault/Folder/Source.md", "/../Safe").empty());
 }
 
 TEST(MarkdownCatalog, BacklinkHelperUsesResolvedAlias) {
