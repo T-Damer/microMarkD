@@ -14,6 +14,21 @@ TEST(MarkdownDocument, BuildsSafeFatFilename) {
   EXPECT_EQ(micromarkd::safeNoteFilename("com1"), "_com1.md");
 }
 
+TEST(MarkdownDocument, BuildsSafeVaultPathComponentsWithoutForcingMarkdownExtension) {
+  EXPECT_EQ(micromarkd::safeVaultPathComponent("  Projects / Active  "), "Projects Active");
+  EXPECT_EQ(micromarkd::safeVaultPathComponent("Folder.md"), "Folder.md");
+  EXPECT_EQ(micromarkd::safeVaultPathComponent("../Secrets\\today:*?"), "Secrets today");
+  EXPECT_EQ(micromarkd::safeVaultPathComponent("..."), "Untitled");
+  EXPECT_EQ(micromarkd::safeVaultPathComponent("AUX"), "_AUX");
+  EXPECT_EQ(micromarkd::safeVaultPathComponent("lpt9"), "_lpt9");
+}
+
+TEST(MarkdownDocument, TruncatesPathComponentsAtUtf8Boundary) {
+  const std::string component = micromarkd::safeVaultPathComponent("Очень длинное название", 21);
+  EXPECT_EQ(component, "Очень длин");
+  EXPECT_LE(component.size(), 21u);
+}
+
 TEST(MarkdownDocument, TruncatesFilenameAtUtf8Boundary) {
   const std::string filename = micromarkd::safeNoteFilename("Очень длинное название заметки", 24);
   EXPECT_EQ(filename, "Очень длинн.md");
