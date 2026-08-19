@@ -8,8 +8,10 @@
 namespace micromarkd {
 
 constexpr size_t MAX_NOTE_FILENAME_BYTES = 100;
+constexpr size_t MAX_VAULT_COMPONENT_BYTES = 100;
 
 std::string trimNoteTitle(std::string_view title);
+std::string safeVaultPathComponent(std::string_view value, size_t maxBytes = MAX_VAULT_COMPONENT_BYTES);
 std::string safeNoteFilename(std::string_view title, size_t maxBytes = MAX_NOTE_FILENAME_BYTES);
 bool isVaultMarkdownPath(std::string_view path);
 std::string vaultNoteDisplayName(std::string_view path);
