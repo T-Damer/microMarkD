@@ -22,8 +22,7 @@ MarkdownTagsActivity::MarkdownTagsActivity(GfxRenderer& renderer, MappedInputMan
 
 void MarkdownTagsActivity::onEnter() {
   UiListActivity::onEnter();
-  reloadCatalog();
-  showTags();
+  beginIndexing();
 }
 
 void MarkdownTagsActivity::onExit() {
@@ -35,10 +34,45 @@ void MarkdownTagsActivity::onExit() {
   rowItems_.clear();
 }
 
-void MarkdownTagsActivity::reloadCatalog() {
+void MarkdownTagsActivity::loop() {
+  UiListActivity::loop();
+  if (mode_ == ViewMode::Indexing) advanceIndexing();
+}
+
+void MarkdownTagsActivity::beginIndexing() {
   catalog_ = micromarkd::MarkdownCatalog{};
-  report_ = {};
-  if (!loadMarkdownCatalogFromCache(catalog_, report_)) report_.invalidRecords++;
+  mode_ = ViewMode::Indexing;
+  selectedTag_.clear();
+  notePaths_.clear();
+  rowItems_.clear();
+  rowLabels_.clear();
+  rowSubtitles_.clear();
+  rowValues_.clear();
+  nav.reset();
+  header_ = "Tags: indexing";
+  emptyMessage_ = "Building vault metadata index...";
+  indexer_.begin();
+  requestUpdate();
+}
+
+void MarkdownTagsActivity::advanceIndexing() {
+  if (indexer_.hasRecord()) {
+    catalog_.addRecord(indexer_.takeRecord());
+  } else if (!indexer_.complete()) {
+    indexer_.step();
+    if (indexer_.hasRecord()) catalog_.addRecord(indexer_.takeRecord());
+  }
+
+  if (indexer_.complete() && !indexer_.hasRecord()) {
+    finishIndexing();
+  } else {
+    updateIndexProgress();
+  }
+}
+
+void MarkdownTagsActivity::finishIndexing() {
+  catalog_.finalize();
+  showTags();
 }
 
 void MarkdownTagsActivity::showTags() {
@@ -46,8 +80,9 @@ void MarkdownTagsActivity::showTags() {
   selectedTag_.clear();
   notePaths_.clear();
   nav.reset();
-  header_ = report_.partial() || catalog_.truncated() ? "Tags (partial)" : "Tags";
-  emptyMessage_ = catalog_.tags().empty() ? "No indexed tags yet" : "";
+  const bool partial = indexer_.report().partial() || catalog_.truncated();
+  header_ = partial ? "Tags (partial)" : "Tags";
+  emptyMessage_ = catalog_.tags().empty() ? "No tags found" : "";
   rebuildTagRows();
   requestUpdate();
 }
@@ -60,6 +95,20 @@ void MarkdownTagsActivity::showNotesForTag(const std::string& tag) {
   header_ = "#" + tag;
   emptyMessage_ = notePaths_.empty() ? "No notes with this tag" : "";
   rebuildNoteRows();
+  requestUpdate();
+}
+
+void MarkdownTagsActivity::updateIndexProgress() {
+  const size_t done = indexer_.completedNotes();
+  const size_t total = indexer_.queuedNotes();
+  RenderLock lock(*this);
+  if (indexer_.phase() == MarkdownVaultIndexer::Phase::Enumerating) {
+    header_ = "Tags: finding notes";
+    emptyMessage_ = "Scanning vault folders...";
+  } else {
+    header_ = "Tags: indexing " + std::to_string(done) + "/" + std::to_string(total);
+    emptyMessage_ = "Reading Markdown metadata...";
+  }
   requestUpdate();
 }
 
@@ -104,7 +153,7 @@ void MarkdownTagsActivity::rebuildNoteRows() {
 int MarkdownTagsActivity::listCount() const { return static_cast<int>(rowItems_.size()); }
 
 void MarkdownTagsActivity::activateIndex(const int index) {
-  if (index < 0 || index >= listCount()) return;
+  if (mode_ == ViewMode::Indexing || index < 0 || index >= listCount()) return;
   app.clearTapFlash();
   nav.selected = index;
 
@@ -138,11 +187,10 @@ void MarkdownTagsActivity::showNoteActions(const int index) {
 
 void MarkdownTagsActivity::editNote(const std::string& path) {
   startActivityForResult(std::make_unique<MarkdownEditorActivity>(renderer, mappedInput, path),
-                         [this](const ActivityResult& result) {
+                         [](const ActivityResult& result) {
                            if (result.isCancelled) return;
                            const auto* file = std::get_if<FilePathResult>(&result.data);
                            if (!file || file->path.empty()) return;
-                           reloadCatalog();
                            activityManager.goToReader(file->path);
                          });
 }
@@ -187,7 +235,7 @@ void MarkdownTagsActivity::buildScreen(UiScreen& screen) {
 }
 
 void MarkdownTagsActivity::drawFooter() {
-  const bool hasRows = !rowItems_.empty();
+  const bool hasRows = mode_ != ViewMode::Indexing && !rowItems_.empty();
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), hasRows ? tr(STR_OPEN) : "", hasRows ? tr(STR_DIR_UP) : "",
                                             hasRows ? tr(STR_DIR_DOWN) : "");
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);

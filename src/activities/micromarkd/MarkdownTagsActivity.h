@@ -4,11 +4,12 @@
 
 #include <MarkdownCatalog.h>
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 #include "activities/UiListActivity.h"
-#include "activities/micromarkd/MarkdownCatalogStorage.h"
+#include "activities/micromarkd/MarkdownVaultIndexer.h"
 #include "components/OptionPopup.h"
 
 class MarkdownTagsActivity final : public UiListActivity {
@@ -17,14 +18,15 @@ class MarkdownTagsActivity final : public UiListActivity {
 
   void onEnter() override;
   void onExit() override;
+  void loop() override;
   void render(RenderLock&&) override;
 
  private:
-  enum class ViewMode : uint8_t { Tags, Notes };
+  enum class ViewMode : uint8_t { Indexing, Tags, Notes };
 
   micromarkd::MarkdownCatalog catalog_;
-  MarkdownCatalogLoadReport report_;
-  ViewMode mode_ = ViewMode::Tags;
+  MarkdownVaultIndexer indexer_;
+  ViewMode mode_ = ViewMode::Indexing;
   std::string selectedTag_;
   std::string header_;
   std::string emptyMessage_;
@@ -44,13 +46,16 @@ class MarkdownTagsActivity final : public UiListActivity {
   const char* headerTitle() const override;
   void drawFooter() override;
 
-  void reloadCatalog();
+  void beginIndexing();
+  void advanceIndexing();
+  void finishIndexing();
   void showTags();
   void showNotesForTag(const std::string& tag);
   void rebuildTagRows();
   void rebuildNoteRows();
   void showNoteActions(int index);
   void editNote(const std::string& path);
+  void updateIndexProgress();
 };
 
 #endif  // MICROMARKD_APP

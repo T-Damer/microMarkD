@@ -52,7 +52,6 @@ void MarkdownBacklinksActivity::beginScan() {
   rowLabels_.clear();
   rowSubtitles_.clear();
   cacheIndex_ = 0;
-  invalidRecords_ = 0;
   partial_ = false;
 
   if (!micromarkd::isVaultMarkdownPath(targetPath_)) {
@@ -63,71 +62,70 @@ void MarkdownBacklinksActivity::beginScan() {
     return;
   }
 
-  micromarkd::MarkdownIndexRecord targetRecord;
-  targetRecord.path = targetPath_;
-  catalog_.addRecord(targetRecord);
-
-  bool truncated = false;
-  if (!listMarkdownIndexCacheFiles(cachePaths_, MAX_CACHE_RECORDS, truncated)) {
-    phase_ = Phase::Complete;
-    partial_ = true;
-    header_ = "Backlinks (partial)";
-    emptyMessage_ = "Could not read metadata index";
-    requestUpdate();
-    return;
-  }
-
-  partial_ = truncated;
-  phase_ = Phase::LoadingCatalog;
-  header_ = "Backlinks: " + micromarkd::vaultNoteDisplayName(targetPath_);
-  emptyMessage_ = "Loading index...";
+  phase_ = Phase::IndexingVault;
+  header_ = "Backlinks: indexing";
+  emptyMessage_ = "Building vault metadata index...";
+  indexer_.begin();
   requestUpdate();
 }
 
 void MarkdownBacklinksActivity::advanceScan() {
-  if (phase_ == Phase::LoadingCatalog) {
-    loadCatalogStep();
+  if (phase_ == Phase::IndexingVault) {
+    indexVaultStep();
   } else if (phase_ == Phase::ScanningLinks) {
     scanBacklinksStep();
   }
 }
 
-void MarkdownBacklinksActivity::loadCatalogStep() {
-  size_t processed = 0;
-  while (cacheIndex_ < cachePaths_.size() && processed < RECORDS_PER_STEP) {
-    micromarkd::MarkdownIndexRecord record;
-    if (loadValidatedMarkdownIndexCache(cachePaths_[cacheIndex_], record)) {
-      catalog_.addRecord(record);
-    } else {
-      invalidRecords_++;
-      partial_ = true;
-    }
-    cacheIndex_++;
-    processed++;
+void MarkdownBacklinksActivity::indexVaultStep() {
+  if (indexer_.hasRecord()) {
+    catalog_.addRecord(indexer_.takeRecord());
+  } else if (!indexer_.complete()) {
+    indexer_.step();
+    if (indexer_.hasRecord()) catalog_.addRecord(indexer_.takeRecord());
   }
 
-  if (cacheIndex_ >= cachePaths_.size()) {
-    catalog_.finalize();
-    partial_ = partial_ || catalog_.truncated();
-    cacheIndex_ = 0;
-    phase_ = Phase::ScanningLinks;
+  if (indexer_.complete() && !indexer_.hasRecord()) {
+    beginLinkScan();
+  } else {
+    updateProgress();
   }
+}
+
+void MarkdownBacklinksActivity::beginLinkScan() {
+  micromarkd::MarkdownIndexRecord targetRecord;
+  targetRecord.path = targetPath_;
+  catalog_.addRecord(targetRecord);
+  catalog_.finalize();
+  partial_ = indexer_.report().partial() || catalog_.truncated();
+
+  bool truncated = false;
+  if (!listMarkdownIndexCacheFiles(cachePaths_, MAX_CACHE_RECORDS, truncated)) {
+    partial_ = true;
+    finishScan();
+    return;
+  }
+  partial_ = partial_ || truncated;
+  cacheIndex_ = 0;
+  phase_ = Phase::ScanningLinks;
   updateProgress();
+  if (cachePaths_.empty()) finishScan();
 }
 
 void MarkdownBacklinksActivity::scanBacklinksStep() {
   size_t processed = 0;
   while (cacheIndex_ < cachePaths_.size() && processed < RECORDS_PER_STEP && resultPaths_.size() < MAX_RESULTS) {
     micromarkd::MarkdownIndexRecord record;
-    if (loadValidatedMarkdownIndexCache(cachePaths_[cacheIndex_], record) && record.path != targetPath_) {
-      bool matched = false;
+    const bool valid = loadValidatedMarkdownIndexCache(cachePaths_[cacheIndex_], record);
+    if (!valid) {
+      partial_ = true;
+    } else if (record.path != targetPath_) {
       for (const auto& link : record.metadata.links) {
         if (micromarkd::catalogLinkTargetsPath(catalog_, record.path, link, targetPath_)) {
-          matched = true;
+          resultPaths_.push_back(record.path);
           break;
         }
       }
-      if (matched) resultPaths_.push_back(record.path);
     }
     cacheIndex_++;
     processed++;
@@ -147,7 +145,7 @@ void MarkdownBacklinksActivity::finishScan() {
   resultPaths_.erase(std::unique(resultPaths_.begin(), resultPaths_.end()), resultPaths_.end());
   header_ = partial_ ? "Backlinks (partial): " + micromarkd::vaultNoteDisplayName(targetPath_)
                      : "Backlinks: " + micromarkd::vaultNoteDisplayName(targetPath_);
-  emptyMessage_ = resultPaths_.empty() ? "No indexed backlinks" : "";
+  emptyMessage_ = resultPaths_.empty() ? "No backlinks found" : "";
   rebuildRows();
   requestUpdate();
 }
@@ -155,14 +153,19 @@ void MarkdownBacklinksActivity::finishScan() {
 void MarkdownBacklinksActivity::updateProgress() {
   if (phase_ == Phase::Complete) return;
   RenderLock lock(*this);
-  if (phase_ == Phase::LoadingCatalog) {
-    header_ = "Backlinks: loading " + std::to_string(cacheIndex_) + "/" + std::to_string(cachePaths_.size());
-    emptyMessage_ = "Loading aliases and paths...";
+  if (phase_ == Phase::IndexingVault) {
+    if (indexer_.phase() == MarkdownVaultIndexer::Phase::Enumerating) {
+      header_ = "Backlinks: finding notes";
+      emptyMessage_ = "Scanning vault folders...";
+    } else {
+      header_ = "Backlinks: indexing " + std::to_string(indexer_.completedNotes()) + "/" +
+                std::to_string(indexer_.queuedNotes());
+      emptyMessage_ = "Reading Markdown metadata...";
+    }
   } else {
     header_ = "Backlinks: scanning " + std::to_string(cacheIndex_) + "/" + std::to_string(cachePaths_.size());
-    emptyMessage_ = "Scanning links...";
+    emptyMessage_ = "Resolving wikilinks...";
   }
-  rebuildRows();
   requestUpdate();
 }
 
@@ -216,7 +219,7 @@ void MarkdownBacklinksActivity::showNoteActions(const int index) {
 
 void MarkdownBacklinksActivity::editNote(const std::string& path) {
   startActivityForResult(std::make_unique<MarkdownEditorActivity>(renderer, mappedInput, path),
-                         [this](const ActivityResult& result) {
+                         [](const ActivityResult& result) {
                            if (result.isCancelled) return;
                            const auto* file = std::get_if<FilePathResult>(&result.data);
                            if (!file || file->path.empty()) return;

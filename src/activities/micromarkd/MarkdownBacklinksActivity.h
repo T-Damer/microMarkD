@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "activities/UiListActivity.h"
+#include "activities/micromarkd/MarkdownVaultIndexer.h"
 #include "components/OptionPopup.h"
 
 class MarkdownBacklinksActivity final : public UiListActivity {
@@ -22,7 +23,7 @@ class MarkdownBacklinksActivity final : public UiListActivity {
   void render(RenderLock&&) override;
 
  private:
-  enum class Phase : uint8_t { LoadingCatalog, ScanningLinks, Complete };
+  enum class Phase : uint8_t { IndexingVault, ScanningLinks, Complete };
 
   static constexpr size_t MAX_CACHE_RECORDS = micromarkd::MAX_CATALOG_NOTES;
   static constexpr size_t RECORDS_PER_STEP = 4;
@@ -31,12 +32,12 @@ class MarkdownBacklinksActivity final : public UiListActivity {
   std::string targetPath_;
   std::string header_;
   std::string emptyMessage_;
+  MarkdownVaultIndexer indexer_;
   micromarkd::MarkdownCatalog catalog_;
   std::vector<std::string> cachePaths_;
   size_t cacheIndex_ = 0;
   Phase phase_ = Phase::Complete;
   bool partial_ = false;
-  size_t invalidRecords_ = 0;
 
   std::vector<std::string> resultPaths_;
   std::vector<std::string> rowLabels_;
@@ -54,7 +55,8 @@ class MarkdownBacklinksActivity final : public UiListActivity {
 
   void beginScan();
   void advanceScan();
-  void loadCatalogStep();
+  void indexVaultStep();
+  void beginLinkScan();
   void scanBacklinksStep();
   void finishScan();
   void rebuildRows();
