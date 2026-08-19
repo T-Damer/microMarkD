@@ -26,15 +26,8 @@ inline freeink::ui::ThemeTokens uiThemeTokens(const freeink::ui::GfxRendererTarg
   // inward past the covered side. Bezel truth is per-board data
   // (BoardConfig::ViewableInsets); lists render in the portrait UI frame, so
   // the panel-native portrait insets apply directly.
-#ifdef SIMULATOR
-  // crossink-simulator's compact BoardProfile shim predates ViewableInsets.
-  // FreeInk's BoardProfile default for both side insets is 3 px, and X4 Pro
-  // currently uses that default, so preserve the real-device geometry here.
-  tokens.listScrollInset = 3;
-#else
   const auto& vi = BoardConfig::ACTIVE.viewableInsets;
   tokens.listScrollInset = static_cast<int16_t>(metrics.listScrollSide == 1 ? vi.left : vi.right);
-#endif
   // Screen::header()/status() band height. Without this the SDK's
   // line-height-derived default applies and fui-drawn headers (OPDS) come out
   // a different height than every GUI.drawHeader band.

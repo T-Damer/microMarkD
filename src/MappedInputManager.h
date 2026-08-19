@@ -1,6 +1,5 @@
 #pragma once
 
-#include <BoardConfig.h>
 #include <HalGPIO.h>
 
 class GfxRenderer;
