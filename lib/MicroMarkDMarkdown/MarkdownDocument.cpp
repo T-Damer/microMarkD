@@ -88,32 +88,16 @@ bool isReservedFatStem(const std::string_view stem) {
   return false;
 }
 
-}  // namespace
+std::string sanitizeFatComponent(const std::string_view input, const size_t maxBytes) {
+  if (maxBytes == 0) return {};
 
-std::string trimNoteTitle(const std::string_view title) {
-  size_t start = 0;
-  while (start < title.size() && isAsciiWhitespace(static_cast<unsigned char>(title[start]))) start++;
-
-  size_t end = title.size();
-  while (end > start && isAsciiWhitespace(static_cast<unsigned char>(title[end - 1]))) end--;
-  return std::string(title.substr(start, end - start));
-}
-
-std::string safeNoteFilename(const std::string_view title, const size_t maxBytes) {
-  std::string stem = trimNoteTitle(title);
-  if (endsWithAsciiCaseInsensitive(stem, ".markdown")) {
-    stem.resize(stem.size() - 9);
-  } else if (endsWithAsciiCaseInsensitive(stem, ".md")) {
-    stem.resize(stem.size() - 3);
-  }
-  stem = trimNoteTitle(stem);
-
+  const std::string trimmed = trimNoteTitle(input);
   std::string safe;
-  safe.reserve(stem.size());
+  safe.reserve(trimmed.size());
   bool pendingSpace = false;
 
-  for (size_t i = 0; i < stem.size();) {
-    const unsigned char ch = static_cast<unsigned char>(stem[i]);
+  for (size_t i = 0; i < trimmed.size();) {
+    const unsigned char ch = static_cast<unsigned char>(trimmed[i]);
     if (ch < 0x80) {
       if (isAsciiWhitespace(ch) || isUnsafeFatCharacter(ch)) {
         pendingSpace = !safe.empty();
@@ -129,7 +113,7 @@ std::string safeNoteFilename(const std::string_view title, const size_t maxBytes
     }
 
     const size_t length = utf8SequenceLength(ch);
-    if (length == 0 || !validUtf8Sequence(stem, i, length)) {
+    if (length == 0 || !validUtf8Sequence(trimmed, i, length)) {
       pendingSpace = !safe.empty();
       i++;
       continue;
@@ -137,22 +121,56 @@ std::string safeNoteFilename(const std::string_view title, const size_t maxBytes
 
     if (pendingSpace && !safe.empty() && safe.back() != ' ') safe.push_back(' ');
     pendingSpace = false;
-    safe.append(stem, i, length);
+    safe.append(trimmed, i, length);
     i += length;
   }
 
   trimUnsafeEdges(safe);
   if (safe.empty()) safe = "Untitled";
-  if (isReservedFatStem(safe)) safe.insert(safe.begin(), '_');
+
+  bool reserved = isReservedFatStem(safe);
+  const size_t contentLimit = reserved && maxBytes > 1 ? maxBytes - 1 : maxBytes;
+  safe = truncateUtf8(safe, contentLimit);
+  trimUnsafeEdges(safe);
+  if (safe.empty()) safe = truncateUtf8("Untitled", contentLimit);
+  if (safe.empty()) safe = "_";
+
+  reserved = isReservedFatStem(safe);
+  if (reserved) {
+    if (maxBytes == 1) return "_";
+    safe = truncateUtf8(safe, maxBytes - 1);
+    safe.insert(safe.begin(), '_');
+  }
+  if (safe.size() > maxBytes) safe = truncateUtf8(safe, maxBytes);
+  return safe;
+}
+
+}  // namespace
+
+std::string trimNoteTitle(const std::string_view title) {
+  size_t start = 0;
+  while (start < title.size() && isAsciiWhitespace(static_cast<unsigned char>(title[start]))) start++;
+
+  size_t end = title.size();
+  while (end > start && isAsciiWhitespace(static_cast<unsigned char>(title[end - 1]))) end--;
+  return std::string(title.substr(start, end - start));
+}
+
+std::string safeVaultPathComponent(const std::string_view value, const size_t maxBytes) {
+  return sanitizeFatComponent(value, maxBytes);
+}
+
+std::string safeNoteFilename(const std::string_view title, const size_t maxBytes) {
+  std::string stem = trimNoteTitle(title);
+  if (endsWithAsciiCaseInsensitive(stem, ".markdown")) {
+    stem.resize(stem.size() - 9);
+  } else if (endsWithAsciiCaseInsensitive(stem, ".md")) {
+    stem.resize(stem.size() - 3);
+  }
+  stem = trimNoteTitle(stem);
 
   const size_t stemLimit = maxBytes > 3 ? maxBytes - 3 : 1;
-  safe = truncateUtf8(safe, stemLimit);
-  trimUnsafeEdges(safe);
-  if (safe.empty()) safe = truncateUtf8("Untitled", stemLimit);
-  if (safe.empty()) safe = "U";
-  if (isReservedFatStem(safe)) safe.insert(safe.begin(), '_');
-
-  return safe + ".md";
+  return sanitizeFatComponent(stem, stemLimit) + ".md";
 }
 
 bool isVaultMarkdownPath(const std::string_view path) {
