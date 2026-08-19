@@ -17,6 +17,7 @@
 #include "activities/micromarkd/MarkdownRecentActivity.h"
 #include "activities/micromarkd/MarkdownRecovery.h"
 #include "activities/micromarkd/MarkdownSearchActivity.h"
+#include "activities/micromarkd/MarkdownTagsActivity.h"
 #include "activities/micromarkd/MarkdownVaultActivity.h"
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
@@ -25,21 +26,12 @@
 namespace fui = freeink::ui;
 
 namespace {
-constexpr StrId menuItems[MicroMarkDActivity::MENU_ITEM_COUNT] = {
-    StrId::STR_MICROMARKD_VAULT, StrId::STR_MICROMARKD_RECENT, StrId::STR_MICROMARKD_SEARCH,
-    StrId::STR_MICROMARKD_NEW_NOTE, StrId::STR_MICROMARKD_SYNC};
-
-constexpr StrId menuDescriptions[MicroMarkDActivity::MENU_ITEM_COUNT] = {
-    StrId::STR_MICROMARKD_VAULT_DESC, StrId::STR_MICROMARKD_RECENT_DESC, StrId::STR_MICROMARKD_SEARCH_DESC,
-    StrId::STR_MICROMARKD_NEW_NOTE_DESC, StrId::STR_MICROMARKD_SYNC_DESC};
-
-constexpr UIIcon menuIcons[MicroMarkDActivity::MENU_ITEM_COUNT] = {UIIcon::Folder, UIIcon::Recent, UIIcon::Text,
-                                                                   UIIcon::File, UIIcon::Transfer};
-
 constexpr int VAULT_INDEX = 0;
 constexpr int RECENT_INDEX = 1;
 constexpr int SEARCH_INDEX = 2;
-constexpr int NEW_NOTE_INDEX = 3;
+constexpr int TAGS_INDEX = 3;
+constexpr int NEW_NOTE_INDEX = 4;
+constexpr int SYNC_INDEX = 5;
 constexpr char VAULT_ROOT[] = "/vault";
 constexpr size_t MAX_NOTE_TITLE_BYTES = 96;
 constexpr size_t MAX_SEARCH_QUERY_BYTES = 96;
@@ -47,14 +39,28 @@ constexpr size_t MAX_SEARCH_QUERY_BYTES = 96;
 
 MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
     : UiListActivity("MicroMarkD", renderer, mappedInput) {
-  for (int i = 0; i < MENU_ITEM_COUNT; i++) {
+  const auto setTranslatedRow = [this](const int index, const StrId label, const StrId description, const UIIcon icon) {
     fui::ListItem item{};
-    item.label = I18N.get(menuItems[i]);
-    item.subtitle = I18N.get(menuDescriptions[i]);
-    item.icon = listIconFor(menuIcons[i], 32);
-    item.actionValue = static_cast<int16_t>(i);
-    rowItems_[i] = item;
-  }
+    item.label = I18N.get(label);
+    item.subtitle = I18N.get(description);
+    item.icon = listIconFor(icon, 32);
+    item.actionValue = static_cast<int16_t>(index);
+    rowItems_[index] = item;
+  };
+
+  setTranslatedRow(VAULT_INDEX, StrId::STR_MICROMARKD_VAULT, StrId::STR_MICROMARKD_VAULT_DESC, UIIcon::Folder);
+  setTranslatedRow(RECENT_INDEX, StrId::STR_MICROMARKD_RECENT, StrId::STR_MICROMARKD_RECENT_DESC, UIIcon::Recent);
+  setTranslatedRow(SEARCH_INDEX, StrId::STR_MICROMARKD_SEARCH, StrId::STR_MICROMARKD_SEARCH_DESC, UIIcon::Text);
+
+  fui::ListItem tags{};
+  tags.label = "Tags";
+  tags.subtitle = "Browse indexed tags and tagged notes";
+  tags.icon = listIconFor(UIIcon::Text, 32);
+  tags.actionValue = TAGS_INDEX;
+  rowItems_[TAGS_INDEX] = tags;
+
+  setTranslatedRow(NEW_NOTE_INDEX, StrId::STR_MICROMARKD_NEW_NOTE, StrId::STR_MICROMARKD_NEW_NOTE_DESC, UIIcon::File);
+  setTranslatedRow(SYNC_INDEX, StrId::STR_MICROMARKD_SYNC, StrId::STR_MICROMARKD_SYNC_DESC, UIIcon::Transfer);
 }
 
 void MicroMarkDActivity::onEnter() {
@@ -112,6 +118,11 @@ void MicroMarkDActivity::activateIndex(const int index) {
 
   if (index == SEARCH_INDEX) {
     startSearch();
+    return;
+  }
+
+  if (index == TAGS_INDEX) {
+    activityManager.pushActivity(std::make_unique<MarkdownTagsActivity>(renderer, mappedInput));
     return;
   }
 
