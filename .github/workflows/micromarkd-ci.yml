@@ -1,15 +1,17 @@
 name: microMarkD CI
 
 on:
-  push:
-    branches:
-      - agent/micromarkd-bootstrap
   pull_request:
     paths:
       - '.github/workflows/micromarkd-ci.yml'
       - 'lib/**'
       - 'src/**'
       - 'platformio.ini'
+  workflow_dispatch:
+
+concurrency:
+  group: micromarkd-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
