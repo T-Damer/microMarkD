@@ -14,9 +14,8 @@ TEST(MarkdownIndexStream, PreservesOffsetsAcrossSplitCrLfChunks) {
   const auto record = builder.finish("/vault/Test.md");
 
   EXPECT_EQ(record.sourceSize, 33u);
-  EXPECT_EQ(record.sourceFingerprint,
-            micromarkd::updateMarkdownFingerprint(micromarkd::MARKDOWN_FINGERPRINT_SEED,
-                                                   "# One\r\nbody\r## Two\n[[Other]] #tag"));
+  EXPECT_EQ(record.sourceFingerprint, micromarkd::updateMarkdownFingerprint(micromarkd::MARKDOWN_FINGERPRINT_SEED,
+                                                                            "# One\r\nbody\r## Two\n[[Other]] #tag"));
   ASSERT_EQ(record.metadata.headings.size(), 2u);
   EXPECT_EQ(record.metadata.headings[0].sourceOffset, 0u);
   EXPECT_EQ(record.metadata.headings[0].text, "One");
