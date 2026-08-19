@@ -43,7 +43,7 @@ class MarkdownCatalog {
 };
 
 std::string normalizeCatalogKey(std::string_view value);
-bool catalogLinkTargetsPath(const MarkdownCatalog& catalog, std::string_view sourcePath,
-                            const MarkdownIndexLink& link, std::string_view targetPath);
+bool catalogLinkTargetsPath(const MarkdownCatalog& catalog, std::string_view sourcePath, const MarkdownIndexLink& link,
+                            std::string_view targetPath);
 
 }  // namespace micromarkd

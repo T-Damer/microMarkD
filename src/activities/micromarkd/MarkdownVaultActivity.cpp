@@ -15,6 +15,7 @@
 #include <utility>
 #include <variant>
 
+#include "activities/micromarkd/MarkdownBacklinksActivity.h"
 #include "activities/micromarkd/MarkdownEditorActivity.h"
 #include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "activities/micromarkd/MarkdownRecovery.h"
@@ -176,8 +177,8 @@ void MarkdownVaultActivity::editNote(const std::string& notePath) {
 }
 
 void MarkdownVaultActivity::showNoteActions(const std::string& entry, const std::string& notePath) {
-  const char* options[] = {tr(STR_OPEN), "Edit note", tr(STR_DELETE)};
-  popup_.show("Note actions", options, 3, 1, [this, entry, notePath](const int option) {
+  const char* options[] = {tr(STR_OPEN), "Edit note", "Backlinks", tr(STR_DELETE)};
+  popup_.show("Note actions", options, 4, 1, [this, entry, notePath](const int option) {
     switch (option) {
       case 0:
         openNote(notePath);
@@ -186,6 +187,9 @@ void MarkdownVaultActivity::showNoteActions(const std::string& entry, const std:
         editNote(notePath);
         break;
       case 2:
+        activityManager.pushActivity(std::make_unique<MarkdownBacklinksActivity>(renderer, mappedInput, notePath));
+        break;
+      case 3:
         confirmDelete(entry, notePath);
         break;
       default:

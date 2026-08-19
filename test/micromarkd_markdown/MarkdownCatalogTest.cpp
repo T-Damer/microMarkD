@@ -89,10 +89,10 @@ TEST(MarkdownCatalog, BacklinkHelperUsesResolvedAlias) {
 
   micromarkd::MarkdownIndexLink aliasLink{"DM", "Treatment"};
   micromarkd::MarkdownIndexLink localHeading{"", "Local"};
-  EXPECT_TRUE(micromarkd::catalogLinkTargetsPath(catalog, "/vault/Notes/Source.md", aliasLink,
-                                                  "/vault/Medicine/Diabetes.md"));
-  EXPECT_FALSE(micromarkd::catalogLinkTargetsPath(catalog, "/vault/Notes/Source.md", localHeading,
-                                                   "/vault/Notes/Source.md"));
+  EXPECT_TRUE(
+      micromarkd::catalogLinkTargetsPath(catalog, "/vault/Notes/Source.md", aliasLink, "/vault/Medicine/Diabetes.md"));
+  EXPECT_FALSE(
+      micromarkd::catalogLinkTargetsPath(catalog, "/vault/Notes/Source.md", localHeading, "/vault/Notes/Source.md"));
 }
 
 TEST(MarkdownCatalog, MarksCatalogTruncatedWhenMetadataIsIncomplete) {
