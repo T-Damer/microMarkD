@@ -21,6 +21,7 @@ class MarkdownVaultActivity final : public UiListActivity {
 
  private:
   static constexpr size_t NAME_BUFFER_SIZE = 500;
+  static constexpr int ACTION_ROW_COUNT = 2;
 
   std::string path_;
   std::string header_;
@@ -44,6 +45,12 @@ class MarkdownVaultActivity final : public UiListActivity {
   bool normalisePath();
   void loadEntries();
   void rebuildRows();
+  void startNewNoteHere();
+  void openNewNoteEditor(const std::string& rawTitle);
+  void startNewFolder();
+  void createFolder(const std::string& rawName);
+  std::string uniqueNotePath(const std::string& filename) const;
+  std::string uniqueFolderPath(const std::string& component) const;
   void openDirectory(const std::string& entry);
   void openNote(const std::string& fullPath);
   void editNote(const std::string& fullPath);
