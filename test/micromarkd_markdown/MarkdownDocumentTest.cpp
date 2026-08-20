@@ -25,7 +25,7 @@ TEST(MarkdownDocument, BuildsSafeVaultPathComponentsWithoutForcingMarkdownExtens
 
 TEST(MarkdownDocument, TruncatesPathComponentsAtUtf8Boundary) {
   const std::string component = micromarkd::safeVaultPathComponent("Очень длинное название", 21);
-  EXPECT_EQ(component, "Очень длин");
+  EXPECT_EQ(component, "Очень длинн");
   EXPECT_LE(component.size(), 21u);
 }
 
@@ -50,14 +50,12 @@ TEST(MarkdownDocument, RecognisesOnlyCanonicalMarkdownPathsInsideVault) {
 }
 
 TEST(MarkdownDocument, RebasesOnlyExactFolderDescendants) {
-  EXPECT_EQ(micromarkd::rebaseVaultPath("/vault/Projects", "/vault/Projects", "/vault/Archive"),
-            "/vault/Archive");
+  EXPECT_EQ(micromarkd::rebaseVaultPath("/vault/Projects", "/vault/Projects", "/vault/Archive"), "/vault/Archive");
   EXPECT_EQ(micromarkd::rebaseVaultPath("/vault/Projects/MiniMed.md", "/vault/Projects", "/vault/Archive"),
             "/vault/Archive/MiniMed.md");
   EXPECT_EQ(micromarkd::rebaseVaultPath("/vault/Projects/Nested/Note.md", "/vault/Projects", "/vault/Archive"),
             "/vault/Archive/Nested/Note.md");
-  EXPECT_TRUE(
-      micromarkd::rebaseVaultPath("/vault/Projects2/Note.md", "/vault/Projects", "/vault/Archive").empty());
+  EXPECT_TRUE(micromarkd::rebaseVaultPath("/vault/Projects2/Note.md", "/vault/Projects", "/vault/Archive").empty());
 }
 
 TEST(MarkdownDocument, DerivesRecentNoteLabelsFromVaultPath) {
