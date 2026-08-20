@@ -49,6 +49,17 @@ TEST(MarkdownDocument, RecognisesOnlyCanonicalMarkdownPathsInsideVault) {
   EXPECT_FALSE(micromarkd::isVaultMarkdownPath("/vault/Projects\\Inbox.md"));
 }
 
+TEST(MarkdownDocument, RebasesOnlyExactFolderDescendants) {
+  EXPECT_EQ(micromarkd::rebaseVaultPath("/vault/Projects", "/vault/Projects", "/vault/Archive"),
+            "/vault/Archive");
+  EXPECT_EQ(micromarkd::rebaseVaultPath("/vault/Projects/MiniMed.md", "/vault/Projects", "/vault/Archive"),
+            "/vault/Archive/MiniMed.md");
+  EXPECT_EQ(micromarkd::rebaseVaultPath("/vault/Projects/Nested/Note.md", "/vault/Projects", "/vault/Archive"),
+            "/vault/Archive/Nested/Note.md");
+  EXPECT_TRUE(
+      micromarkd::rebaseVaultPath("/vault/Projects2/Note.md", "/vault/Projects", "/vault/Archive").empty());
+}
+
 TEST(MarkdownDocument, DerivesRecentNoteLabelsFromVaultPath) {
   EXPECT_EQ(micromarkd::vaultNoteDisplayName("/vault/Inbox.md"), "Inbox");
   EXPECT_EQ(micromarkd::vaultNoteFolderLabel("/vault/Inbox.md"), "Vault");
