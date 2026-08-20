@@ -365,14 +365,15 @@ void MarkdownVaultActivity::showFolderActions(const std::string& entry, const st
 }
 
 void MarkdownVaultActivity::startRenameNote(const std::string& entry, const std::string& notePath) {
-  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "Rename note", displayName(entry),
-                                                                 MAX_ENTRY_NAME_BYTES, InputType::Text),
-                         [this, notePath](const ActivityResult& result) {
-                           if (result.isCancelled) return;
-                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
-                           if (!keyboard) return;
-                           renameNote(notePath, keyboard->text);
-                         });
+  startActivityForResult(
+      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "Rename note", displayName(entry),
+                                              MAX_ENTRY_NAME_BYTES, InputType::Text),
+      [this, notePath](const ActivityResult& result) {
+        if (result.isCancelled) return;
+        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+        if (!keyboard) return;
+        renameNote(notePath, keyboard->text);
+      });
 }
 
 void MarkdownVaultActivity::migrateNoteState(const std::string& oldPath, const std::string& newPath) {
@@ -420,14 +421,15 @@ void MarkdownVaultActivity::renameNote(const std::string& oldPath, const std::st
 }
 
 void MarkdownVaultActivity::startRenameFolder(const std::string& entry, const std::string& folderPath) {
-  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "Rename folder", displayName(entry),
-                                                                 MAX_ENTRY_NAME_BYTES, InputType::Text),
-                         [this, folderPath](const ActivityResult& result) {
-                           if (result.isCancelled) return;
-                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
-                           if (!keyboard) return;
-                           renameFolder(folderPath, keyboard->text);
-                         });
+  startActivityForResult(
+      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "Rename folder", displayName(entry),
+                                              MAX_ENTRY_NAME_BYTES, InputType::Text),
+      [this, folderPath](const ActivityResult& result) {
+        if (result.isCancelled) return;
+        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+        if (!keyboard) return;
+        renameFolder(folderPath, keyboard->text);
+      });
 }
 
 bool MarkdownVaultActivity::collectMarkdownFiles(const std::string& rootPath, std::vector<std::string>& files) {
@@ -603,9 +605,9 @@ void MarkdownVaultActivity::buildScreen(UiScreen& screen) {
 }
 
 void MarkdownVaultActivity::drawFooter() {
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), listCount() == 0 ? "" : tr(STR_OPEN),
-                                            listCount() == 0 ? "" : tr(STR_DIR_UP),
-                                            listCount() == 0 ? "" : tr(STR_DIR_DOWN));
+  const auto labels =
+      mappedInput.mapLabels(tr(STR_BACK), listCount() == 0 ? "" : tr(STR_OPEN), listCount() == 0 ? "" : tr(STR_DIR_UP),
+                            listCount() == 0 ? "" : tr(STR_DIR_DOWN));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 }
 
