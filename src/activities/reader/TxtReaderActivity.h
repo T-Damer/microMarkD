@@ -1,6 +1,9 @@
 #pragma once
 
 #include <Txt.h>
+#ifdef MICROMARKD_APP
+#include <MarkdownLineParser.h>
+#endif
 
 #include <memory>
 #include <string>
@@ -22,6 +25,35 @@ class TxtReaderActivity final : public ReaderActivity {
   int viewportWidth = 0;
   bool initialized = false;
 
+#ifdef MICROMARKD_APP
+  struct MarkdownLinkHit {
+    int x = 0;
+    int y = 0;
+    int width = 0;
+    int height = 0;
+    std::string target;
+  };
+
+  struct MarkdownHistoryEntry {
+    std::string path;
+    int page = 0;
+  };
+
+  bool markdownMode = false;
+  int pendingMarkdownPage = -1;
+  std::vector<micromarkd::ParsedLine> currentMarkdownLines;
+  std::vector<size_t> markdownPageTextOffsets;
+  std::vector<MarkdownLinkHit> markdownLinkHits;
+  std::vector<MarkdownHistoryEntry> markdownHistory;
+
+  bool loadMarkdownPageAtCursor(GfxRenderer& renderer, size_t sourceOffset, size_t textOffset,
+                                std::vector<std::string>& outLines,
+                                std::vector<micromarkd::ParsedLine>& outMarkdownLines, size_t& nextSourceOffset,
+                                size_t& nextTextOffset);
+  bool openMarkdownFile(const std::string& path, int page, bool rememberCurrent);
+  std::string resolveWikiLink(const std::string& target) const;
+#endif
+
   // Cached settings for cache validation
   int cachedFontId = 0;
   uint8_t cachedScreenMargin = 0;
@@ -42,6 +74,7 @@ class TxtReaderActivity final : public ReaderActivity {
   void renderStatusBar() const;
 
   bool loadBook() override;
+  bool handleFormatInput() override;
   std::string getBookTitle() const override { return txt ? txt->getTitle() : ""; }
   void renderBook() override;
 

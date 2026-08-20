@@ -16,6 +16,9 @@
 #include "home/CrashActivity.h"
 #include "home/FileBrowserActivity.h"
 #include "home/HomeActivity.h"
+#ifdef MICROMARKD_APP
+#include "micromarkd/MicroMarkDActivity.h"
+#endif
 #include "home/RecentBooksActivity.h"
 #include "network/CrossPointWebServerActivity.h"
 #include "reader/ReaderActivity.h"
@@ -257,6 +260,12 @@ void ActivityManager::goToFullScreenMessage(std::string message, EpdFontFamily::
 }
 
 void ActivityManager::goHome(HomeMenuItem initialMenuItem) {
+#ifdef MICROMARKD_APP
+  (void)initialMenuItem;
+  replaceActivity(std::make_unique<MicroMarkDActivity>(renderer, mappedInput));
+  return;
+#endif
+
   if (initialMenuItem == HomeMenuItem::NONE && currentActivity) {
     const auto& activityName = currentActivity->name;
     if (activityName == "FileBrowser") {
