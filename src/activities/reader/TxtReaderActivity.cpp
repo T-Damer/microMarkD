@@ -2,6 +2,7 @@
 
 #include <BidiUtils.h>
 #include <FontCacheManager.h>
+#include <FsHelpers.h>
 #include <GfxRenderer.h>
 #include <HalStorage.h>
 #include <I18n.h>
@@ -9,10 +10,14 @@
 #include <Serialization.h>
 #include <Utf8.h>
 
+#include <algorithm>
+
 #include "CrossPointSettings.h"
+#include "CrossPointState.h"
 #include "ProgressFile.h"
 #include "ReaderActivity.h"
 #include "ReaderUtils.h"
+#include "RecentBooksStore.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 
@@ -21,6 +26,108 @@ constexpr size_t CHUNK_SIZE = 8 * 1024;  // 8KB chunk for reading
 // Cache file magic and version
 constexpr uint32_t CACHE_MAGIC = 0x54585449;  // "TXTI"
 constexpr uint8_t CACHE_VERSION = 3;          // Increment when cache format changes
+
+#ifdef MICROMARKD_APP
+constexpr uint32_t MARKDOWN_CACHE_MAGIC = 0x4D444958;  // "MDIX"
+constexpr uint8_t MARKDOWN_CACHE_VERSION = 1;
+
+int markdownIndent(const micromarkd::BlockKind block) {
+  switch (block) {
+    case micromarkd::BlockKind::Quote:
+      return 16;
+    case micromarkd::BlockKind::Bullet:
+      return 22;
+    case micromarkd::BlockKind::OrderedList:
+    case micromarkd::BlockKind::Code:
+      return 12;
+    case micromarkd::BlockKind::Paragraph:
+    case micromarkd::BlockKind::Heading:
+    case micromarkd::BlockKind::Separator:
+      return 0;
+  }
+  return 0;
+}
+
+EpdFontFamily::Style markdownStyle(const micromarkd::ParsedLine& line) {
+  if (line.bold) return EpdFontFamily::BOLD;
+  if (line.italic) return EpdFontFamily::ITALIC;
+  return EpdFontFamily::REGULAR;
+}
+
+size_t nextUtf8Boundary(const std::string& text, size_t position) {
+  if (position >= text.size()) return text.size();
+  position++;
+  while (position < text.size() && (static_cast<unsigned char>(text[position]) & 0xC0) == 0x80) position++;
+  return position;
+}
+
+size_t previousUtf8Boundary(const std::string& text, size_t position, const size_t floor) {
+  position = std::min(position, text.size());
+  while (position > floor && position < text.size() && (static_cast<unsigned char>(text[position]) & 0xC0) == 0x80) {
+    position--;
+  }
+  return position;
+}
+
+size_t findMarkdownWrapEnd(GfxRenderer& renderer, const int fontId, const micromarkd::ParsedLine& line,
+                           const size_t start, const int availableWidth) {
+  if (start >= line.text.size()) return line.text.size();
+
+  const auto fits = [&](const size_t end) {
+    const std::string candidate = line.text.substr(start, end - start);
+    return renderer.getTextAdvanceX(fontId, candidate.c_str(), markdownStyle(line)) <= availableWidth;
+  };
+
+  if (fits(line.text.size())) return line.text.size();
+
+  const size_t minimumEnd = nextUtf8Boundary(line.text, start);
+  if (minimumEnd <= start) return line.text.size();
+
+  size_t low = minimumEnd;
+  size_t high = line.text.size();
+  size_t best = start;
+
+  // Search by raw byte positions, but only measure complete UTF-8 prefixes. Moving
+  // the raw midpoint (rather than the aligned candidate) guarantees progress even
+  // when several midpoint values fall inside the same multibyte code point.
+  while (low <= high) {
+    const size_t midpoint = low + (high - low) / 2;
+    size_t candidate = previousUtf8Boundary(line.text, midpoint, start);
+    if (candidate < minimumEnd) candidate = minimumEnd;
+
+    if (fits(candidate)) {
+      best = std::max(best, candidate);
+      if (midpoint >= line.text.size()) break;
+      low = midpoint + 1;
+    } else {
+      if (midpoint == 0) break;
+      high = midpoint - 1;
+    }
+  }
+
+  if (best <= start) best = minimumEnd;
+
+  // Alignment can make the binary search stop one boundary early. Advance over
+  // any remaining fitting code points before looking for a word boundary.
+  while (best < line.text.size()) {
+    const size_t candidate = nextUtf8Boundary(line.text, best);
+    if (candidate <= best || !fits(candidate)) break;
+    best = candidate;
+  }
+
+  size_t breakPosition = best;
+  while (breakPosition > start) {
+    size_t previous = breakPosition - 1;
+    while (previous > start && (static_cast<unsigned char>(line.text[previous]) & 0xC0) == 0x80) previous--;
+    // Never return the current cursor merely because the fragment begins with
+    // whitespace; the caller skips separators after a non-empty fragment.
+    if (previous > start && (line.text[previous] == ' ' || line.text[previous] == '\t')) return previous;
+    breakPosition = previous;
+  }
+
+  return best;
+}
+#endif
 }  // namespace
 
 bool TxtReaderActivity::loadBook() {
@@ -34,6 +141,13 @@ bool TxtReaderActivity::loadBook() {
     return false;
   }
   txt->setupCacheDir();
+#ifdef MICROMARKD_APP
+  markdownMode = FsHelpers::hasMarkdownExtension(bookPath);
+  currentMarkdownLines.reserve(64);
+  markdownPageTextOffsets.reserve(64);
+  markdownLinkHits.reserve(24);
+  markdownHistory.reserve(8);
+#endif
   return true;
 }
 
@@ -76,10 +190,63 @@ void TxtReaderActivity::initializeReader(GfxRenderer& renderer) {
   // Load saved progress
   loadProgress();
 
+#ifdef MICROMARKD_APP
+  if (pendingMarkdownPage >= 0) {
+    currentPage = std::min(pendingMarkdownPage, std::max(totalPages - 1, 0));
+    pendingMarkdownPage = -1;
+  }
+#endif
+
   initialized = true;
 }
 
 void TxtReaderActivity::buildPageIndex(GfxRenderer& renderer) {
+#ifdef MICROMARKD_APP
+  if (markdownMode) {
+    pageOffsets.clear();
+    markdownPageTextOffsets.clear();
+
+    size_t sourceOffset = 0;
+    size_t textOffset = 0;
+    const size_t fileSize = txt->getFileSize();
+
+    LOG_DBG("TRS", "Building measured Markdown page index for %zu bytes...", fileSize);
+    GUI.drawPopup(renderer, tr(STR_INDEXING));
+
+    if (fileSize == 0) {
+      pageOffsets.push_back(0);
+      markdownPageTextOffsets.push_back(0);
+    }
+
+    while (sourceOffset < fileSize) {
+      pageOffsets.push_back(sourceOffset);
+      markdownPageTextOffsets.push_back(textOffset);
+
+      std::vector<std::string> tempLines;
+      std::vector<micromarkd::ParsedLine> tempMarkdownLines;
+      size_t nextSourceOffset = sourceOffset;
+      size_t nextTextOffset = textOffset;
+      if (!loadMarkdownPageAtCursor(renderer, sourceOffset, textOffset, tempLines, tempMarkdownLines, nextSourceOffset,
+                                    nextTextOffset)) {
+        break;
+      }
+
+      if (nextSourceOffset == sourceOffset && nextTextOffset == textOffset) {
+        LOG_ERR("TRS", "Markdown paginator made no progress at %zu:%zu", sourceOffset, textOffset);
+        break;
+      }
+
+      sourceOffset = nextSourceOffset;
+      textOffset = nextTextOffset;
+      if (pageOffsets.size() % 20 == 0) vTaskDelay(1);
+    }
+
+    totalPages = pageOffsets.size();
+    LOG_DBG("TRS", "Built measured Markdown page index: %d pages", totalPages);
+    return;
+  }
+#endif
+
   pageOffsets.clear();
   pageOffsets.push_back(0);  // First page starts at offset 0
 
@@ -237,6 +404,124 @@ bool TxtReaderActivity::loadPageAtOffset(GfxRenderer& renderer, size_t offset, s
   return !outLines.empty();
 }
 
+#ifdef MICROMARKD_APP
+bool TxtReaderActivity::loadMarkdownPageAtCursor(GfxRenderer& renderer, const size_t sourceOffset,
+                                                 const size_t textOffset, std::vector<std::string>& outLines,
+                                                 std::vector<micromarkd::ParsedLine>& outMarkdownLines,
+                                                 size_t& nextSourceOffset, size_t& nextTextOffset) {
+  outLines.clear();
+  outMarkdownLines.clear();
+
+  const size_t fileSize = txt->getFileSize();
+  if (sourceOffset >= fileSize) return false;
+
+  size_t cursorSourceOffset = sourceOffset;
+  size_t cursorTextOffset = textOffset;
+
+  // A page normally needs only one 8 KiB read. If an unusually markup-heavy
+  // chunk produces fewer visible lines, continue with the next sequential chunk.
+  while (cursorSourceOffset < fileSize && static_cast<int>(outLines.size()) < linesPerPage) {
+    const size_t chunkLimit = std::min(CHUNK_SIZE, fileSize - cursorSourceOffset);
+    const size_t probeSize = std::min(chunkLimit + 1, fileSize - cursorSourceOffset);
+    auto* buffer = static_cast<uint8_t*>(malloc(probeSize));
+    if (!buffer) {
+      LOG_ERR("TRS", "Failed to allocate %zu bytes for Markdown pagination", probeSize);
+      break;
+    }
+
+    if (!txt->readContent(buffer, cursorSourceOffset, probeSize)) {
+      free(buffer);
+      break;
+    }
+
+    size_t pos = 0;
+    while (pos < chunkLimit && static_cast<int>(outLines.size()) < linesPerPage) {
+      const size_t lineStart = pos;
+      size_t lineEnd = pos;
+      while (lineEnd < chunkLimit && buffer[lineEnd] != '\n') lineEnd++;
+
+      bool hasNewline = lineEnd < chunkLimit && buffer[lineEnd] == '\n';
+      if (!hasNewline && lineEnd == chunkLimit && probeSize > chunkLimit && buffer[lineEnd] == '\n') {
+        hasNewline = true;
+      }
+
+      size_t displayLength = lineEnd - lineStart;
+      if (displayLength > 0 && buffer[lineStart + displayLength - 1] == '\r') displayLength--;
+      const std::string sourceLine(reinterpret_cast<const char*>(buffer + lineStart), displayLength);
+
+      size_t followingSourceOffset = cursorSourceOffset + lineEnd + (hasNewline ? 1 : 0);
+      if (followingSourceOffset <= cursorSourceOffset + lineStart) {
+        followingSourceOffset = std::min(fileSize, cursorSourceOffset + lineStart + 1);
+      }
+
+      const auto parsed = micromarkd::parseMarkdownLine(sourceLine);
+      size_t lineTextOffset = cursorTextOffset;
+      cursorTextOffset = 0;  // Only the first source fragment can resume mid-line.
+      if (lineTextOffset > parsed.text.size()) lineTextOffset = 0;
+
+      if (parsed.block == micromarkd::BlockKind::Separator || parsed.text.empty()) {
+        outLines.push_back(parsed.text);
+        outMarkdownLines.push_back(parsed);
+        pos = followingSourceOffset - cursorSourceOffset;
+        continue;
+      }
+
+      if (renderer.isSdCardFont(cachedFontId)) {
+        renderer.ensureSdCardFontReady(cachedFontId, parsed.text.c_str(), /*styleMask=*/0x01);
+      }
+
+      const int availableWidth = std::max(1, viewportWidth - markdownIndent(parsed.block));
+      while (lineTextOffset < parsed.text.size() && static_cast<int>(outLines.size()) < linesPerPage) {
+        size_t wrapEnd = findMarkdownWrapEnd(renderer, cachedFontId, parsed, lineTextOffset, availableWidth);
+        if (wrapEnd <= lineTextOffset) {
+          LOG_ERR("TRS", "Markdown wrapper stalled at %zu:%zu; forcing one UTF-8 code point",
+                  cursorSourceOffset + lineStart, lineTextOffset);
+          wrapEnd = nextUtf8Boundary(parsed.text, lineTextOffset);
+        }
+        if (wrapEnd <= lineTextOffset) {
+          // A malformed final fragment should not trap page-index construction.
+          lineTextOffset = parsed.text.size();
+          break;
+        }
+
+        auto fragment = micromarkd::sliceParsedLine(parsed, lineTextOffset, wrapEnd - lineTextOffset);
+        outLines.push_back(fragment.text);
+        outMarkdownLines.push_back(std::move(fragment));
+
+        lineTextOffset = wrapEnd;
+        while (lineTextOffset < parsed.text.size() &&
+               (parsed.text[lineTextOffset] == ' ' || parsed.text[lineTextOffset] == '\t')) {
+          lineTextOffset++;
+        }
+      }
+
+      if (lineTextOffset < parsed.text.size()) {
+        free(buffer);
+        nextSourceOffset = cursorSourceOffset + lineStart;
+        nextTextOffset = lineTextOffset;
+        return !outLines.empty();
+      }
+
+      pos = followingSourceOffset - cursorSourceOffset;
+    }
+
+    free(buffer);
+
+    if (pos == 0) {
+      LOG_ERR("TRS", "Markdown chunk made no source progress at %zu", cursorSourceOffset);
+      cursorSourceOffset = std::min(fileSize, cursorSourceOffset + 1);
+    } else {
+      cursorSourceOffset += pos;
+    }
+    cursorTextOffset = 0;
+  }
+
+  nextSourceOffset = cursorSourceOffset;
+  nextTextOffset = cursorTextOffset;
+  return !outLines.empty();
+}
+#endif
+
 void TxtReaderActivity::renderBook() {
   if (!txt) {
     return;
@@ -257,11 +542,31 @@ void TxtReaderActivity::renderBook() {
   if (currentPage < 0) currentPage = 0;
   if (currentPage >= totalPages) currentPage = totalPages - 1;
 
-  // Load current page content
-  size_t offset = pageOffsets[currentPage];
-  size_t nextOffset;
   currentPageLines.clear();
-  loadPageAtOffset(renderer, offset, currentPageLines, nextOffset);
+#ifdef MICROMARKD_APP
+  if (markdownMode) {
+    currentMarkdownLines.clear();
+    markdownLinkHits.clear();
+
+    if (currentPage >= static_cast<int>(markdownPageTextOffsets.size())) {
+      LOG_ERR("TRS", "Markdown page cursor missing for page %d", currentPage);
+      return;
+    }
+
+    size_t nextSourceOffset = pageOffsets[currentPage];
+    size_t nextTextOffset = markdownPageTextOffsets[currentPage];
+    loadMarkdownPageAtCursor(renderer, pageOffsets[currentPage], markdownPageTextOffsets[currentPage], currentPageLines,
+                             currentMarkdownLines, nextSourceOffset, nextTextOffset);
+  } else
+#endif
+  {
+    size_t nextOffset = pageOffsets[currentPage];
+    loadPageAtOffset(renderer, pageOffsets[currentPage], currentPageLines, nextOffset);
+#ifdef MICROMARKD_APP
+    currentMarkdownLines.clear();
+    markdownLinkHits.clear();
+#endif
+  }
 
   renderer.clearScreen();
   renderPage(renderer);
@@ -275,18 +580,82 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
   const int contentWidth = viewportWidth;
 
   // Render text lines with alignment
-  auto renderLines = [&]() {
+  auto renderLines = [&](const bool recordLinks) {
+#ifdef MICROMARKD_APP
+    if (recordLinks) markdownLinkHits.clear();
+#endif
     int y = cachedOrientedMarginTop;
-    for (const auto& line : currentPageLines) {
-      if (!line.empty()) {
-        int x = cachedOrientedMarginLeft;
-        const bool lineIsRtl = BidiUtils::startsWithRtl(line.c_str(), BidiUtils::RTL_PARAGRAPH_PROBE_DEPTH);
+    for (size_t lineIndex = 0; lineIndex < currentPageLines.size(); lineIndex++) {
+      const auto& rawLine = currentPageLines[lineIndex];
+      const char* text = rawLine.c_str();
+      EpdFontFamily::Style style = EpdFontFamily::REGULAR;
+      int indent = 0;
+#ifdef MICROMARKD_APP
+      bool forceLeft = false;
+      bool drawBullet = false;
+      bool drawQuote = false;
+      bool drawSeparator = false;
+#endif
+
+#ifdef MICROMARKD_APP
+      const micromarkd::ParsedLine* markdownLine = nullptr;
+      if (markdownMode && lineIndex < currentMarkdownLines.size()) {
+        markdownLine = &currentMarkdownLines[lineIndex];
+        text = markdownLine->text.c_str();
+        if (markdownLine->bold) {
+          style = EpdFontFamily::BOLD;
+        } else if (markdownLine->italic) {
+          style = EpdFontFamily::ITALIC;
+        }
+
+        switch (markdownLine->block) {
+          case micromarkd::BlockKind::Heading:
+            forceLeft = true;
+            break;
+          case micromarkd::BlockKind::Quote:
+            indent = 16;
+            forceLeft = true;
+            drawQuote = true;
+            break;
+          case micromarkd::BlockKind::Bullet:
+            indent = 22;
+            forceLeft = true;
+            drawBullet = !markdownLine->continuation;
+            break;
+          case micromarkd::BlockKind::OrderedList:
+          case micromarkd::BlockKind::Code:
+            indent = 12;
+            forceLeft = true;
+            break;
+          case micromarkd::BlockKind::Separator:
+            forceLeft = true;
+            drawSeparator = true;
+            break;
+          case micromarkd::BlockKind::Paragraph:
+            break;
+        }
+      }
+#endif
+
+#ifdef MICROMARKD_APP
+      if (drawSeparator) {
+        renderer.drawLine(cachedOrientedMarginLeft, y + lineHeight / 2, cachedOrientedMarginLeft + contentWidth,
+                          y + lineHeight / 2, true);
+      } else
+#endif
+          if (text[0] != '\0') {
+        int x = cachedOrientedMarginLeft + indent;
+        const bool lineIsRtl = BidiUtils::startsWithRtl(text, BidiUtils::RTL_PARAGRAPH_PROBE_DEPTH);
         uint8_t effectiveAlignment = cachedParagraphAlignment;
+#ifdef MICROMARKD_APP
+        if (forceLeft) effectiveAlignment = CrossPointSettings::LEFT_ALIGN;
+#endif
         if (lineIsRtl && (effectiveAlignment == CrossPointSettings::LEFT_ALIGN ||
                           effectiveAlignment == CrossPointSettings::JUSTIFIED)) {
           effectiveAlignment = CrossPointSettings::RIGHT_ALIGN;
         }
-        const int textWidth = renderer.getTextAdvanceX(cachedFontId, line.c_str(), EpdFontFamily::REGULAR);
+        const int textWidth = renderer.getTextAdvanceX(cachedFontId, text, style);
+        const int availableWidth = contentWidth - indent;
 
         // Apply text alignment
         switch (effectiveAlignment) {
@@ -294,7 +663,7 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
           default:
             break;
           case CrossPointSettings::CENTER_ALIGN: {
-            x = cachedOrientedMarginLeft + (contentWidth - textWidth) / 2;
+            x = cachedOrientedMarginLeft + indent + (availableWidth - textWidth) / 2;
             break;
           }
           case CrossPointSettings::RIGHT_ALIGN: {
@@ -305,7 +674,37 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
             break;
         }
 
-        renderer.drawText(cachedFontId, x, y, line.c_str());
+#ifdef MICROMARKD_APP
+        if (drawQuote) {
+          renderer.drawLine(cachedOrientedMarginLeft + 3, y, cachedOrientedMarginLeft + 3, y + lineHeight - 3, 2, true);
+        }
+#endif
+#ifdef MICROMARKD_APP
+        if (drawBullet) {
+          renderer.drawText(cachedFontId, cachedOrientedMarginLeft + 4, y, "-", true, EpdFontFamily::BOLD);
+        }
+#endif
+        renderer.drawText(cachedFontId, x, y, text, true, style);
+
+#ifdef MICROMARKD_APP
+        if (markdownMode && recordLinks && markdownLine != nullptr) {
+          for (uint8_t linkIndex = 0; linkIndex < markdownLine->linkCount; linkIndex++) {
+            const auto& link = markdownLine->links[linkIndex];
+            if (link.end <= link.start || link.end > markdownLine->text.size()) continue;
+
+            const std::string prefix = markdownLine->text.substr(0, link.start);
+            const std::string label = markdownLine->text.substr(link.start, link.end - link.start);
+            const int linkX = x + renderer.getTextAdvanceX(cachedFontId, prefix.c_str(), style);
+            const int linkWidth = renderer.getTextAdvanceX(cachedFontId, label.c_str(), style);
+            if (linkWidth <= 0) continue;
+
+            renderer.drawLine(linkX, y + lineHeight - 2, linkX + linkWidth, y + lineHeight - 2, true);
+            if (markdownLinkHits.size() < 32) {
+              markdownLinkHits.push_back({linkX - 2, y - 2, linkWidth + 4, lineHeight + 4, link.target});
+            }
+          }
+        }
+#endif
       }
       y += lineHeight;
     }
@@ -314,21 +713,134 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
   // Font prewarm: scan pass accumulates text, then prewarm, then real render
   auto* fcm = renderer.getFontCacheManager();
   auto scope = fcm->createPrewarmScope();
-  renderLines();      // scan pass
-  renderStatusBar();  // scan: a CJK title joins the batch prewarm
+  renderLines(false);  // scan pass
+  renderStatusBar();   // scan: a CJK title joins the batch prewarm
   scope.endScanAndPrewarm();
 
   // BW rendering
-  renderLines();
+  renderLines(true);
   renderStatusBar();
 
   if (SETTINGS.textAntiAliasing) {
     ReaderUtils::displayBaseWithRefreshCycle(renderer, pagesUntilFullRefresh);
-    ReaderUtils::renderAntiAliased(renderer, [&renderLines]() { renderLines(); });
+    ReaderUtils::renderAntiAliased(renderer, [&renderLines]() { renderLines(false); });
   } else {
     ReaderUtils::displayWithRefreshCycle(renderer, pagesUntilFullRefresh);
   }
 }
+
+bool TxtReaderActivity::handleFormatInput() {
+#ifdef MICROMARKD_APP
+  if (!markdownMode) return false;
+
+  if (!markdownHistory.empty() && mappedInput.wasReleased(MappedInputManager::Button::Back)) {
+    const auto previous = markdownHistory.back();
+    if (openMarkdownFile(previous.path, previous.page, false)) markdownHistory.pop_back();
+    return true;
+  }
+
+  int tapX = 0;
+  int tapY = 0;
+  if (!mappedInput.wasScreenTapped(tapX, tapY)) return false;
+
+  std::string target;
+  {
+    RenderLock lock(*this);
+    for (const auto& hit : markdownLinkHits) {
+      if (tapX >= hit.x && tapX < hit.x + hit.width && tapY >= hit.y && tapY < hit.y + hit.height) {
+        target = hit.target;
+        break;
+      }
+    }
+  }
+
+  if (target.empty()) return false;
+  const std::string path = resolveWikiLink(target);
+  if (path.empty()) {
+    LOG_INF("MD", "Wikilink target not found: %s", target.c_str());
+    return true;
+  }
+
+  if (path != bookPath) openMarkdownFile(path, -1, true);
+  return true;
+#else
+  return false;
+#endif
+}
+
+#ifdef MICROMARKD_APP
+
+bool TxtReaderActivity::openMarkdownFile(const std::string& path, const int page, const bool rememberCurrent) {
+  if (!Storage.exists(path.c_str()) || !FsHelpers::hasMarkdownExtension(path)) return false;
+
+  auto nextTxt = makeUniqueNoThrow<Txt>(path, "/.crosspoint");
+  if (!nextTxt || !nextTxt->load()) {
+    LOG_ERR("MD", "Failed to open wikilink target: %s", path.c_str());
+    return false;
+  }
+  nextTxt->setupCacheDir();
+
+  if (rememberCurrent) {
+    saveProgress();
+    if (markdownHistory.size() >= 16) markdownHistory.erase(markdownHistory.begin());
+    markdownHistory.push_back({bookPath, currentPage});
+  }
+
+  {
+    RenderLock lock(*this);
+    txt = std::move(nextTxt);
+    bookPath = path;
+    currentPage = 0;
+    totalPages = 1;
+    pageOffsets.clear();
+    markdownPageTextOffsets.clear();
+    currentPageLines.clear();
+    currentMarkdownLines.clear();
+    markdownLinkHits.clear();
+    pendingMarkdownPage = page;
+    initialized = false;
+    markdownMode = true;
+    endOfBookOptions.reset();
+    endOfBookOptionsReady.store(false, std::memory_order_release);
+  }
+
+  APP_STATE.openEpubPath = bookPath;
+  APP_STATE.saveToFile();
+  RECENT_BOOKS.addBook(bookPath, txt->getTitle(), "", "");
+  requestUpdate();
+  return true;
+}
+
+std::string TxtReaderActivity::resolveWikiLink(const std::string& rawTarget) const {
+  std::string target = micromarkd::wikiTargetPathPart(rawTarget);
+  if (target.empty()) return {};
+  std::replace(target.begin(), target.end(), '\\', '/');
+
+  const auto tryCandidate = [](const std::string& rawPath) -> std::string {
+    const std::string normalised = FsHelpers::normalisePath(rawPath);
+    if (normalised.empty()) return {};
+    const std::string path = "/" + normalised;
+    if (path != "/vault" && path.rfind("/vault/", 0) != 0) return {};
+
+    if (FsHelpers::hasMarkdownExtension(path)) {
+      return Storage.exists(path.c_str()) ? path : std::string{};
+    }
+
+    const std::string mdPath = path + ".md";
+    if (Storage.exists(mdPath.c_str())) return mdPath;
+    const std::string markdownPath = path + ".markdown";
+    if (Storage.exists(markdownPath.c_str())) return markdownPath;
+    return {};
+  };
+
+  if (target.front() == '/') return tryCandidate("/vault/" + target.substr(1));
+
+  const std::string folder = FsHelpers::extractFolderPath(bookPath);
+  std::string resolved = tryCandidate(folder + "/" + target);
+  if (!resolved.empty()) return resolved;
+  return tryCandidate("/vault/" + target);
+}
+#endif
 
 void TxtReaderActivity::renderStatusBar() const {
   const float progress = totalPages > 0 ? (currentPage + 1) * 100.0f / totalPages : 0;
@@ -408,6 +920,72 @@ void TxtReaderActivity::loadProgress() {
 }
 
 bool TxtReaderActivity::loadPageIndexCache() {
+#ifdef MICROMARKD_APP
+  if (markdownMode) {
+    const std::string cachePath = txt->getCachePath() + "/markdown-index.bin";
+    HalFile f;
+    if (!Storage.openFileForRead("TRS", cachePath, f)) {
+      LOG_DBG("TRS", "No measured Markdown page index cache found");
+      return false;
+    }
+
+    uint32_t magic;
+    serialization::readPod(f, magic);
+    if (magic != MARKDOWN_CACHE_MAGIC) return false;
+
+    uint8_t version;
+    serialization::readPod(f, version);
+    if (version != MARKDOWN_CACHE_VERSION) return false;
+
+    uint32_t fileSize;
+    serialization::readPod(f, fileSize);
+    if (fileSize != txt->getFileSize()) return false;
+
+    int32_t cachedWidth;
+    serialization::readPod(f, cachedWidth);
+    if (cachedWidth != viewportWidth) return false;
+
+    int32_t cachedLines;
+    serialization::readPod(f, cachedLines);
+    if (cachedLines != linesPerPage) return false;
+
+    int32_t fontId;
+    serialization::readPod(f, fontId);
+    if (fontId != cachedFontId) return false;
+
+    int32_t margin;
+    serialization::readPod(f, margin);
+    if (margin != cachedScreenMargin) return false;
+
+    uint8_t alignment;
+    serialization::readPod(f, alignment);
+    if (alignment != cachedParagraphAlignment) return false;
+
+    uint32_t numPages;
+    serialization::readPod(f, numPages);
+    if (numPages == 0 || numPages > txt->getFileSize() + 1) return false;
+
+    pageOffsets.clear();
+    markdownPageTextOffsets.clear();
+    pageOffsets.reserve(numPages);
+    markdownPageTextOffsets.reserve(numPages);
+
+    for (uint32_t i = 0; i < numPages; i++) {
+      uint32_t sourceOffset;
+      uint32_t textOffset;
+      serialization::readPod(f, sourceOffset);
+      serialization::readPod(f, textOffset);
+      if (sourceOffset > txt->getFileSize()) return false;
+      pageOffsets.push_back(sourceOffset);
+      markdownPageTextOffsets.push_back(textOffset);
+    }
+
+    totalPages = pageOffsets.size();
+    LOG_DBG("TRS", "Loaded measured Markdown page index cache: %d pages", totalPages);
+    return true;
+  }
+#endif
+
   std::string cachePath = txt->getCachePath() + "/index.bin";
   HalFile f;
   if (!Storage.openFileForRead("TRS", cachePath, f)) {
@@ -489,6 +1067,40 @@ bool TxtReaderActivity::loadPageIndexCache() {
 }
 
 void TxtReaderActivity::savePageIndexCache() const {
+#ifdef MICROMARKD_APP
+  if (markdownMode) {
+    if (pageOffsets.size() != markdownPageTextOffsets.size()) {
+      LOG_ERR("TRS", "Refusing to save mismatched Markdown page cursors");
+      return;
+    }
+
+    const std::string cachePath = txt->getCachePath() + "/markdown-index.bin";
+    HalFile f;
+    if (!Storage.openFileForWrite("TRS", cachePath, f)) {
+      LOG_ERR("TRS", "Failed to save measured Markdown page index cache");
+      return;
+    }
+
+    serialization::writePod(f, MARKDOWN_CACHE_MAGIC);
+    serialization::writePod(f, MARKDOWN_CACHE_VERSION);
+    serialization::writePod(f, static_cast<uint32_t>(txt->getFileSize()));
+    serialization::writePod(f, static_cast<int32_t>(viewportWidth));
+    serialization::writePod(f, static_cast<int32_t>(linesPerPage));
+    serialization::writePod(f, static_cast<int32_t>(cachedFontId));
+    serialization::writePod(f, static_cast<int32_t>(cachedScreenMargin));
+    serialization::writePod(f, cachedParagraphAlignment);
+    serialization::writePod(f, static_cast<uint32_t>(pageOffsets.size()));
+
+    for (size_t i = 0; i < pageOffsets.size(); i++) {
+      serialization::writePod(f, static_cast<uint32_t>(pageOffsets[i]));
+      serialization::writePod(f, static_cast<uint32_t>(markdownPageTextOffsets[i]));
+    }
+
+    LOG_DBG("TRS", "Saved measured Markdown page index cache: %d pages", totalPages);
+    return;
+  }
+#endif
+
   std::string cachePath = txt->getCachePath() + "/index.bin";
   HalFile f;
   if (!Storage.openFileForWrite("TRS", cachePath, f)) {
