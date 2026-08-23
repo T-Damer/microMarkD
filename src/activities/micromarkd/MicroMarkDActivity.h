@@ -27,6 +27,8 @@ class MicroMarkDActivity final : public UiListActivity {
   std::string uniqueNotePath(const std::string& filename) const;
   void showCreateError();
   void recoverInterruptedSaves();
+  void runGitSync();
+  bool stageVaultForCommit();
 
   freeink::ui::ListItem rowItems_[MENU_ITEM_COUNT]{};
   std::string vaultStatus_;

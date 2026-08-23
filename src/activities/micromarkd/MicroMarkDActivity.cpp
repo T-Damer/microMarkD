@@ -22,10 +22,17 @@
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
+#include "util/Esp32GitStorage.h"
+
+#include <esp32_git.h>
 
 namespace fui = freeink::ui;
 
 namespace {
+constexpr const char* GIT_REMOTE_DIR = "/vault-backup.git";
+constexpr const char* GIT_ID_NAME = "microMarkD";
+constexpr const char* GIT_ID_EMAIL = "vault@xteink.device";
+constexpr size_t MAX_GIT_FILES = 256;
 constexpr int VAULT_INDEX = 0;
 constexpr int RECENT_INDEX = 1;
 constexpr int SEARCH_INDEX = 2;
@@ -131,7 +138,97 @@ void MicroMarkDActivity::activateIndex(const int index) {
     return;
   }
 
+  if (index == SYNC_INDEX) {
+    runGitSync();
+    return;
+  }
+
   rowItems_[index].subtitle = tr(STR_MICROMARKD_PLANNED);
+  requestUpdate();
+}
+
+bool MicroMarkDActivity::stageVaultForCommit() {
+  std::vector<std::string> directories{VAULT_ROOT};
+  size_t stagedOrChanged = 0;
+  std::array<char, 128> name{};
+
+  while (!directories.empty() && stagedOrChanged < MAX_GIT_FILES) {
+    const std::string dirPath = directories.back();
+    directories.pop_back();
+    auto dir = Storage.open(dirPath.c_str());
+    if (!dir || !dir.isDirectory()) continue;
+    dir.rewindDirectory();
+    for (auto entry = dir.openNextFile(); entry && stagedOrChanged < MAX_GIT_FILES;
+         entry = dir.openNextFile()) {
+      entry.getName(name.data(), name.size());
+      const bool isDirectory = entry.isDirectory();
+      entry.close();
+      if (name[0] == '.' || std::strcmp(name.data(), "System Volume Information") == 0) {
+        continue;
+      }
+      const std::string child = dirPath == VAULT_ROOT
+                                    ? std::string(VAULT_ROOT) + "/" + name.data()
+                                    : dirPath + "/" + name.data();
+      if (isDirectory) {
+        directories.push_back(child);
+        continue;
+      }
+      const bool isNote = child.size() > 3 && (child.compare(child.size() - 3, 3, ".md") == 0 ||
+                                               child.compare(child.size() - 9, 9, ".markdown") == 0);
+      if (!isNote) continue;
+      const std::string rel =
+          child.substr(strlen(VAULT_ROOT) + 1);  // repo-relative path
+      if (esp32git_add(VAULT_ROOT, rel.c_str()) == ESP32GIT_OK) stagedOrChanged++;
+    }
+  }
+  return stagedOrChanged > 0;
+}
+
+void MicroMarkDActivity::runGitSync() {
+  registerEsp32GitStorage();
+
+  // One-time repo bootstrap; init() is not idempotent (resets the index).
+  if (!Storage.exists("/vault/.git/HEAD")) {
+    if (esp32git_init(VAULT_ROOT) != ESP32GIT_OK) {
+      rowItems_[SYNC_INDEX].subtitle = tr(STR_MICROMARKD_SYNC_ERROR);
+      requestUpdate();
+      return;
+    }
+  }
+
+  // Fast-forward pull; divergence is reported, never merged.
+  const esp32git_status pull = esp32git_fetch(GIT_REMOTE_DIR, "main", VAULT_ROOT);
+  if (pull == ESP32GIT_REMOTE_DIVERGED) {
+    rowItems_[SYNC_INDEX].subtitle = tr(STR_MICROMARKD_SYNC_DIVERGED);
+    requestUpdate();
+    return;
+  }
+  if (pull != ESP32GIT_OK && pull != ESP32GIT_UP_TO_DATE) {
+    rowItems_[SYNC_INDEX].subtitle = tr(STR_MICROMARKD_SYNC_ERROR);
+    requestUpdate();
+    return;
+  }
+
+  if (!stageVaultForCommit()) {
+    rowItems_[SYNC_INDEX].subtitle = pull == ESP32GIT_UP_TO_DATE
+                                         ? tr(STR_MICROMARKD_SYNC_NOTHING)
+                                         : tr(STR_MICROMARKD_SYNC_OK);
+    requestUpdate();
+    return;
+  }
+
+  const esp32git_identity id = {GIT_ID_NAME, GIT_ID_EMAIL};
+  char commitSha[41];
+  if (esp32git_commit(VAULT_ROOT, &id, "vault sync", commitSha) != ESP32GIT_OK) {
+    rowItems_[SYNC_INDEX].subtitle = tr(STR_MICROMARKD_SYNC_ERROR);
+    requestUpdate();
+    return;
+  }
+
+  const esp32git_status push = esp32git_push(GIT_REMOTE_DIR, "main", VAULT_ROOT);
+  rowItems_[SYNC_INDEX].subtitle =
+      push == ESP32GIT_OK || push == ESP32GIT_UP_TO_DATE ? tr(STR_MICROMARKD_SYNC_OK)
+                                                         : tr(STR_MICROMARKD_SYNC_ERROR);
   requestUpdate();
 }
 
