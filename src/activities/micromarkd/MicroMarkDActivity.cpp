@@ -219,8 +219,17 @@ void MicroMarkDActivity::runGitSync() {
 
   const esp32git_identity id = {GIT_ID_NAME, GIT_ID_EMAIL};
   char commitSha[41];
-  if (esp32git_commit(VAULT_ROOT, &id, "vault sync", commitSha) != ESP32GIT_OK) {
+  const esp32git_status commit = esp32git_commit(VAULT_ROOT, &id, "vault sync", commitSha);
+  if (commit != ESP32GIT_OK && commit != ESP32GIT_UP_TO_DATE) {
     rowItems_[SYNC_INDEX].subtitle = tr(STR_MICROMARKD_SYNC_ERROR);
+    requestUpdate();
+    return;
+  }
+  if (commit == ESP32GIT_UP_TO_DATE) {
+    // Nothing new locally; only report progress when the pull moved us.
+    rowItems_[SYNC_INDEX].subtitle = pull == ESP32GIT_UP_TO_DATE
+                                         ? tr(STR_MICROMARKD_SYNC_NOTHING)
+                                         : tr(STR_MICROMARKD_SYNC_OK);
     requestUpdate();
     return;
   }

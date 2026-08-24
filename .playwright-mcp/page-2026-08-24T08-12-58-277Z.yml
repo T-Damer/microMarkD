@@ -1,0 +1,208 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic "micro-mark D" [ref=e5]:
+        - generic [ref=e6]: D
+        - generic [ref=e7]: micro-mark
+      - generic [ref=e8]:
+        - paragraph [ref=e9]: CrossInk simulator package
+        - heading "Browser device lab" [level=1] [ref=e10]
+      - generic [ref=e11]: Loading Xteink X4 Pro…
+    - generic [ref=e12]:
+      - complementary "Emulator controls" [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]: Device profile
+          - combobox "Device profile" [ref=e16]:
+            - option "Xteink X4 Pro" [selected]
+            - option "Xteink X4"
+            - option "Xteink X3"
+          - generic [ref=e17]:
+            - generic [ref=e18]:
+              - term [ref=e19]: Logical panel
+              - definition [ref=e20]: 800 × 480px
+            - generic [ref=e21]:
+              - term [ref=e22]: Screen
+              - definition [ref=e23]: ≈ 92.8 × 55.7mm · 4.3″
+            - generic [ref=e24]:
+              - term [ref=e25]: Body
+              - definition [ref=e26]: 69 × 111 × 5.95mm portrait
+            - generic [ref=e27]:
+              - term [ref=e28]: Input
+              - definition [ref=e29]: touch + buttons
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - heading "Device keys" [level=2] [ref=e32]
+            - generic [ref=e33]: Keyboard works too
+          - generic [ref=e34]:
+            - button "Back" [ref=e35] [cursor=pointer]:
+              - generic [ref=e36]: 
+            - button "Up" [ref=e37] [cursor=pointer]: ↑
+            - button "Confirm" [ref=e38] [cursor=pointer]: OK
+            - button "Left" [ref=e39] [cursor=pointer]: ←
+            - button "Down" [ref=e40] [cursor=pointer]: ↓
+            - button "Right" [ref=e41] [cursor=pointer]: →
+          - button " Capture keyboard Off" [ref=e42] [cursor=pointer]:
+            - generic [ref=e43]: 
+            - generic [ref=e44]: Capture keyboard
+            - strong [ref=e45]: "Off"
+          - paragraph [ref=e46]: Device shortcuts only; form fields remain editable.
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - heading "Browser card" [level=2] [ref=e49]
+            - generic [ref=e50]: saved locally
+          - button " Mount image on SD" [ref=e51] [cursor=pointer]:
+            - generic [ref=e52]: 
+            - text: Mount image on SD
+          - paragraph [ref=e53]:
+            - text: Upload a PNG/JPG/BMP and it will be available at
+            - code [ref=e54]: /fs_/browser-upload/
+            - text: .
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - heading " Auto-sleep" [level=2] [ref=e57]:
+              - generic [ref=e58]: 
+              - text: Auto-sleep
+            - generic [ref=e59]: device default
+          - combobox "Auto-sleep timeout" [ref=e60]:
+            - option "Never — testing" [selected]
+            - option "After 1 minute"
+            - option "After 5 minutes"
+            - option "After 10 minutes (device default)"
+            - option "After 15 minutes"
+            - option "After 30 minutes"
+          - paragraph [ref=e61]: Applies immediately and is remembered for this browser. "Never" keeps scripted test sessions alive.
+          - button " Reset device" [ref=e62] [cursor=pointer]:
+            - generic [ref=e63]: 
+            - text: Reset device
+          - paragraph [ref=e64]: Deep sleep cannot re-exec inside WASM — if the device slept, reset it here (or reload).
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - heading " tiny-git" [level=2] [ref=e67]:
+              - generic [ref=e68]: 
+              - text: tiny-git
+            - generic [ref=e69]: main
+          - textbox "Commit message" [ref=e70]: Update browser card
+          - button " Commit staged card" [ref=e71] [cursor=pointer]:
+            - generic [ref=e72]: 
+            - text: Commit staged card
+          - generic [ref=e73]:
+            - textbox "New branch name" [ref=e74]:
+              - /placeholder: new branch
+            - button " New branch" [ref=e75] [cursor=pointer]:
+              - generic [ref=e76]: 
+              - text: New branch
+          - combobox "Checkout branch" [ref=e77]:
+            - option "main" [selected]
+          - button " Checkout branch" [ref=e78] [cursor=pointer]:
+            - generic [ref=e79]: 
+            - text: Checkout branch
+          - list [ref=e80]:
+            - listitem [ref=e81]: No commits yet
+      - main [ref=e82]:
+        - generic [ref=e83]:
+          - button "Up side key" [ref=e84] [cursor=pointer]
+          - button "Down side key" [ref=e85] [cursor=pointer]
+          - generic "Xteink X4 Pro display" [ref=e86]
+        - generic [ref=e87]:
+          - generic [ref=e88]: Xteink X4 Pro
+          - generic [ref=e89]: 800 × 480 logical pixels · 1-bit preview
+        - paragraph [ref=e90]: The canvas is fed by the same firmware framebuffer as the native simulator. Rotate the firmware and the browser follows the reported panel orientation.
+    - region "MicroMarkD browser workbench" [ref=e91]:
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - paragraph [ref=e94]: MicroMarkD preview
+          - heading "Note tools for a button-first device" [level=2] [ref=e95]
+        - generic [ref=e96]: E edit · G graph · L links
+      - generic [ref=e97]:
+        - article [ref=e98]:
+          - generic [ref=e99]:
+            - generic [ref=e100]:
+              - generic [ref=e101]: 
+              - text: /vault
+            - button " New" [ref=e102] [cursor=pointer]:
+              - generic [ref=e103]: 
+              - text: New
+          - searchbox "Search notes" [ref=e104]
+          - navigation "Vault notes" [ref=e105]:
+            - button "Small devices, durable notes field-notes.md" [ref=e106] [cursor=pointer]:
+              - strong [ref=e107]: Small devices, durable notes
+              - generic [ref=e108]: field-notes.md
+            - button "Graph view graph.md" [ref=e109] [cursor=pointer]:
+              - strong [ref=e110]: Graph view
+              - generic [ref=e111]: graph.md
+            - button "tiny-git tiny-git.md" [ref=e112] [cursor=pointer]:
+              - strong [ref=e113]: tiny-git
+              - generic [ref=e114]: tiny-git.md
+        - article [ref=e115]:
+          - generic [ref=e116]:
+            - generic [ref=e117]:
+              - generic [ref=e118]: 
+              - text: /vault/field-notes.md
+            - generic [ref=e119]:
+              - button "Edit" [ref=e120] [cursor=pointer]:
+                - generic [ref=e121]: 
+                - text: Edit
+              - button "Menu" [ref=e122] [cursor=pointer]:
+                - generic [ref=e123]: 
+                - text: Menu
+          - heading "Small devices, durable notes" [level=3] [ref=e124]
+          - generic "Markdown formatting" [ref=e125]:
+            - button "" [ref=e126] [cursor=pointer]
+            - button "" [ref=e128] [cursor=pointer]
+            - button "" [ref=e130] [cursor=pointer]
+            - button "" [ref=e132] [cursor=pointer]
+            - button "" [ref=e134] [cursor=pointer]
+            - button "" [ref=e136] [cursor=pointer]
+            - button " Preview" [ref=e138] [cursor=pointer]:
+              - generic [ref=e139]: 
+              - generic [ref=e140]: Preview
+          - paragraph [ref=e141]:
+            - text: MicroMarkD keeps the vault close to the reader. Follow
+            - button "graph" [ref=e142] [cursor=pointer]
+            - text: or
+            - button "tiny-git" [ref=e143] [cursor=pointer]
+            - text: "with the same arrows used by the Xteink. #reading #xteink"
+          - generic "Note tags" [ref=e144]:
+            - button "#reading" [ref=e145] [cursor=pointer]
+            - button "#xteink" [ref=e146] [cursor=pointer]
+          - generic [ref=e147]:
+            - generic [ref=e148]: Backlinks
+            - button "Graph view" [ref=e149] [cursor=pointer]
+          - generic [ref=e150]: Ready
+          - generic [ref=e151]:
+            - button "Edit note" [ref=e152] [cursor=pointer]:
+              - generic [ref=e153]: 
+              - text: Edit note
+            - button "Graph view" [ref=e154] [cursor=pointer]:
+              - generic [ref=e155]: 
+              - text: Graph view
+            - button "Links" [ref=e156] [cursor=pointer]:
+              - generic [ref=e157]: 
+              - text: Links
+        - article [ref=e158]:
+          - generic [ref=e159]:
+            - generic [ref=e160]:
+              - generic [ref=e161]: 
+              - text: Link graph
+            - generic [ref=e162]:
+              - button "←" [ref=e163] [cursor=pointer]
+              - text: 1/2
+              - button "→" [ref=e164] [cursor=pointer]
+              - button "" [ref=e165] [cursor=pointer]
+          - img "Markdown link graph" [ref=e167]:
+            - generic [ref=e170]:
+              - generic [ref=e172]: ✦
+              - generic [ref=e173]: field-notes
+              - generic [ref=e174]: selected
+            - generic [ref=e175]:
+              - generic [ref=e177]: ◇
+              - generic [ref=e178]: graph
+              - generic [ref=e179]: linked note
+            - generic [ref=e180]:
+              - generic [ref=e182]: ◆
+              - generic [ref=e183]: tiny-git
+              - generic [ref=e184]: package
+            - generic [ref=e185]:
+              - generic [ref=e187]: □
+              - generic [ref=e188]: reader
+              - generic [ref=e189]: next page

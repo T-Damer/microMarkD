@@ -1,0 +1,864 @@
+[     339ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     596ms] [WARNING] [firmware] [257] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     597ms] [WARNING] [firmware] [259] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     598ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     598ms] [WARNING] [firmware] [259] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     598ms] [WARNING] [firmware] [260] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     599ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     599ms] [WARNING] [firmware] [261] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     599ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     599ms] [WARNING] [firmware] [261] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     599ms] [WARNING] [firmware] [261] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     599ms] [WARNING] [firmware] [261] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     600ms] [WARNING] [firmware] [261] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     600ms] [WARNING] [firmware] [261] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     600ms] [WARNING] [firmware] [262] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     603ms] [WARNING] [firmware] [264] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     604ms] [WARNING] [firmware] [266] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[     606ms] [WARNING] [firmware] [268] [DBG] [GFX] Time = 2 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   10375ms] [WARNING] [firmware] [10036] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   20429ms] [WARNING] [firmware] [20091] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   30431ms] [WARNING] [firmware] [30092] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   40473ms] [WARNING] [firmware] [40134] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   50490ms] [WARNING] [firmware] [50151] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   60497ms] [WARNING] [firmware] [60158] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   70553ms] [WARNING] [firmware] [70213] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   80598ms] [WARNING] [firmware] [80260] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   81760ms] [WARNING] [firmware] [81421] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   82019ms] [WARNING] [firmware] [81680] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   82291ms] [WARNING] [firmware] [81952] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   82554ms] [WARNING] [firmware] [82215] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   82832ms] [WARNING] [firmware] [82493] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   83100ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault-backup.git/.git/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   83100ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault-backup.git/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   83104ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault/.git/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   83104ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   83106ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault-backup.git/.git/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   83106ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault-backup.git/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   83109ms] [WARNING] [firmware] [82771] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   86722ms] [WARNING] [firmware] [86383] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[   90617ms] [WARNING] [firmware] [90278] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  100660ms] [WARNING] [firmware] [100320] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  110702ms] [WARNING] [firmware] [110363] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  120708ms] [WARNING] [firmware] [120369] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  130720ms] [WARNING] [firmware] [130381] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  140721ms] [WARNING] [firmware] [140382] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  150759ms] [WARNING] [firmware] [150420] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  160768ms] [WARNING] [firmware] [160429] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  170817ms] [WARNING] [firmware] [170478] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  180835ms] [WARNING] [firmware] [180496] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  190866ms] [WARNING] [firmware] [190526] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  200911ms] [WARNING] [firmware] [200571] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  210954ms] [WARNING] [firmware] [210614] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  220969ms] [WARNING] [firmware] [220629] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  230993ms] [WARNING] [firmware] [230653] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  241034ms] [WARNING] [firmware] [240694] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  251085ms] [WARNING] [firmware] [250745] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  261102ms] [WARNING] [firmware] [260762] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  271113ms] [WARNING] [firmware] [270773] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  281148ms] [WARNING] [firmware] [280808] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  291174ms] [WARNING] [firmware] [290834] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  301186ms] [WARNING] [firmware] [300846] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  311223ms] [WARNING] [firmware] [310882] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  321273ms] [WARNING] [firmware] [320933] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  331309ms] [WARNING] [firmware] [330969] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  341338ms] [WARNING] [firmware] [340997] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  351368ms] [WARNING] [firmware] [351028] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  361374ms] [WARNING] [firmware] [361034] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  371423ms] [WARNING] [firmware] [371082] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  381475ms] [WARNING] [firmware] [381134] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  391516ms] [WARNING] [firmware] [391175] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  401567ms] [WARNING] [firmware] [401226] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  411611ms] [WARNING] [firmware] [411271] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  421648ms] [WARNING] [firmware] [421307] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  431666ms] [WARNING] [firmware] [431325] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  441668ms] [WARNING] [firmware] [441327] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  451707ms] [WARNING] [firmware] [451366] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  461750ms] [WARNING] [firmware] [461409] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  471766ms] [WARNING] [firmware] [471425] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  481768ms] [WARNING] [firmware] [481427] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  491823ms] [WARNING] [firmware] [491467] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  501834ms] [WARNING] [firmware] [501493] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  511877ms] [WARNING] [firmware] [511536] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  521887ms] [WARNING] [firmware] [521546] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  531903ms] [WARNING] [firmware] [531561] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  541968ms] [WARNING] [firmware] [541581] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  552005ms] [WARNING] [firmware] [551663] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  562010ms] [WARNING] [firmware] [561668] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  572047ms] [WARNING] [firmware] [571705] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  582059ms] [WARNING] [firmware] [581717] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  592072ms] [WARNING] [firmware] [591730] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  602109ms] [WARNING] [firmware] [601768] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  612162ms] [WARNING] [firmware] [611820] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  622186ms] [WARNING] [firmware] [621844] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  632219ms] [WARNING] [firmware] [631875] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  642260ms] [WARNING] [firmware] [641916] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  652302ms] [WARNING] [firmware] [651960] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  662328ms] [WARNING] [firmware] [661985] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  672362ms] [WARNING] [firmware] [672020] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  682398ms] [WARNING] [firmware] [682056] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  692443ms] [WARNING] [firmware] [692100] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  702470ms] [WARNING] [firmware] [702127] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  712471ms] [WARNING] [firmware] [712128] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  722513ms] [WARNING] [firmware] [722170] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  732564ms] [WARNING] [firmware] [732221] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  742573ms] [WARNING] [firmware] [742230] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  752575ms] [WARNING] [firmware] [752232] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  762609ms] [WARNING] [firmware] [762250] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  772664ms] [WARNING] [firmware] [772321] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  782695ms] [WARNING] [firmware] [782352] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  792745ms] [WARNING] [firmware] [792402] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  802758ms] [WARNING] [firmware] [802415] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  812778ms] [WARNING] [firmware] [812422] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  822819ms] [WARNING] [firmware] [822475] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  832865ms] [WARNING] [firmware] [832521] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  842882ms] [WARNING] [firmware] [842527] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  852899ms] [WARNING] [firmware] [852563] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  862933ms] [WARNING] [firmware] [862606] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  872960ms] [WARNING] [firmware] [872638] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  882963ms] [WARNING] [firmware] [882643] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  892986ms] [WARNING] [firmware] [892667] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  903039ms] [WARNING] [firmware] [902721] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  913042ms] [WARNING] [firmware] [912724] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  923052ms] [WARNING] [firmware] [922733] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  933087ms] [WARNING] [firmware] [932769] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  943117ms] [WARNING] [firmware] [942799] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  953152ms] [WARNING] [firmware] [952829] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  963158ms] [WARNING] [firmware] [962840] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  973195ms] [WARNING] [firmware] [972877] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  983228ms] [WARNING] [firmware] [982910] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[  993285ms] [WARNING] [firmware] [992967] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1003305ms] [WARNING] [firmware] [1002987] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1013331ms] [WARNING] [firmware] [1013013] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1023371ms] [WARNING] [firmware] [1023053] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1033372ms] [WARNING] [firmware] [1033054] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1043419ms] [WARNING] [firmware] [1043101] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1053451ms] [WARNING] [firmware] [1053132] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1063465ms] [WARNING] [firmware] [1063144] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1073469ms] [WARNING] [firmware] [1073151] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1083491ms] [WARNING] [firmware] [1083173] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1093543ms] [WARNING] [firmware] [1093225] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1103583ms] [WARNING] [firmware] [1103265] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1113601ms] [WARNING] [firmware] [1113283] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1123621ms] [WARNING] [firmware] [1123302] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1133625ms] [WARNING] [firmware] [1133307] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1143635ms] [WARNING] [firmware] [1143317] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1153674ms] [WARNING] [firmware] [1153355] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1163707ms] [WARNING] [firmware] [1163389] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1173715ms] [WARNING] [firmware] [1173396] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1183722ms] [WARNING] [firmware] [1183404] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1193765ms] [WARNING] [firmware] [1193447] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1203813ms] [WARNING] [firmware] [1203494] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1213861ms] [WARNING] [firmware] [1213543] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1223898ms] [WARNING] [firmware] [1223579] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1233921ms] [WARNING] [firmware] [1233603] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1243955ms] [WARNING] [firmware] [1243636] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1253964ms] [WARNING] [firmware] [1253645] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1264002ms] [WARNING] [firmware] [1263683] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1274025ms] [WARNING] [firmware] [1273705] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1284062ms] [WARNING] [firmware] [1283743] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1294098ms] [WARNING] [firmware] [1293779] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1304139ms] [WARNING] [firmware] [1303820] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1314158ms] [WARNING] [firmware] [1313839] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1324199ms] [WARNING] [firmware] [1323865] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1334218ms] [WARNING] [firmware] [1333899] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1344251ms] [WARNING] [firmware] [1343932] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1354285ms] [WARNING] [firmware] [1353966] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1364310ms] [WARNING] [firmware] [1363991] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1374345ms] [WARNING] [firmware] [1374026] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1384394ms] [WARNING] [firmware] [1384075] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1394414ms] [WARNING] [firmware] [1394095] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1404417ms] [WARNING] [firmware] [1404098] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1414459ms] [WARNING] [firmware] [1414140] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1424496ms] [WARNING] [firmware] [1424177] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1434502ms] [WARNING] [firmware] [1434183] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1444559ms] [WARNING] [firmware] [1444240] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1454593ms] [WARNING] [firmware] [1454274] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1464611ms] [WARNING] [firmware] [1464292] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1474637ms] [WARNING] [firmware] [1474317] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1484692ms] [WARNING] [firmware] [1484373] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1494726ms] [WARNING] [firmware] [1494407] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1504751ms] [WARNING] [firmware] [1504431] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1514787ms] [WARNING] [firmware] [1514468] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1524817ms] [WARNING] [firmware] [1524497] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1534818ms] [WARNING] [firmware] [1534499] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1544859ms] [WARNING] [firmware] [1544540] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1554885ms] [WARNING] [firmware] [1554564] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1564906ms] [WARNING] [firmware] [1564587] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1574945ms] [WARNING] [firmware] [1574624] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1584946ms] [WARNING] [firmware] [1584627] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1595001ms] [WARNING] [firmware] [1594671] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1605020ms] [WARNING] [firmware] [1604700] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1615029ms] [WARNING] [firmware] [1614709] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1625054ms] [WARNING] [firmware] [1624734] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1635086ms] [WARNING] [firmware] [1634766] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1645109ms] [WARNING] [firmware] [1644790] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1655120ms] [WARNING] [firmware] [1654800] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1665129ms] [WARNING] [firmware] [1664810] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1675131ms] [WARNING] [firmware] [1674812] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1685138ms] [WARNING] [firmware] [1684818] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1695180ms] [WARNING] [firmware] [1694860] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1705209ms] [WARNING] [firmware] [1704889] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1715216ms] [WARNING] [firmware] [1714897] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1725260ms] [WARNING] [firmware] [1724941] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1735289ms] [WARNING] [firmware] [1734969] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1745337ms] [WARNING] [firmware] [1745018] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1755343ms] [WARNING] [firmware] [1755023] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1765375ms] [WARNING] [firmware] [1765056] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1775382ms] [WARNING] [firmware] [1775063] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1785433ms] [WARNING] [firmware] [1785113] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1795483ms] [WARNING] [firmware] [1795163] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1805525ms] [WARNING] [firmware] [1805205] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1815532ms] [WARNING] [firmware] [1815230] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1825561ms] [WARNING] [firmware] [1825270] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1835571ms] [WARNING] [firmware] [1835285] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1845588ms] [WARNING] [firmware] [1845305] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1855633ms] [WARNING] [firmware] [1855351] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1864118ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1868647ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868903ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868904ms] [WARNING] [firmware] [257] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868905ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868905ms] [WARNING] [firmware] [258] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868906ms] [WARNING] [firmware] [258] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868906ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868906ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868906ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868906ms] [WARNING] [firmware] [259] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868906ms] [WARNING] [firmware] [259] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868906ms] [WARNING] [firmware] [259] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868907ms] [WARNING] [firmware] [259] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868907ms] [WARNING] [firmware] [259] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868907ms] [WARNING] [firmware] [259] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868909ms] [WARNING] [firmware] [261] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868909ms] [WARNING] [firmware] [262] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1868913ms] [WARNING] [firmware] [265] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1878701ms] [WARNING] [firmware] [10053] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1888630ms] [WARNING] [firmware] [20062] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1895887ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1898658ms] [WARNING] [firmware] [30090] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1901755ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902008ms] [WARNING] [firmware] [252] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902009ms] [WARNING] [firmware] [253] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902009ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902009ms] [WARNING] [firmware] [253] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902009ms] [WARNING] [firmware] [254] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902010ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902010ms] [WARNING] [firmware] [254] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902010ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902010ms] [WARNING] [firmware] [254] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902010ms] [WARNING] [firmware] [255] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902010ms] [WARNING] [firmware] [255] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902011ms] [WARNING] [firmware] [255] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902011ms] [WARNING] [firmware] [255] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902011ms] [WARNING] [firmware] [255] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902012ms] [WARNING] [firmware] [256] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902013ms] [WARNING] [firmware] [257] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1902015ms] [WARNING] [firmware] [258] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1905939ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1910509ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910765ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910766ms] [WARNING] [firmware] [256] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910767ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910767ms] [WARNING] [firmware] [258] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910767ms] [WARNING] [firmware] [258] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910768ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910768ms] [WARNING] [firmware] [259] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910768ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910769ms] [WARNING] [firmware] [259] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910769ms] [WARNING] [firmware] [259] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910769ms] [WARNING] [firmware] [259] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910769ms] [WARNING] [firmware] [260] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910770ms] [WARNING] [firmware] [260] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910770ms] [WARNING] [firmware] [260] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910771ms] [WARNING] [firmware] [261] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910772ms] [WARNING] [firmware] [262] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1910773ms] [WARNING] [firmware] [263] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1916016ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1920542ms] [WARNING] [firmware] [10033] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922190ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922446ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922447ms] [WARNING] [firmware] [256] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922448ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922448ms] [WARNING] [firmware] [257] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922448ms] [WARNING] [firmware] [257] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922448ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922449ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922449ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922449ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922449ms] [WARNING] [firmware] [258] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922449ms] [WARNING] [firmware] [258] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922449ms] [WARNING] [firmware] [258] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922449ms] [WARNING] [firmware] [259] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922450ms] [WARNING] [firmware] [259] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922452ms] [WARNING] [firmware] [261] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922453ms] [WARNING] [firmware] [262] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1922453ms] [WARNING] [firmware] [262] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1926040ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1932549ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932800ms] [WARNING] [firmware] [250] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932800ms] [WARNING] [firmware] [251] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932801ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932801ms] [WARNING] [firmware] [252] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932801ms] [WARNING] [firmware] [252] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932801ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932802ms] [WARNING] [firmware] [253] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932802ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932802ms] [WARNING] [firmware] [253] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932802ms] [WARNING] [firmware] [253] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932802ms] [WARNING] [firmware] [253] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932802ms] [WARNING] [firmware] [253] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932802ms] [WARNING] [firmware] [253] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932802ms] [WARNING] [firmware] [253] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932803ms] [WARNING] [firmware] [254] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932804ms] [WARNING] [firmware] [255] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1932804ms] [WARNING] [firmware] [255] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1936076ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1939499ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939755ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939756ms] [WARNING] [firmware] [256] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939756ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939756ms] [WARNING] [firmware] [257] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939757ms] [WARNING] [firmware] [257] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939757ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939757ms] [WARNING] [firmware] [257] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939757ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939757ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939757ms] [WARNING] [firmware] [258] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939757ms] [WARNING] [firmware] [258] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939757ms] [WARNING] [firmware] [258] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939757ms] [WARNING] [firmware] [258] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939758ms] [WARNING] [firmware] [258] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939758ms] [WARNING] [firmware] [259] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939759ms] [WARNING] [firmware] [259] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1939759ms] [WARNING] [firmware] [260] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1946152ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1949515ms] [WARNING] [firmware] [10015] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1951962ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952215ms] [WARNING] [firmware] [252] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952216ms] [WARNING] [firmware] [253] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952216ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952216ms] [WARNING] [firmware] [254] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952217ms] [WARNING] [firmware] [254] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952217ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952217ms] [WARNING] [firmware] [255] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952217ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952218ms] [WARNING] [firmware] [255] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952218ms] [WARNING] [firmware] [255] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952218ms] [WARNING] [firmware] [255] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952218ms] [WARNING] [firmware] [255] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952218ms] [WARNING] [firmware] [255] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952218ms] [WARNING] [firmware] [255] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952219ms] [WARNING] [firmware] [256] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952225ms] [WARNING] [firmware] [262] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1952228ms] [WARNING] [firmware] [265] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1956175ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1960803ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961059ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961060ms] [WARNING] [firmware] [257] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961060ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961060ms] [WARNING] [firmware] [257] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961060ms] [WARNING] [firmware] [257] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961061ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961061ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961061ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961061ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961061ms] [WARNING] [firmware] [258] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961061ms] [WARNING] [firmware] [258] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961061ms] [WARNING] [firmware] [258] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961061ms] [WARNING] [firmware] [258] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961062ms] [WARNING] [firmware] [258] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961062ms] [WARNING] [firmware] [259] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961063ms] [WARNING] [firmware] [260] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1961068ms] [WARNING] [firmware] [264] [DBG] [GFX] Time = 4 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1966223ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1971024ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971280ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971281ms] [WARNING] [firmware] [256] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971281ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971281ms] [WARNING] [firmware] [257] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971281ms] [WARNING] [firmware] [257] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971281ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971282ms] [WARNING] [firmware] [257] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971282ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971282ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971282ms] [WARNING] [firmware] [258] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971282ms] [WARNING] [firmware] [258] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971282ms] [WARNING] [firmware] [258] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971282ms] [WARNING] [firmware] [258] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971283ms] [WARNING] [firmware] [258] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971284ms] [WARNING] [firmware] [259] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971284ms] [WARNING] [firmware] [260] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1971285ms] [WARNING] [firmware] [261] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1976336ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1982624ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982879ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982880ms] [WARNING] [firmware] [256] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982880ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982880ms] [WARNING] [firmware] [256] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982880ms] [WARNING] [firmware] [256] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982881ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982881ms] [WARNING] [firmware] [257] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982881ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982881ms] [WARNING] [firmware] [257] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982881ms] [WARNING] [firmware] [257] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982881ms] [WARNING] [firmware] [257] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982881ms] [WARNING] [firmware] [257] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982882ms] [WARNING] [firmware] [258] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982882ms] [WARNING] [firmware] [258] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982883ms] [WARNING] [firmware] [259] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982883ms] [WARNING] [firmware] [259] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1982884ms] [WARNING] [firmware] [260] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1986433ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 1992650ms] [WARNING] [firmware] [10026] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1993846ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994099ms] [WARNING] [firmware] [252] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994100ms] [WARNING] [firmware] [253] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994100ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994100ms] [WARNING] [firmware] [253] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994100ms] [WARNING] [firmware] [254] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994101ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994101ms] [WARNING] [firmware] [254] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994101ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994101ms] [WARNING] [firmware] [254] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994101ms] [WARNING] [firmware] [254] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994101ms] [WARNING] [firmware] [254] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994101ms] [WARNING] [firmware] [254] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994101ms] [WARNING] [firmware] [254] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994101ms] [WARNING] [firmware] [255] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994102ms] [WARNING] [firmware] [255] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994103ms] [WARNING] [firmware] [256] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 1994103ms] [WARNING] [firmware] [256] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2001504ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2003870ms] [WARNING] [firmware] [10023] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005289ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005544ms] [WARNING] [firmware] [254] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005545ms] [WARNING] [firmware] [255] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005545ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005545ms] [WARNING] [firmware] [256] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005545ms] [WARNING] [firmware] [256] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005546ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005546ms] [WARNING] [firmware] [256] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005546ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005546ms] [WARNING] [firmware] [257] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005547ms] [WARNING] [firmware] [257] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005547ms] [WARNING] [firmware] [257] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005547ms] [WARNING] [firmware] [257] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005547ms] [WARNING] [firmware] [257] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005547ms] [WARNING] [firmware] [258] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005555ms] [WARNING] [firmware] [266] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005556ms] [WARNING] [firmware] [267] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2005557ms] [WARNING] [firmware] [268] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2011557ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2016353ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016607ms] [WARNING] [firmware] [253] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016608ms] [WARNING] [firmware] [255] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016609ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016609ms] [WARNING] [firmware] [256] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016609ms] [WARNING] [firmware] [256] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016609ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016610ms] [WARNING] [firmware] [256] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016610ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016610ms] [WARNING] [firmware] [257] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016610ms] [WARNING] [firmware] [257] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016610ms] [WARNING] [firmware] [257] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016610ms] [WARNING] [firmware] [257] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016610ms] [WARNING] [firmware] [257] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016610ms] [WARNING] [firmware] [257] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016611ms] [WARNING] [firmware] [258] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016613ms] [WARNING] [firmware] [259] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2016614ms] [WARNING] [firmware] [261] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2021623ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2026929ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027185ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027185ms] [WARNING] [firmware] [256] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027186ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027186ms] [WARNING] [firmware] [257] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027186ms] [WARNING] [firmware] [257] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027187ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027187ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027187ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027187ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027187ms] [WARNING] [firmware] [258] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027187ms] [WARNING] [firmware] [258] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027188ms] [WARNING] [firmware] [258] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027188ms] [WARNING] [firmware] [259] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027188ms] [WARNING] [firmware] [259] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027189ms] [WARNING] [firmware] [259] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027189ms] [WARNING] [firmware] [260] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2027190ms] [WARNING] [firmware] [261] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2031683ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2035163ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035417ms] [WARNING] [firmware] [252] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035418ms] [WARNING] [firmware] [254] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035418ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035418ms] [WARNING] [firmware] [255] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035418ms] [WARNING] [firmware] [255] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035419ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035419ms] [WARNING] [firmware] [255] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035419ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035419ms] [WARNING] [firmware] [255] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035419ms] [WARNING] [firmware] [256] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035419ms] [WARNING] [firmware] [256] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035419ms] [WARNING] [firmware] [256] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035420ms] [WARNING] [firmware] [256] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035420ms] [WARNING] [firmware] [256] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035421ms] [WARNING] [firmware] [258] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035422ms] [WARNING] [firmware] [258] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2035423ms] [WARNING] [firmware] [259] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2041769ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2045586ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045841ms] [WARNING] [firmware] [254] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045842ms] [WARNING] [firmware] [255] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045842ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045842ms] [WARNING] [firmware] [255] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045842ms] [WARNING] [firmware] [255] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045843ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045843ms] [WARNING] [firmware] [256] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045843ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045843ms] [WARNING] [firmware] [256] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045843ms] [WARNING] [firmware] [256] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045843ms] [WARNING] [firmware] [256] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045844ms] [WARNING] [firmware] [257] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045844ms] [WARNING] [firmware] [257] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045844ms] [WARNING] [firmware] [257] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045846ms] [WARNING] [firmware] [259] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045847ms] [WARNING] [firmware] [260] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2045848ms] [WARNING] [firmware] [261] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2051785ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2055065ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055318ms] [WARNING] [firmware] [252] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055321ms] [WARNING] [firmware] [255] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055325ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055325ms] [WARNING] [firmware] [260] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055326ms] [WARNING] [firmware] [260] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055326ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055327ms] [WARNING] [firmware] [261] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055327ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055327ms] [WARNING] [firmware] [262] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055328ms] [WARNING] [firmware] [262] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055328ms] [WARNING] [firmware] [262] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055328ms] [WARNING] [firmware] [262] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055328ms] [WARNING] [firmware] [263] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055328ms] [WARNING] [firmware] [263] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055330ms] [WARNING] [firmware] [265] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055331ms] [WARNING] [firmware] [265] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2055332ms] [WARNING] [firmware] [266] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2061898ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2066384ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066640ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066641ms] [WARNING] [firmware] [257] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066641ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066641ms] [WARNING] [firmware] [257] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066642ms] [WARNING] [firmware] [258] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066642ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066642ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066642ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066643ms] [WARNING] [firmware] [259] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066643ms] [WARNING] [firmware] [259] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066643ms] [WARNING] [firmware] [259] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066643ms] [WARNING] [firmware] [259] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066643ms] [WARNING] [firmware] [259] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066644ms] [WARNING] [firmware] [259] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066644ms] [WARNING] [firmware] [260] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066645ms] [WARNING] [firmware] [261] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2066647ms] [WARNING] [firmware] [262] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2071920ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2076406ms] [WARNING] [firmware] [10021] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2076814ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077069ms] [WARNING] [firmware] [254] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077069ms] [WARNING] [firmware] [254] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077070ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077070ms] [WARNING] [firmware] [255] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077070ms] [WARNING] [firmware] [255] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077070ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077071ms] [WARNING] [firmware] [256] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077071ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077071ms] [WARNING] [firmware] [256] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077071ms] [WARNING] [firmware] [256] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077071ms] [WARNING] [firmware] [256] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077071ms] [WARNING] [firmware] [256] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077071ms] [WARNING] [firmware] [256] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077072ms] [WARNING] [firmware] [257] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077073ms] [WARNING] [firmware] [258] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077074ms] [WARNING] [firmware] [259] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2077075ms] [WARNING] [firmware] [260] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2081938ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2086843ms] [WARNING] [firmware] [10028] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088731ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088982ms] [WARNING] [firmware] [250] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088984ms] [WARNING] [firmware] [252] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088984ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088984ms] [WARNING] [firmware] [253] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088985ms] [WARNING] [firmware] [253] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088985ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088985ms] [WARNING] [firmware] [253] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088995ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088995ms] [WARNING] [firmware] [264] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088996ms] [WARNING] [firmware] [264] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088996ms] [WARNING] [firmware] [264] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088996ms] [WARNING] [firmware] [264] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088996ms] [WARNING] [firmware] [264] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088996ms] [WARNING] [firmware] [264] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088997ms] [WARNING] [firmware] [265] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088997ms] [WARNING] [firmware] [266] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2088998ms] [WARNING] [firmware] [266] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2091990ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2096619ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096875ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096875ms] [WARNING] [firmware] [256] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096876ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096876ms] [WARNING] [firmware] [256] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096876ms] [WARNING] [firmware] [257] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096876ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096876ms] [WARNING] [firmware] [257] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096876ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096877ms] [WARNING] [firmware] [257] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096877ms] [WARNING] [firmware] [258] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096877ms] [WARNING] [firmware] [258] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096877ms] [WARNING] [firmware] [258] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096877ms] [WARNING] [firmware] [258] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096878ms] [WARNING] [firmware] [258] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096878ms] [WARNING] [firmware] [259] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096879ms] [WARNING] [firmware] [260] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2096880ms] [WARNING] [firmware] [260] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2102039ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:5199/@vite/client:1002
+[ 2106633ms] [WARNING] [firmware] [10013] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110102ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110358ms] [WARNING] [firmware] [255] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110359ms] [WARNING] [firmware] [257] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110359ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110359ms] [WARNING] [firmware] [257] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110360ms] [WARNING] [firmware] [257] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110360ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110360ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110360ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110360ms] [WARNING] [firmware] [258] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110361ms] [WARNING] [firmware] [259] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110361ms] [WARNING] [firmware] [259] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110362ms] [WARNING] [firmware] [259] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110362ms] [WARNING] [firmware] [260] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110362ms] [WARNING] [firmware] [260] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110363ms] [WARNING] [firmware] [261] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110365ms] [WARNING] [firmware] [263] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2110366ms] [WARNING] [firmware] [264] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2120149ms] [WARNING] [firmware] [10047] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2130164ms] [WARNING] [firmware] [20062] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2140178ms] [WARNING] [firmware] [30076] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2150225ms] [WARNING] [firmware] [40124] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2160261ms] [WARNING] [firmware] [50159] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2170282ms] [WARNING] [firmware] [60180] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2180311ms] [WARNING] [firmware] [70209] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2190355ms] [WARNING] [firmware] [80253] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2200388ms] [WARNING] [firmware] [90286] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2210433ms] [WARNING] [firmware] [100331] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2220482ms] [WARNING] [firmware] [110381] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2230538ms] [WARNING] [firmware] [120436] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2240590ms] [WARNING] [firmware] [130489] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2250593ms] [WARNING] [firmware] [140492] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2260648ms] [WARNING] [firmware] [150547] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2270687ms] [WARNING] [firmware] [160586] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2280701ms] [WARNING] [firmware] [170600] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2290713ms] [WARNING] [firmware] [180612] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2300715ms] [WARNING] [firmware] [190614] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2310755ms] [WARNING] [firmware] [200655] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2320799ms] [WARNING] [firmware] [210699] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2330854ms] [WARNING] [firmware] [220753] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2340906ms] [WARNING] [firmware] [230806] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2350958ms] [WARNING] [firmware] [240858] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2360963ms] [WARNING] [firmware] [250863] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2370993ms] [WARNING] [firmware] [260893] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2381006ms] [WARNING] [firmware] [270906] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2391042ms] [WARNING] [firmware] [280942] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2401083ms] [WARNING] [firmware] [290983] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2411094ms] [WARNING] [firmware] [300994] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2421112ms] [WARNING] [firmware] [311013] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2431113ms] [WARNING] [firmware] [321014] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2441132ms] [WARNING] [firmware] [331033] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2451183ms] [WARNING] [firmware] [341084] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2461208ms] [WARNING] [firmware] [351109] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2471256ms] [WARNING] [firmware] [361157] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2481299ms] [WARNING] [firmware] [371201] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2491302ms] [WARNING] [firmware] [381203] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2501352ms] [WARNING] [firmware] [391254] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2511385ms] [WARNING] [firmware] [401286] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2521401ms] [WARNING] [firmware] [411303] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2531415ms] [WARNING] [firmware] [421317] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2541443ms] [WARNING] [firmware] [431345] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2551453ms] [WARNING] [firmware] [441355] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2561507ms] [WARNING] [firmware] [451409] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2571514ms] [WARNING] [firmware] [461417] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2581520ms] [WARNING] [firmware] [471422] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2591566ms] [WARNING] [firmware] [481468] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2601568ms] [WARNING] [firmware] [491470] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2611606ms] [WARNING] [firmware] [501509] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2621645ms] [WARNING] [firmware] [511548] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2631656ms] [WARNING] [firmware] [521558] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2641693ms] [WARNING] [firmware] [531595] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2651745ms] [WARNING] [firmware] [541648] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2661759ms] [WARNING] [firmware] [551662] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2671768ms] [WARNING] [firmware] [561671] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2681804ms] [WARNING] [firmware] [571707] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2691816ms] [WARNING] [firmware] [581720] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2701861ms] [WARNING] [firmware] [591764] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2711910ms] [WARNING] [firmware] [601813] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2721915ms] [WARNING] [firmware] [611819] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2731952ms] [WARNING] [firmware] [621856] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2741988ms] [WARNING] [firmware] [631892] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2752039ms] [WARNING] [firmware] [641943] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2762092ms] [WARNING] [firmware] [651996] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2772131ms] [WARNING] [firmware] [662034] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2782132ms] [WARNING] [firmware] [672036] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2792148ms] [WARNING] [firmware] [682052] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2802164ms] [WARNING] [firmware] [692069] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2812209ms] [WARNING] [firmware] [702113] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2822219ms] [WARNING] [firmware] [712123] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2832267ms] [WARNING] [firmware] [722171] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2842288ms] [WARNING] [firmware] [732193] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2852332ms] [WARNING] [firmware] [742232] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2862339ms] [WARNING] [firmware] [752236] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2872382ms] [WARNING] [firmware] [762273] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2882426ms] [WARNING] [firmware] [772320] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2892470ms] [WARNING] [firmware] [782363] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2902491ms] [WARNING] [firmware] [792384] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2912543ms] [WARNING] [firmware] [802436] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2922553ms] [WARNING] [firmware] [812447] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2932601ms] [WARNING] [firmware] [822495] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2942657ms] [WARNING] [firmware] [832550] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2952686ms] [WARNING] [firmware] [842579] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2962715ms] [WARNING] [firmware] [852609] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2972735ms] [WARNING] [firmware] [862629] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2982752ms] [WARNING] [firmware] [872645] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 2992799ms] [WARNING] [firmware] [882693] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3002830ms] [WARNING] [firmware] [892724] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3012870ms] [WARNING] [firmware] [902764] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3022903ms] [WARNING] [firmware] [912795] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3032920ms] [WARNING] [firmware] [922814] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3042945ms] [WARNING] [firmware] [932839] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3052992ms] [WARNING] [firmware] [942886] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3063019ms] [WARNING] [firmware] [952913] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3073026ms] [WARNING] [firmware] [962921] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3083026ms] [WARNING] [firmware] [972921] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3093076ms] [WARNING] [firmware] [982971] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3103125ms] [WARNING] [firmware] [993019] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3113125ms] [WARNING] [firmware] [1003020] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3123159ms] [WARNING] [firmware] [1013054] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3133202ms] [WARNING] [firmware] [1023097] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3143232ms] [WARNING] [firmware] [1033126] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3153242ms] [WARNING] [firmware] [1043137] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3163263ms] [WARNING] [firmware] [1053158] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3173268ms] [WARNING] [firmware] [1063163] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3183314ms] [WARNING] [firmware] [1073195] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3193357ms] [WARNING] [firmware] [1083253] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3203407ms] [WARNING] [firmware] [1093302] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3213407ms] [WARNING] [firmware] [1103303] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3223409ms] [WARNING] [firmware] [1113305] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3233451ms] [WARNING] [firmware] [1123347] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3243475ms] [WARNING] [firmware] [1133371] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3253507ms] [WARNING] [firmware] [1143403] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3263517ms] [WARNING] [firmware] [1153413] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3273562ms] [WARNING] [firmware] [1163458] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3283564ms] [WARNING] [firmware] [1173460] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3293610ms] [WARNING] [firmware] [1183507] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3303660ms] [WARNING] [firmware] [1193556] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3313696ms] [WARNING] [firmware] [1203591] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3323745ms] [WARNING] [firmware] [1213641] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3333750ms] [WARNING] [firmware] [1223647] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3343779ms] [WARNING] [firmware] [1233676] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3353798ms] [WARNING] [firmware] [1243695] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3363841ms] [WARNING] [firmware] [1253737] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3373872ms] [WARNING] [firmware] [1263769] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3383892ms] [WARNING] [firmware] [1273790] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3393898ms] [WARNING] [firmware] [1283795] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3403909ms] [WARNING] [firmware] [1293806] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3413948ms] [WARNING] [firmware] [1303844] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3423984ms] [WARNING] [firmware] [1313882] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3434017ms] [WARNING] [firmware] [1323915] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3444049ms] [WARNING] [firmware] [1333946] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3454082ms] [WARNING] [firmware] [1343980] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3464118ms] [WARNING] [firmware] [1354015] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3474169ms] [WARNING] [firmware] [1364067] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3484211ms] [WARNING] [firmware] [1374109] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3494244ms] [WARNING] [firmware] [1384137] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3504256ms] [WARNING] [firmware] [1394154] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3514298ms] [WARNING] [firmware] [1404197] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3524344ms] [WARNING] [firmware] [1414243] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3534371ms] [WARNING] [firmware] [1424269] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3544406ms] [WARNING] [firmware] [1434305] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3554409ms] [WARNING] [firmware] [1444307] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3564464ms] [WARNING] [firmware] [1454363] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3574510ms] [WARNING] [firmware] [1464409] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3584521ms] [WARNING] [firmware] [1474420] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3594567ms] [WARNING] [firmware] [1484466] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3604584ms] [WARNING] [firmware] [1494483] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3614597ms] [WARNING] [firmware] [1504496] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3624614ms] [WARNING] [firmware] [1514514] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3634657ms] [WARNING] [firmware] [1524556] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3644697ms] [WARNING] [firmware] [1534597] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3654728ms] [WARNING] [firmware] [1544627] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3664747ms] [WARNING] [firmware] [1554647] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3674797ms] [WARNING] [firmware] [1564697] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3684841ms] [WARNING] [firmware] [1574741] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3694889ms] [WARNING] [firmware] [1584789] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3704914ms] [WARNING] [firmware] [1594814] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3714917ms] [WARNING] [firmware] [1604817] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725096ms] [WARNING] [firmware] [0] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725353ms] [WARNING] [firmware] [257] [INF] [MAIN] Device: xteink_x4_pro @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725357ms] [WARNING] [firmware] [261] [DBG] [UI] Using Lyra theme @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725358ms] [WARNING] [firmware] [SIM] X4 Pro frontlight: off, brightness=60%, warmth=50% @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725358ms] [WARNING] [firmware] [263] [DBG] [MAIN] Starting CrossPoint version dev-simulator @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725359ms] [WARNING] [firmware] [264] [DBG] [MAIN] Display initialized @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725361ms] [WARNING] [firmware] [SIM] open failed: ./fs_/.fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725361ms] [WARNING] [firmware] [265] [DBG] [SDREG] Fonts directory not found: /.fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725361ms] [WARNING] [firmware] [SIM] open failed: ./fs_/fonts (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725362ms] [WARNING] [firmware] [266] [DBG] [SDREG] Fonts directory not found: /fonts @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725366ms] [WARNING] [firmware] [266] [DBG] [SDREG] Discovery complete: 0 families @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725366ms] [WARNING] [firmware] [270] [DBG] [SDFS] SD font system ready (0 families discovered) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725366ms] [WARNING] [firmware] [270] [DBG] [MAIN] Fonts setup @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725367ms] [WARNING] [firmware] [271] [DBG] [ACT] Entering activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725368ms] [WARNING] [firmware] [272] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725373ms] [WARNING] [firmware] [278] [DBG] [ACT] Exiting activity: Boot @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725376ms] [WARNING] [firmware] [280] [DBG] [ACT] Entering activity: MicroMarkD @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3725380ms] [WARNING] [firmware] [284] [DBG] [GFX] Time = 3 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3727972ms] [WARNING] [firmware] [2876] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3728926ms] [WARNING] [firmware] [3830] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3729686ms] [WARNING] [firmware] [4590] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3730561ms] [WARNING] [firmware] [5465] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3731509ms] [WARNING] [firmware] [6413] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3732049ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault-backup.git/.git/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3732049ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault-backup.git/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3732052ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault/.git/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3732052ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3732054ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault-backup.git/.git/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3732054ms] [WARNING] [firmware] [SIM] open failed: ./fs_/vault-backup.git/refs/heads/main (flags=0x0 errno=44 No such file or directory) @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3732059ms] [WARNING] [firmware] [6963] [DBG] [GFX] Time = 0 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3735111ms] [WARNING] [firmware] [10015] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3737254ms] [WARNING] [firmware] [12159] [DBG] [GFX] Time = 1 ms from clearScreen to displayBuffer @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3745151ms] [WARNING] [firmware] [20056] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3755179ms] [WARNING] [firmware] [30084] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3765184ms] [WARNING] [firmware] [40088] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3775237ms] [WARNING] [firmware] [50141] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3785286ms] [WARNING] [firmware] [60190] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3795322ms] [WARNING] [firmware] [70226] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3805327ms] [WARNING] [firmware] [80233] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3815359ms] [WARNING] [firmware] [90273] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3825402ms] [WARNING] [firmware] [100321] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3835452ms] [WARNING] [firmware] [110374] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3845492ms] [WARNING] [firmware] [120415] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3855503ms] [WARNING] [firmware] [130427] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3865533ms] [WARNING] [firmware] [140457] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3875576ms] [WARNING] [firmware] [150501] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3885595ms] [WARNING] [firmware] [160520] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3895623ms] [WARNING] [firmware] [170547] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3905650ms] [WARNING] [firmware] [180575] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3915663ms] [WARNING] [firmware] [190588] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3925665ms] [WARNING] [firmware] [200590] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3935682ms] [WARNING] [firmware] [210607] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3945704ms] [WARNING] [firmware] [220629] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3955759ms] [WARNING] [firmware] [230684] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3965765ms] [WARNING] [firmware] [240691] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3975820ms] [WARNING] [firmware] [250746] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3985837ms] [WARNING] [firmware] [260762] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 3995883ms] [WARNING] [firmware] [270809] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 4005894ms] [WARNING] [firmware] [280820] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
+[ 4015908ms] [WARNING] [firmware] [290834] [INF] [MEM] Free: 1048576 bytes, Total: 1048576 bytes, Min Free: 1048576 bytes, MaxAlloc: 1048576 bytes @ http://127.0.0.1:5199/src/main.ts?t=1787390545603:350
