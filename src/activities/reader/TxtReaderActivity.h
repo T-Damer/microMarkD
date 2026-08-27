@@ -3,6 +3,7 @@
 #include <Txt.h>
 #ifdef MICROMARKD_APP
 #include <MarkdownLineParser.h>
+#include "activities/micromarkd/MarkdownVaultIndexer.h"
 #endif
 
 #include <memory>
@@ -39,12 +40,21 @@ class TxtReaderActivity final : public ReaderActivity {
     int page = 0;
   };
 
+  // Incremental vault-index fallback for wikilinks that fail direct path resolution.
+  struct WikiLinkResolution {
+    std::string target;
+    std::string sourceBook;
+    std::unique_ptr<MarkdownVaultIndexer> indexer;
+    std::unique_ptr<micromarkd::MarkdownCatalog> catalog;
+  };
+
   bool markdownMode = false;
   int pendingMarkdownPage = -1;
   std::vector<micromarkd::ParsedLine> currentMarkdownLines;
   std::vector<size_t> markdownPageTextOffsets;
   std::vector<MarkdownLinkHit> markdownLinkHits;
   std::vector<MarkdownHistoryEntry> markdownHistory;
+  std::unique_ptr<WikiLinkResolution> wikiLinkResolution_;
 
   bool loadMarkdownPageAtCursor(GfxRenderer& renderer, size_t sourceOffset, size_t textOffset,
                                 std::vector<std::string>& outLines,
@@ -52,6 +62,8 @@ class TxtReaderActivity final : public ReaderActivity {
                                 size_t& nextTextOffset);
   bool openMarkdownFile(const std::string& path, int page, bool rememberCurrent);
   std::string resolveWikiLink(const std::string& target) const;
+  void beginWikiLinkIndexResolution(const std::string& target);
+  void stepWikiLinkResolution();
 #endif
 
   // Cached settings for cache validation
@@ -82,12 +94,13 @@ class TxtReaderActivity final : public ReaderActivity {
   explicit TxtReaderActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, std::string bookPath,
                              bool allowFastInitialRefresh)
       : ReaderActivity("TxtReader", renderer, mappedInput, std::move(bookPath), allowFastInitialRefresh) {}
-  ~TxtReaderActivity() override = default;
+  ~TxtReaderActivity() override;
 
   bool pageTurn(bool isForward) override;
   bool skipPages(int amount) override;
   bool isAtEndOfBook() const override;
   void onReturnFromEndOfBook() override;
+  void loop() override;
 
   ScreenshotInfo getScreenshotInfo() const override;
 };

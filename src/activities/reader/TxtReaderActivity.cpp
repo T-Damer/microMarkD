@@ -18,6 +18,7 @@
 #include "ReaderActivity.h"
 #include "ReaderUtils.h"
 #include "RecentBooksStore.h"
+#include "activities/micromarkd/MarkdownVaultIndexer.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 
@@ -729,6 +730,16 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
   }
 }
 
+void TxtReaderActivity::loop() {
+  ReaderActivity::loop();
+#ifdef MICROMARKD_APP
+  if (wikiLinkResolution_) stepWikiLinkResolution();
+#endif
+}
+
+// Out of line so the unique_ptr members can use forward-declared types.
+TxtReaderActivity::~TxtReaderActivity() = default;
+
 bool TxtReaderActivity::handleFormatInput() {
 #ifdef MICROMARKD_APP
   if (!markdownMode) return false;
@@ -757,7 +768,8 @@ bool TxtReaderActivity::handleFormatInput() {
   if (target.empty()) return false;
   const std::string path = resolveWikiLink(target);
   if (path.empty()) {
-    LOG_INF("MD", "Wikilink target not found: %s", target.c_str());
+    // Direct path/basename lookup failed; fall back to the vault metadata catalog.
+    beginWikiLinkIndexResolution(target);
     return true;
   }
 
@@ -839,6 +851,49 @@ std::string TxtReaderActivity::resolveWikiLink(const std::string& rawTarget) con
   std::string resolved = tryCandidate(folder + "/" + target);
   if (!resolved.empty()) return resolved;
   return tryCandidate("/vault/" + target);
+}
+
+void TxtReaderActivity::beginWikiLinkIndexResolution(const std::string& target) {
+  auto resolution = makeUniqueNoThrow<WikiLinkResolution>();
+  if (!resolution) return;
+  resolution->target = target;
+  resolution->sourceBook = bookPath;
+  resolution->indexer = makeUniqueNoThrow<MarkdownVaultIndexer>();
+  resolution->catalog = makeUniqueNoThrow<micromarkd::MarkdownCatalog>();
+  if (!resolution->indexer || !resolution->catalog) {
+    LOG_ERR("MD", "OOM: wikilink index resolution");
+    return;
+  }
+  resolution->indexer->begin("/vault");
+  wikiLinkResolution_ = std::move(resolution);
+}
+
+void TxtReaderActivity::stepWikiLinkResolution() {
+  WikiLinkResolution& pending = *wikiLinkResolution_;
+  // Navigating to another note invalidates the pending source-relative lookup.
+  if (pending.sourceBook != bookPath || !markdownMode) {
+    wikiLinkResolution_.reset();
+    return;
+  }
+
+  if (pending.indexer->hasRecord()) {
+    pending.catalog->addRecord(pending.indexer->takeRecord());
+  } else if (!pending.indexer->complete()) {
+    pending.indexer->step();
+    if (pending.indexer->hasRecord()) pending.catalog->addRecord(pending.indexer->takeRecord());
+  }
+  if (!pending.indexer->complete() || pending.indexer->hasRecord()) return;
+
+  pending.catalog->finalize();
+  const std::string path = pending.catalog->resolveTarget(bookPath, pending.target);
+  const std::string target = pending.target;
+  wikiLinkResolution_.reset();
+
+  if (path.empty() || path == bookPath) {
+    LOG_INF("MD", "Wikilink target not found: %s", target.c_str());
+    return;
+  }
+  openMarkdownFile(path, -1, true);
 }
 #endif
 

@@ -8,7 +8,7 @@
 
 class MicroMarkDActivity final : public UiListActivity {
  public:
-  static constexpr int MENU_ITEM_COUNT = 6;
+  static constexpr int MENU_ITEM_COUNT = 7;
 
   explicit MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
@@ -28,10 +28,18 @@ class MicroMarkDActivity final : public UiListActivity {
   void showCreateError();
   void recoverInterruptedSaves();
   void runGitSync();
+  void runGitSyncUrl(const std::string& url, const std::string& user, const std::string& token);
+  void launchWifiThenSync();
+  void showSyncFailure(int status);
   bool stageVaultForCommit();
+  void startGitRemoteConfig();
+  void updateGitRemoteRow();
+  void configureGitUser(const std::string& url);
+  void configureGitToken(const std::string& url, const std::string& user);
 
   freeink::ui::ListItem rowItems_[MENU_ITEM_COUNT]{};
   std::string vaultStatus_;
+  std::string gitRemoteDisplay_;
 };
 
 #endif  // MICROMARKD_APP

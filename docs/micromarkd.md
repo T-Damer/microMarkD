@@ -13,7 +13,8 @@ The current bootstrap exposes:
 - **Search** — bounded, incremental full-text search over the vault;
 - **Tags** — an indexed tag browser backed by disposable metadata records;
 - **New note** — title entry followed by the line-oriented Markdown editor;
-- **Git sync** — reserved product surface; synchronization is not implemented yet.
+- **Git sync** — fast-forward pull from `/vault-backup.git`, then stage/commit/push of all vault notes;
+  divergence is reported and never merged.
 
 Default CrossPoint environments do not define `MICROMARKD_APP` and keep their
 existing home screen and behavior.
@@ -45,10 +46,10 @@ Heading fragments are supported:
 ```
 
 The target heading's source byte offset is mapped to the measured Markdown page
-index, so the reader opens the page containing that heading. Alias-aware
-resolution is implemented by the metadata catalog and backlinks layer; normal
-reader clicks still use direct path/basename resolution and do not yet fall back
-to frontmatter aliases.
+index, so the reader opens the page containing that heading. When direct
+path/basename resolution fails, reader clicks fall back to the metadata catalog,
+resolving unique basenames and frontmatter aliases with the same precedence as
+the backlinks layer; ambiguous aliases are never guessed.
 
 ## Pagination and memory model
 
@@ -162,10 +163,29 @@ a search ranking signal.
 ## Build
 
 This branch is stacked on the X4 Pro support branch from CrossPoint PR #2983.
+The command below is a firmware-maintainer reference; browser validation is
+the acceptance check for microMarkD changes.
 
 ```sh
 pio run -e micromarkd-x4pro
 ```
+
+### Browser-emulator network sync
+
+The WASM build routes outbound HTTP through JS `fetch()` (EM_ASYNC_JS), so Git
+sync can be exercised end to end without hardware:
+
+```sh
+# serve a git repo with CORS enabled (esp32-git's test backend works)
+python3 <esp32-git>/test/http_backend.py 8940 <repo-root>
+# bake remote config into the SD image at fs_/.micromarkd/sync/remote.json,
+# then rebuild and reload the emulator
+python3 <crossink-simulator>/web/wasm/build.py --firmware-root . --environment simulator_x4_pro
+```
+
+Servers must send CORS headers; `http.receivepack = true` is required on the
+bare repo for pushes. The firmware's fake "Simulator WiFi" network satisfies
+the WiFi gate.
 
 Expected SD-card layout:
 
@@ -186,26 +206,18 @@ stable cache/state boundaries for later milestones.
 
 ## Simulator status
 
-A full-firmware integration experiment with the external CrossPoint simulator
-was intentionally removed from the active branch. The external simulator is
-useful, but its native Arduino/ESP-IDF/FreeInk shims currently lag the CrossPoint
-X4 Pro base used by microMarkD. Carrying those compatibility patches in this PR
-would couple the app to unrelated Wi-Fi, power, OTA, and platform APIs.
-
-A future simulator target should be a thin, microMarkD-focused desktop target
-(or should consume an upstream simulator integration once that contract is
-stable). Real X4 Pro validation remains required for touch behavior, e-paper
-refresh characteristics, SD timing, PSRAM pressure, and power-loss behavior.
+The full-firmware browser emulator lives in the external `crossink-simulator`
+repository so this firmware repository stays focused on the device code. It
+supports the X4 Pro, X4, and X3 profiles and is the required validation surface
+for microMarkD changes. Hardware testing remains a useful follow-up, but does
+not replace the browser check.
 
 ## Next milestones
 
-1. Add alias fallback to normal reader wikilink clicks and metadata-aware search
-   ranking.
-2. Add note rename/move and folder creation with safe cache/index invalidation.
-3. Add zoom-dependent, tiled graph navigation using the indexed link graph.
-4. Implement constrained Git synchronization: one remote, one branch, shallow
-   fetch, commit, pull/rebase, and push.
-5. Add a stable X4 Pro/microMarkD simulator target and deterministic touch tests.
+1. Add metadata-aware search ranking using aliases, tags, and headings.
+2. Add zoom-dependent, tiled graph navigation using the indexed link graph.
+3. Keep the external browser emulator aligned with the firmware input and
+   framebuffer contracts.
 
 ## Design constraints
 

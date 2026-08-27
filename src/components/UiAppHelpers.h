@@ -12,7 +12,6 @@
 #include "components/UIThemeTokens.h"
 #include "components/icons/customListIcons.h"
 #include "components/icons/listIcons.h"
-
 // Shared glue for activities hosting a FreeInkApp: the font-bound render
 // target and the touch snapshot FreeInkApp routing consumes.
 
@@ -99,6 +98,11 @@ inline freeink::ui::BitmapRef listIconFor(const UIIcon icon, const int size = 24
         return freeink::ui::bitmapFromIcon(icon_radio_tower_32);
       case UIIcon::Bookmark:
         return freeink::ui::bitmapFromIcon(icon_bookmark_32);
+      case UIIcon::Recent:
+        // 32px-only conversions of the legacy drawIcon assets; no 24px variant.
+        return freeink::ui::bitmapFromIcon(icon_recent_32);
+      case UIIcon::Transfer:
+        return freeink::ui::bitmapFromIcon(icon_transfer_32);
       default:
         return {};
     }

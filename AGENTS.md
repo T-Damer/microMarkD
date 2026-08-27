@@ -561,6 +561,10 @@ renderer.drawText(FONT_UI_MEDIUM, x, y, "Hello", true);
 
 ## Testing and Debugging
 
+### Browser-only validation for microMarkD
+
+All microMarkD changes must be validated in the separate browser WASM emulator in `crossink-simulator/web`. Build the relevant emulator profile and exercise the changed flow there. Do not substitute a PlatformIO/native build or a hardware run; if the browser artifact cannot be built or started, report validation as blocked.
+
 ### Build Commands
 
 **Via CLI**:
