@@ -9,6 +9,7 @@
 #include <Logging.h>
 #include <MarkdownIndexDocument.h>
 #include <MarkdownRecoveryPlan.h>
+#include <MarkdownDocument.h>
 #include <Txt.h>
 
 #include <algorithm>
@@ -52,6 +53,7 @@ void MarkdownEditorActivity::onEnter() {
   title_ = filenameTitle(path_);
   rebuildRows();
   UiListActivity::onEnter();
+  if (!loadFailed_) editDocument();
 }
 
 bool MarkdownEditorActivity::normalisePath() {
@@ -250,6 +252,7 @@ bool MarkdownEditorActivity::saveDocumentAtomic() {
   }
 
   const auto indexRecord = micromarkd::buildMarkdownIndexRecord(path_, lines_, trailingNewline_);
+  invalidateMarkdownIndexCatalog();
   if (!writeMarkdownIndexRecord(indexRecord)) {
     LOG_ERR(MODULE, "Saved note but failed to update its metadata index: %s", path_.c_str());
   }
@@ -258,7 +261,7 @@ bool MarkdownEditorActivity::saveDocumentAtomic() {
 
 int MarkdownEditorActivity::listCount() const {
   if (loadFailed_) return 0;
-  return static_cast<int>(lines_.size()) + 2;
+  return static_cast<int>(lines_.size()) + 3;
 }
 
 std::string MarkdownEditorActivity::linePreview(const std::string& line) {
@@ -280,17 +283,20 @@ void MarkdownEditorActivity::rebuildRows() {
     return;
   }
 
-  const size_t count = lines_.size() + 2;
+  const size_t count = lines_.size() + 3;
   rowLabels_.resize(count);
   rowValues_.resize(count);
   rowItems_.resize(count);
 
+  rowLabels_[0] = tr(STR_MICROMARKD_EDIT_NOTE);
+  rowValues_[0] = "";
+
   for (size_t i = 0; i < lines_.size(); i++) {
-    rowLabels_[i] = linePreview(lines_[i]);
-    rowValues_[i] = std::to_string(i + 1);
+    rowLabels_[i + 1] = linePreview(lines_[i]);
+    rowValues_[i + 1] = std::to_string(i + 1);
   }
 
-  const size_t addIndex = lines_.size();
+  const size_t addIndex = lines_.size() + 1;
   const size_t saveIndex = addIndex + 1;
   rowLabels_[addIndex] = "Add line";
   rowLabels_[saveIndex] = "Save note";
@@ -304,6 +310,27 @@ void MarkdownEditorActivity::rebuildRows() {
     item.actionValue = static_cast<int16_t>(i);
     rowItems_[i] = item;
   }
+}
+
+void MarkdownEditorActivity::editDocument() {
+  app.clearTapFlash();
+  const std::string initialText = micromarkd::joinMarkdownLines(lines_, trailingNewline_);
+  startActivityForResult(
+      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_EDIT_NOTE), initialText,
+                                               MAX_FILE_BYTES,
+                                               InputType::Multiline),
+      [this](const ActivityResult& result) {
+        if (result.isCancelled) return;
+        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+        if (!keyboard) return;
+
+        RenderLock lock(*this);
+        lines_ = micromarkd::splitMarkdownLines(keyboard->text, trailingNewline_);
+        if (lines_.empty()) lines_.emplace_back();
+        markChanged();
+        nav.selected = 0;
+        nav.follow(listCount());
+      });
 }
 
 void MarkdownEditorActivity::markChanged() {
@@ -415,9 +442,11 @@ void MarkdownEditorActivity::activateIndex(const int index) {
   app.clearTapFlash();
 
   const size_t lineCount = lines_.size();
-  if (static_cast<size_t>(index) < lineCount) {
-    editLine(static_cast<size_t>(index));
-  } else if (static_cast<size_t>(index) == lineCount) {
+  if (index == 0) {
+    editDocument();
+  } else if (static_cast<size_t>(index) <= lineCount) {
+    editLine(static_cast<size_t>(index - 1));
+  } else if (static_cast<size_t>(index) == lineCount + 1) {
     insertLine(lineCount, true);
   } else {
     saveAndFinish();
@@ -425,10 +454,10 @@ void MarkdownEditorActivity::activateIndex(const int index) {
 }
 
 void MarkdownEditorActivity::onRowLongPress(const int index) {
-  if (loadFailed_ || index < 0 || static_cast<size_t>(index) >= lines_.size()) return;
+  if (loadFailed_ || index <= 0 || static_cast<size_t>(index) > lines_.size()) return;
   app.clearTapFlash();
   nav.selected = index;
-  showLineActions(static_cast<size_t>(index));
+  showLineActions(static_cast<size_t>(index - 1));
 }
 
 bool MarkdownEditorActivity::handleCustomInput() {

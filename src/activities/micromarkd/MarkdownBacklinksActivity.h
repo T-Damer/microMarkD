@@ -34,6 +34,7 @@ class MarkdownBacklinksActivity final : public UiListActivity {
   std::string emptyMessage_;
   MarkdownVaultIndexer indexer_;
   micromarkd::MarkdownCatalog catalog_;
+  bool cachedIndexPartial_ = false;
   std::vector<std::string> cachePaths_;
   size_t cacheIndex_ = 0;
   Phase phase_ = Phase::Complete;

@@ -12,6 +12,8 @@
 #include <variant>
 
 #include "activities/micromarkd/MarkdownEditorActivity.h"
+#include "activities/micromarkd/MarkdownCatalogStorage.h"
+#include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
 
@@ -49,6 +51,19 @@ void MarkdownTagsActivity::beginIndexing() {
   rowSubtitles_.clear();
   rowValues_.clear();
   nav.reset();
+  cachedIndexPartial_ = false;
+
+  bool cachedPartial = false;
+  if (markdownIndexCatalogReady(&cachedPartial)) {
+    MarkdownCatalogLoadReport report;
+    if (loadMarkdownCatalogFromCache(catalog_, report) && !report.partial()) {
+      cachedIndexPartial_ = cachedPartial;
+      finishIndexing();
+      return;
+    }
+    invalidateMarkdownIndexCatalog();
+  }
+
   header_ = "Tags: indexing";
   emptyMessage_ = "Building vault metadata index...";
   indexer_.begin();
@@ -80,7 +95,7 @@ void MarkdownTagsActivity::showTags() {
   selectedTag_.clear();
   notePaths_.clear();
   nav.reset();
-  const bool partial = indexer_.report().partial() || catalog_.truncated();
+  const bool partial = cachedIndexPartial_ || indexer_.report().partial() || catalog_.truncated();
   header_ = partial ? "Tags (partial)" : "Tags";
   emptyMessage_ = catalog_.tags().empty() ? "No tags found" : "";
   rebuildTagRows();
@@ -126,6 +141,7 @@ void MarkdownTagsActivity::rebuildTagRows() {
     fui::ListItem item{};
     item.label = rowLabels_[index].c_str();
     item.value = rowValues_[index].c_str();
+    item.icon = listIconFor(UIIcon::Tag, 32);
     item.actionValue = static_cast<int16_t>(index);
     rowItems_[index] = item;
   }

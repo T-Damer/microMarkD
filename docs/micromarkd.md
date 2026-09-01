@@ -13,7 +13,19 @@ The current bootstrap exposes:
 - **Search** — bounded, incremental full-text search over the vault;
 - **Tags** — an indexed tag browser backed by disposable metadata records;
 - **New note** — title entry followed by the line-oriented Markdown editor;
-- **Git sync** — reserved product surface; synchronization is not implemented yet.
+- **Git sync** — optional verified-HTTPS clone/pull of a single `main` branch
+  from GitHub into the Markdown vault. Pack responses are streamed to SD;
+  commit/push and merge recovery remain separate follow-up work.
+
+The firmware target consumes `esp32-git` as an external dependency. The browser
+emulator keeps that package outside the simulator repository and uses a
+deterministic UI-only Git mock. The firmware pins GitHub's current Sectigo trust
+anchor and verifies both the peer chain and hostname; redirects are not followed
+while credentials are active. Upload-pack responses now stream to a temporary
+`.git/esp32git-pack.tmp` file on the SD card and are parsed with the
+file-backed pack reader; only the bounded current-object/delta working set is
+held in RAM. The 192 KiB buffer ceiling remains for advertisements, push
+responses, and legacy ports without the streaming callback.
 
 Default CrossPoint environments do not define `MICROMARKD_APP` and keep their
 existing home screen and behavior.
@@ -197,14 +209,21 @@ A future simulator target should be a thin, microMarkD-focused desktop target
 stable). Real X4 Pro validation remains required for touch behavior, e-paper
 refresh characteristics, SD timing, PSRAM pressure, and power-loss behavior.
 
+## Validation rule
+
+User-visible microMarkD changes are validated through the separate browser
+emulator. The emulator may provide deterministic Git/network mocks, but it does
+not prove SD-card, TLS, heap, or power-loss behavior on ESP32 hardware. Those
+paths require a real Xteink test after the browser check passes.
+
 ## Next milestones
 
 1. Add alias fallback to normal reader wikilink clicks and metadata-aware search
    ranking.
 2. Add note rename/move and folder creation with safe cache/index invalidation.
 3. Add zoom-dependent, tiled graph navigation using the indexed link graph.
-4. Implement constrained Git synchronization: one remote, one branch, shallow
-   fetch, commit, pull/rebase, and push.
+4. Add commit/push UI and explicit interrupted-sync recovery on top of the
+   current clone/pull path.
 5. Add a stable X4 Pro/microMarkD simulator target and deterministic touch tests.
 
 ## Design constraints
@@ -215,4 +234,5 @@ refresh characteristics, SD timing, PSRAM pressure, and power-loss behavior.
 - bound scans, indexes, collections, and per-loop work;
 - avoid animated graph layouts and continuous e-ink repainting;
 - keep Git credentials and interrupted-write recovery explicit;
+- fail closed when Git transport or repository limits are exceeded;
 - preserve recovery and crash-report paths from the base firmware.

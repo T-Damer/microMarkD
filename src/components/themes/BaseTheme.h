@@ -55,9 +55,8 @@ struct ThemeMetrics {
   int headerUnderlineSize;  // bottom rule thickness (Lyra), 0 = none
   int headerTitleAlign;     // 0 = left, 1 = center, 2 = right (fui::TextAlign order)
   int headerBatterySide;    // 0 = right edge, 1 = left edge
-  // Battery in its own corner strip (batteryBarHeight tall) with the title on
-  // the lower sub-band spanning the full width (Lyra), vs sharing the title
-  // line with a width reserve (Classic, RoundedRaff).
+  // Battery shares the title line with a width reserve; detached corner strips
+  // remain available for themes that explicitly need them.
   bool headerBatteryDetached;
   int menuRowHeight;
   int menuSpacing;
@@ -125,7 +124,28 @@ struct ThemeMetrics {
   int textFieldLineEndOffset;
 };
 
-enum UIIcon { None = 0, Folder, Text, Image, Book, File, Recent, Settings, Transfer, Library, Wifi, Hotspot, Bookmark };
+enum UIIcon {
+  None = 0,
+  Folder,
+  Text,
+  Image,
+  Book,
+  File,
+  Recent,
+  Settings,
+  Transfer,
+  Library,
+  Wifi,
+  Hotspot,
+  Bookmark,
+  Search,
+  Tag,
+  NewNote,
+  Git,
+  Edit,
+  Links,
+  Graph
+};
 
 // Default theme implementation (Classic Theme)
 // Additional themes can inherit from this and override methods as needed
@@ -239,7 +259,7 @@ class BaseTheme {
                         const std::function<std::string(int index)>& rowValue = nullptr, bool highlightValue = false,
                         const std::function<bool(int index)>& rowDimmed = nullptr) const;
   virtual void drawHeader(const GfxRenderer& renderer, Rect rect, const char* title,
-                          const char* subtitle = nullptr) const;
+                          const char* subtitle = nullptr, int16_t leftReserve = 0) const;
   virtual void drawSubHeader(const GfxRenderer& renderer, Rect rect, const char* label,
                              const char* rightLabel = nullptr) const;
   virtual void drawTabBar(const GfxRenderer& renderer, Rect rect, const std::vector<TabInfo>& tabs,

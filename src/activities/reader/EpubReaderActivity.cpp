@@ -366,8 +366,6 @@ void EpubReaderActivity::loop() {
     pendingReadFolderMove = false;
   }
 
-  const auto touch = ReaderUtils::detectTouchPageTurn(renderer, mappedInput);
-
   if (automaticPageTurnActive) {
     if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) ||
         mappedInput.wasReleased(MappedInputManager::Button::Back) ||
@@ -468,6 +466,10 @@ void EpubReaderActivity::loop() {
   if (handleEndOfBookMenu()) {
     return;
   }
+
+  // Let the end-of-book UI consume taps before the reader's page-turn
+  // classifier consumes the same touch release.
+  const auto touch = ReaderUtils::detectTouchPageTurn(renderer, mappedInput);
 
   if (confirmReleased || ReaderUtils::isTouchMenuGesture(renderer, mappedInput)) {
     openReaderMenu();

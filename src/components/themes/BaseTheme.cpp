@@ -378,7 +378,8 @@ void BaseTheme::drawList(const GfxRenderer& renderer, Rect rect, int itemCount, 
   }
 }
 
-void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* title, const char* subtitle) const {
+void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* title, const char* subtitle,
+                           const int16_t leftReserve) const {
   // Every activity header renders through the FreeInkUI header + battery
   // indicator components, styled by the active theme's tokens (padding,
   // centering, underline). Non-interactive frame: no hit rects registered.
@@ -408,12 +409,28 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
   // The icon glyph extends 2px past glyphWidth (terminal nub); reserve it or
   // the percent label's rect comes up short and the text truncates.
   constexpr int16_t batteryNubWidth = 2;
-  int16_t batteryReserve = static_cast<int16_t>(metrics.batteryWidth + batteryNubWidth);
+  const int16_t batteryGlyphWidth = static_cast<int16_t>(metrics.batteryWidth + batteryNubWidth);
+  int16_t batteryLabelWidth = 0;
+  int16_t batteryReserve = batteryGlyphWidth;
   if (showBatteryPercentage) {
-    batteryReserve = static_cast<int16_t>(
-        batteryReserve + batteryPercentSpacing +
+    batteryLabelWidth = static_cast<int16_t>(
         ui.target.measureText(fui::GfxRendererTarget::FONT_SMALL, percentText, tokens.smallText).width);
+    batteryReserve = static_cast<int16_t>(batteryReserve + batteryPercentSpacing + batteryLabelWidth);
   }
+
+  const auto statusBar = SETTINGS.statusBarSpec();
+  char clockText[9] = {};
+  const bool showClock = statusBar.showsClock() && halClock.isAvailable() &&
+                         halClock.formatTime(clockText, sizeof(clockText), statusBar.clockUtcOffsetQ,
+                                             statusBar.clock12h);
+  const bool clockLeft = statusBar.clockMode == CrossPointSettings::STATUS_BAR_CLOCK_LEFT;
+  const int16_t clockWidth = showClock ? static_cast<int16_t>(
+                                            ui.target.measureText(fui::GfxRendererTarget::FONT_SMALL, clockText,
+                                                                  tokens.smallText)
+                                                .width)
+                                      : 0;
+  constexpr int16_t headerStatusGap = 6;
+  const int16_t clockReserve = showClock ? static_cast<int16_t>(clockWidth + headerStatusGap) : 0;
 
   fui::HeaderProps props;
   props.title = title;
@@ -448,11 +465,27 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
   } else {
     const int16_t reserve = static_cast<int16_t>(batteryReserve + tokens.spaceMd);
     if (batteryLeft) {
-      props.leftReserve = reserve;
+      props.leftReserve = std::max(reserve, leftReserve);
     } else {
       props.rightReserve = reserve;
     }
   }
+  if (showClock) {
+    const bool sharesBatterySide = clockLeft == batteryLeft;
+    if (sharesBatterySide) {
+      const int16_t reserve = static_cast<int16_t>(batteryReserve + clockReserve + tokens.spaceMd);
+      if (batteryLeft) {
+        props.leftReserve = std::max(props.leftReserve, reserve);
+      } else {
+        props.rightReserve = std::max(props.rightReserve, reserve);
+      }
+    } else if (clockLeft) {
+      props.leftReserve = std::max(props.leftReserve, clockReserve);
+    } else {
+      props.rightReserve = std::max(props.rightReserve, clockReserve);
+    }
+  }
+  props.leftReserve = std::max(props.leftReserve, leftReserve);
   // Underline only under a titled header: an untitled band (Lyra home screen)
   // historically drew no rule, and the old themes keyed the line on the title.
   if (title != nullptr && props.styles.normal.border.kind == fui::PaintKind::None && tokens.headerUnderline > 0) {
@@ -464,21 +497,43 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
   fui::BatteryIndicatorProps battery;
   battery.percent = static_cast<uint8_t>(percentage > 100 ? 100 : percentage);
   battery.charging = gpio.isUsbConnected();
-  battery.label = showBatteryPercentage ? percentText : nullptr;
+  battery.label = nullptr;
   battery.text = tokens.smallText;
   battery.glyphWidth = static_cast<int16_t>(metrics.batteryWidth);
   battery.glyphHeight = static_cast<int16_t>(metrics.batteryHeight);
   battery.gap = batteryPercentSpacing;
-  // Detached: hug the corner (12px, the legacy inset) within the battery
-  // strip; shared line: sit on the content grid. Both anchor to the band's top
-  // strip (batteryBarHeight) — the legacy shared-line headers drew the battery
-  // at the top edge, and it keeps the lower-right corner free for the manual
-  // right label below.
+  // Detached headers keep the battery in the corner strip; shared-line headers
+  // center it vertically beside the title instead of leaving a dead top band.
   const int16_t batteryEdgeInset = batteryDetached ? 12 : tokens.headerSidePadding;
-  const int16_t batteryX = batteryLeft ? static_cast<int16_t>(band.x + batteryEdgeInset)
-                                       : static_cast<int16_t>(band.right() - batteryEdgeInset - batteryReserve);
+  const bool clockSharesBatterySide = showClock && clockLeft == batteryLeft;
+  const int16_t batteryX = batteryLeft
+                               ? static_cast<int16_t>(band.x + batteryEdgeInset +
+                                                      (clockSharesBatterySide && clockLeft ? clockReserve : 0))
+                               : static_cast<int16_t>(band.right() - batteryEdgeInset - batteryReserve);
   const int16_t batteryH = static_cast<int16_t>(metrics.batteryBarHeight);
-  fui::batteryIndicator(ui.frame, fui::Rect{batteryX, band.y, batteryReserve, batteryH}, battery);
+  const int16_t batteryY = batteryDetached ? band.y : static_cast<int16_t>(band.y + (band.height - batteryH) / 2);
+  fui::batteryIndicator(ui.frame, fui::Rect{batteryX, batteryY, batteryGlyphWidth, batteryH}, battery);
+
+  if (showBatteryPercentage && batteryLabelWidth > 0) {
+    fui::TextStyle batteryLabelStyle = tokens.smallText;
+    batteryLabelStyle.align = fui::TextAlign::Left;
+    const int16_t labelH = ui.target.lineHeight(fui::GfxRendererTarget::FONT_SMALL);
+    const int16_t labelY = static_cast<int16_t>(band.y + (band.height - labelH) / 2);
+    ui.target.text(fui::Rect{static_cast<int16_t>(batteryX + batteryGlyphWidth + batteryPercentSpacing), labelY,
+                             batteryLabelWidth, labelH},
+                   percentText, batteryLabelStyle);
+  }
+
+  if (showClock && clockWidth > 0) {
+    const int16_t clockX = clockSharesBatterySide
+                               ? static_cast<int16_t>(clockLeft ? band.x + batteryEdgeInset
+                                                                 : batteryX - headerStatusGap - clockWidth)
+                               : static_cast<int16_t>(clockLeft ? band.x + batteryEdgeInset
+                                                                 : band.right() - batteryEdgeInset - clockWidth);
+    const int16_t clockH = ui.target.lineHeight(fui::GfxRendererTarget::FONT_SMALL);
+    const int16_t clockY = static_cast<int16_t>(band.y + (band.height - clockH) / 2);
+    ui.target.text(fui::Rect{clockX, clockY, clockWidth, clockH}, clockText, tokens.smallText);
+  }
 
   if (manualRightLabel) {
     const fui::Size labelSize = ui.target.measureText(fui::GfxRendererTarget::FONT_SMALL, subtitle, tokens.smallText);

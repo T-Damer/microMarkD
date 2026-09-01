@@ -5,14 +5,21 @@
 #include <HalStorage.h>
 #include <Logging.h>
 
+#include <array>
 #include <cstddef>
 #include <string>
-#include <utility>
+#include <string_view>
+
+#include "activities/micromarkd/MarkdownCatalogStorage.h"
 
 namespace {
 constexpr char MODULE[] = "MDI";
 constexpr char INDEX_ROOT[] = "/.micromarkd/index";
 constexpr char TEMPORARY_SUFFIX[] = ".tmp";
+constexpr char READY_PATH[] = "/.micromarkd/index/.ready";
+constexpr char READY_TEMPORARY_PATH[] = "/.micromarkd/index/.ready.tmp";
+constexpr std::string_view READY_MAGIC_COMPLETE = "MMDIDXREADY\t1\t0\n";
+constexpr std::string_view READY_MAGIC_PARTIAL = "MMDIDXREADY\t1\t1\n";
 constexpr size_t MAX_INDEX_RECORD_BYTES = 64 * 1024;
 
 bool ensureIndexRoot() {
@@ -25,6 +32,8 @@ bool ensureIndexRoot() {
 }
 
 bool removeIfPresent(const std::string& path) { return !Storage.exists(path.c_str()) || Storage.remove(path.c_str()); }
+
+bool removeIfPresent(const char* path) { return !Storage.exists(path) || Storage.remove(path); }
 
 void discardInvalidRecord(const std::string& cachePath, const char* reason) {
   LOG_ERR(MODULE, "Discarding Markdown index (%s): %s", reason, cachePath.c_str());
@@ -83,43 +92,77 @@ bool writeMarkdownIndexRecord(const micromarkd::MarkdownIndexRecord& record) {
   return true;
 }
 
-bool loadMarkdownIndexRecord(const std::string& notePath, const uint64_t sourceSize,
-                             micromarkd::MarkdownIndexRecord& record) {
-  const std::string cachePath = micromarkd::markdownIndexCachePath(notePath);
-  if (!Storage.exists(cachePath.c_str())) return false;
+bool markdownIndexCatalogReady(bool* partial) {
+  HalFile file;
+  if (!Storage.openFileForRead(MODULE, READY_PATH, file)) return false;
+
+  const uint64_t size = file.fileSize64();
+  if (size != READY_MAGIC_COMPLETE.size()) {
+    file.close();
+    return false;
+  }
+  std::array<char, READY_MAGIC_COMPLETE.size()> marker{};
+  const int bytesRead = file.read(marker.data(), marker.size());
+  file.close();
+  if (bytesRead != static_cast<int>(marker.size())) return false;
+
+  const std::string_view value(marker.data(), marker.size());
+  if (value == READY_MAGIC_COMPLETE) {
+    if (partial != nullptr) *partial = false;
+    return true;
+  }
+  if (value == READY_MAGIC_PARTIAL) {
+    if (partial != nullptr) *partial = true;
+    return true;
+  }
+  return false;
+}
+
+bool writeMarkdownIndexCatalogReady(const bool partial) {
+  if (!ensureIndexRoot()) {
+    LOG_ERR(MODULE, "Failed to create Markdown index directory for ready marker");
+    return false;
+  }
+  if (!removeIfPresent(READY_TEMPORARY_PATH)) {
+    LOG_ERR(MODULE, "Failed to remove stale Markdown index ready marker");
+    return false;
+  }
 
   HalFile file;
-  if (!Storage.openFileForRead(MODULE, cachePath, file)) return false;
-  const uint64_t encodedSize = file.fileSize64();
-  if (encodedSize == 0 || encodedSize > MAX_INDEX_RECORD_BYTES) {
+  if (!Storage.openFileForWrite(MODULE, READY_TEMPORARY_PATH, file)) {
+    LOG_ERR(MODULE, "Failed to open Markdown index ready marker");
+    return false;
+  }
+  const std::string_view marker = partial ? READY_MAGIC_PARTIAL : READY_MAGIC_COMPLETE;
+  if (file.write(marker.data(), marker.size()) != marker.size()) {
     file.close();
-    discardInvalidRecord(cachePath, "invalid size");
+    removeIfPresent(READY_TEMPORARY_PATH);
+    LOG_ERR(MODULE, "Short write creating Markdown index ready marker");
+    return false;
+  }
+  file.flush();
+  if (!file.close()) {
+    removeIfPresent(READY_TEMPORARY_PATH);
+    LOG_ERR(MODULE, "Failed to close Markdown index ready marker");
     return false;
   }
 
-  std::string encoded(static_cast<size_t>(encodedSize), '\0');
-  const int bytesRead = file.read(encoded.data(), encoded.size());
-  file.close();
-  if (bytesRead != static_cast<int>(encoded.size())) {
-    discardInvalidRecord(cachePath, "short read");
+  if (!removeIfPresent(READY_PATH) || !Storage.rename(READY_TEMPORARY_PATH, READY_PATH)) {
+    removeIfPresent(READY_TEMPORARY_PATH);
+    LOG_ERR(MODULE, "Failed to promote Markdown index ready marker");
     return false;
   }
-
-  micromarkd::MarkdownIndexRecord decoded;
-  if (!micromarkd::decodeMarkdownIndexRecord(encoded, decoded)) {
-    discardInvalidRecord(cachePath, "invalid record");
-    return false;
-  }
-  if (decoded.path != notePath || decoded.sourceSize != sourceSize) {
-    discardInvalidRecord(cachePath, "stale source");
-    return false;
-  }
-
-  record = std::move(decoded);
   return true;
 }
 
+void invalidateMarkdownIndexCatalog() {
+  invalidateMarkdownGraphCache();
+  removeIfPresent(READY_PATH);
+  removeIfPresent(READY_TEMPORARY_PATH);
+}
+
 bool removeMarkdownIndexRecord(const std::string& notePath) {
+  invalidateMarkdownIndexCatalog();
   const std::string cachePath = micromarkd::markdownIndexCachePath(notePath);
   const std::string temporaryPath = cachePath + TEMPORARY_SUFFIX;
   bool success = true;

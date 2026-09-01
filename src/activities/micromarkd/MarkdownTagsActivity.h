@@ -25,6 +25,7 @@ class MarkdownTagsActivity final : public UiListActivity {
   enum class ViewMode : uint8_t { Indexing, Tags, Notes };
 
   micromarkd::MarkdownCatalog catalog_;
+  bool cachedIndexPartial_ = false;
   MarkdownVaultIndexer indexer_;
   ViewMode mode_ = ViewMode::Indexing;
   std::string selectedTag_;

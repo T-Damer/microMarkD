@@ -10,7 +10,7 @@ namespace micromarkd {
 
 constexpr size_t MAX_WIKI_LINKS_PER_LINE = 4;
 
-enum class BlockKind : uint8_t { Paragraph, Heading, Quote, Bullet, OrderedList, Separator, Code };
+enum class BlockKind : uint8_t { Paragraph, Heading, Quote, Bullet, OrderedList, Separator, Code, Image };
 
 struct WikiLink {
   uint16_t start = 0;
@@ -20,6 +20,9 @@ struct WikiLink {
 
 struct ParsedLine {
   std::string text;
+  std::string imagePath;
+  uint16_t imageWidth = 0;
+  uint16_t imageHeight = 0;
   BlockKind block = BlockKind::Paragraph;
   uint8_t headingLevel = 0;
   bool bold = false;

@@ -2,9 +2,11 @@
 
 #include <GfxRenderer.h>
 #include <I18n.h>
+#include <FreeInkUIIcon.h>
 
 #include "MappedInputManager.h"
 #include "components/UITheme.h"
+#include "components/icons/back32.h"
 #include "fontIds.h"
 
 namespace fui = freeink::ui;
@@ -18,18 +20,37 @@ void UiListActivity::onEnter() {
   activeNav().reset();
   resetUi();
   app.on(ACTION_ROW, &UiListActivity::rowActionTrampoline, this);
+  app.on(ACTION_BACK, &UiListActivity::backActionTrampoline, this);
   app.setScreen(&UiListActivity::screenTrampoline, this);
   requestUpdate();
 }
 
 void UiListActivity::screenTrampoline(UiScreen& screen, void* user) {
-  static_cast<UiListActivity*>(user)->buildScreen(screen);
+  auto* self = static_cast<UiListActivity*>(user);
+  if (self->mappedInput.hasTouch() && !self->isHomeActivity()) {
+    const auto& metrics = UITheme::getInstance().getMetrics();
+    fui::ButtonProps back;
+    back.icon = fui::bitmapFromIcon(icon_arrow_left_32);
+    back.action = ACTION_BACK;
+    back.inputMask = fui::InputTouch;
+    back.styles = fui::plainStyles();
+    back.radius = 8;
+    const int16_t buttonSize = static_cast<int16_t>(metrics.headerHeight - 8);
+    screen.button(back, fui::Rect{4, static_cast<int16_t>(metrics.topPadding + 4), buttonSize, buttonSize});
+  }
+  self->buildScreen(screen);
 }
 
 void UiListActivity::rowActionTrampoline(const fui::ActionEvent& event, void* user) {
   auto* self = static_cast<UiListActivity*>(user);
   if (event.value < 0 || event.value >= self->listCount()) return;
   self->onRowAction(event);
+}
+
+void UiListActivity::backActionTrampoline(const fui::ActionEvent&, void* user) {
+  auto* self = static_cast<UiListActivity*>(user);
+  self->app.clearTapFlash();
+  self->onBackButton();
 }
 
 void UiListActivity::onRowAction(const fui::ActionEvent& event) {
@@ -123,7 +144,11 @@ void UiListActivity::drawChrome() {
   const char* title = headerTitle();
   if (!title) return;
   const auto& metrics = UITheme::getInstance().getMetrics();
-  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, renderer.getScreenWidth(), metrics.headerHeight}, title);
+  const int16_t leftReserve = mappedInput.hasTouch()
+                                  ? static_cast<int16_t>(metrics.headerHeight + metrics.headerSidePadding)
+                                  : 0;
+  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, renderer.getScreenWidth(), metrics.headerHeight}, title,
+                 nullptr, leftReserve);
 }
 
 void UiListActivity::drawFooter() {

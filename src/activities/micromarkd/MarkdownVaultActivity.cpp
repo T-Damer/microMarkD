@@ -15,6 +15,7 @@
 #include <cstring>
 #include <iterator>
 #include <memory>
+#include <string_view>
 #include <utility>
 #include <variant>
 
@@ -23,10 +24,12 @@
 #include "activities/micromarkd/MarkdownEditorActivity.h"
 #include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "activities/micromarkd/MarkdownRecovery.h"
+#include "activities/reader/ReaderActivity.h"
 #include "activities/util/ConfirmationActivity.h"
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
+#include "components/icons/back32.h"
 #include "util/BookCacheUtils.h"
 
 namespace fui = freeink::ui;
@@ -49,6 +52,9 @@ MarkdownVaultActivity::MarkdownVaultActivity(GfxRenderer& renderer, MappedInputM
 
 void MarkdownVaultActivity::onEnter() {
   UiListActivity::onEnter();
+  app.on(ACTION_HOME, &MarkdownVaultActivity::toolbarActionTrampoline, this);
+  app.on(ACTION_NEW_NOTE, &MarkdownVaultActivity::toolbarActionTrampoline, this);
+  app.on(ACTION_NEW_FOLDER, &MarkdownVaultActivity::toolbarActionTrampoline, this);
   loadFailed_ = !normalisePath();
   if (!loadFailed_) loadEntries();
 }
@@ -94,10 +100,12 @@ void MarkdownVaultActivity::loadEntries() {
     file.close();
 
     if (nameBuffer_[0] == '.' || std::strcmp(nameBuffer_.data(), "System Volume Information") == 0) continue;
+    const std::string_view filename{nameBuffer_.data()};
 
     if (isDirectory) {
       entries_.emplace_back(std::string(nameBuffer_.data()) + "/");
-    } else if (FsHelpers::hasMarkdownExtension(nameBuffer_.data())) {
+    } else if (FsHelpers::hasMarkdownExtension(filename) || FsHelpers::hasTxtExtension(filename) ||
+               FsHelpers::hasEpubExtension(filename) || FsHelpers::hasXtcExtension(filename)) {
       entries_.emplace_back(nameBuffer_.data());
     }
   }
@@ -114,7 +122,8 @@ void MarkdownVaultActivity::loadEntries() {
 }
 
 void MarkdownVaultActivity::rebuildRows() {
-  const size_t count = entries_.size() + ACTION_ROW_COUNT;
+  const bool showActionRows = !mappedInput.hasTouch();
+  const size_t count = entries_.size() + (showActionRows ? ACTION_ROW_COUNT : 0);
   rowNames_.resize(count);
   rowExtensions_.resize(count);
   rowItems_.clear();
@@ -132,24 +141,43 @@ void MarkdownVaultActivity::rebuildRows() {
     rowItems_.push_back(item);
   }
 
-  const size_t noteAction = entries_.size();
-  const size_t folderAction = noteAction + 1;
-  rowNames_[noteAction] = "New note";
-  rowNames_[folderAction] = "New folder";
-  rowExtensions_[noteAction].clear();
-  rowExtensions_[folderAction].clear();
+  if (!showActionRows) return;
 
-  fui::ListItem noteItem{};
-  noteItem.label = rowNames_[noteAction].c_str();
-  noteItem.icon = listIconFor(UIIcon::File);
-  noteItem.actionValue = static_cast<int16_t>(noteAction);
-  rowItems_.push_back(noteItem);
+  const size_t actionStart = entries_.size();
+  const char* actionLabels[ACTION_ROW_COUNT] = {tr(STR_BACK), tr(STR_HOME), tr(STR_MICROMARKD_NEW_NOTE),
+                                                tr(STR_MICROMARKD_NEW_FOLDER)};
+  const fui::BitmapRef actionIcons[ACTION_ROW_COUNT] = {
+      fui::bitmapFromIcon(icon_arrow_left_32), fui::bitmapFromIcon(icon_house_24), listIconFor(UIIcon::NewNote),
+      fui::bitmapFromIcon(icon_folder_plus_24)};
+  for (int action = 0; action < ACTION_ROW_COUNT; action++) {
+    const size_t index = actionStart + static_cast<size_t>(action);
+    rowNames_[index] = actionLabels[action];
+    rowExtensions_[index].clear();
 
-  fui::ListItem folderItem{};
-  folderItem.label = rowNames_[folderAction].c_str();
-  folderItem.icon = listIconFor(UIIcon::Folder);
-  folderItem.actionValue = static_cast<int16_t>(folderAction);
-  rowItems_.push_back(folderItem);
+    fui::ListItem item{};
+    item.label = rowNames_[index].c_str();
+    item.icon = actionIcons[action];
+    item.actionValue = static_cast<int16_t>(index);
+    rowItems_.push_back(item);
+  }
+}
+
+void MarkdownVaultActivity::toolbarActionTrampoline(const fui::ActionEvent& event, void* user) {
+  auto* self = static_cast<MarkdownVaultActivity*>(user);
+  self->app.clearTapFlash();
+  switch (event.action) {
+    case ACTION_HOME:
+      self->onGoHome();
+      break;
+    case ACTION_NEW_NOTE:
+      self->startNewNoteHere();
+      break;
+    case ACTION_NEW_FOLDER:
+      self->startNewFolder();
+      break;
+    default:
+      break;
+  }
 }
 
 int MarkdownVaultActivity::listCount() const { return static_cast<int>(rowItems_.size()); }
@@ -174,12 +202,23 @@ void MarkdownVaultActivity::activateIndex(const int index) {
   if (index < 0 || index >= listCount()) return;
   app.clearTapFlash();
 
-  if (static_cast<size_t>(index) == entries_.size()) {
-    startNewNoteHere();
-    return;
-  }
-  if (static_cast<size_t>(index) == entries_.size() + 1) {
-    startNewFolder();
+  if (!mappedInput.hasTouch() && static_cast<size_t>(index) >= entries_.size()) {
+    switch (static_cast<size_t>(index) - entries_.size()) {
+      case 0:
+        navigateToParent();
+        break;
+      case 1:
+        onGoHome();
+        break;
+      case 2:
+        startNewNoteHere();
+        break;
+      case 3:
+        startNewFolder();
+        break;
+      default:
+        break;
+    }
     return;
   }
 
@@ -199,7 +238,7 @@ void MarkdownVaultActivity::onRowLongPress(const int index) {
   const std::string& entry = entries_[index];
   if (!entry.empty() && entry.back() == '/') {
     showFolderActions(entry, fullPath(entry.substr(0, entry.size() - 1)));
-  } else {
+  } else if (FsHelpers::hasMarkdownExtension(entry)) {
     showNoteActions(entry, fullPath(entry));
   }
 }
@@ -257,7 +296,7 @@ void MarkdownVaultActivity::openNewNoteEditor(const std::string& rawTitle) {
                            if (!file || file->path.empty()) return;
 
                            loadEntries();
-                           activityManager.goToReader(file->path);
+                           openReader(file->path);
                          });
 }
 
@@ -312,7 +351,15 @@ void MarkdownVaultActivity::openDirectory(const std::string& entry) {
   requestUpdate();
 }
 
-void MarkdownVaultActivity::openNote(const std::string& notePath) { onSelectBook(notePath); }
+void MarkdownVaultActivity::openNote(const std::string& notePath) { openReader(notePath); }
+
+void MarkdownVaultActivity::openReader(const std::string& notePath) {
+  auto reader = ReaderActivity::create(renderer, mappedInput, notePath, false);
+  if (!reader) return;
+  reader->setBackReturnsToPreviousActivity();
+  std::unique_ptr<Activity> activity = std::move(reader);
+  activityManager.pushActivity(std::move(activity));
+}
 
 void MarkdownVaultActivity::editNote(const std::string& notePath) {
   startActivityForResult(std::make_unique<MarkdownEditorActivity>(renderer, mappedInput, notePath),
@@ -322,7 +369,7 @@ void MarkdownVaultActivity::editNote(const std::string& notePath) {
                            if (!file || file->path.empty()) return;
 
                            loadEntries();
-                           activityManager.goToReader(file->path);
+                           openReader(file->path);
                          });
 }
 
@@ -543,7 +590,23 @@ bool MarkdownVaultActivity::handleCustomInput() {
   return popup_.handleInput(mappedInput, [this] { requestUpdate(); });
 }
 
+void MarkdownVaultActivity::navigateButtons() {
+  // Keep vault navigation identical to every other button-only list: a short
+  // directional press moves the focus, while a hold advances by one viewport.
+  UiListActivity::navigateButtons();
+}
+
 void MarkdownVaultActivity::onBackButton() {
+  if (!mappedInput.hasTouch()) {
+    const bool actionFocused = nav.selected >= static_cast<int>(entries_.size());
+    moveSelectionTo(actionFocused ? 0 : static_cast<int>(entries_.size()));
+    return;
+  }
+
+  navigateToParent();
+}
+
+void MarkdownVaultActivity::navigateToParent() {
   if (path_ == VAULT_ROOT) {
     finish();
     return;
@@ -583,6 +646,32 @@ void MarkdownVaultActivity::buildScreen(UiScreen& screen) {
   const auto& metrics = UITheme::getInstance().getMetrics();
   screen.setContentMargin(fui::Insets{static_cast<int16_t>(metrics.topPadding + metrics.headerHeight), 0,
                                       static_cast<int16_t>(metrics.buttonHintsHeight), 0});
+
+  if (mappedInput.hasTouch()) {
+    const fui::Rect toolbar = screen.takeBottom(screen.theme().rowHeight, screen.theme().spaceSm);
+    const int16_t buttonSize = static_cast<int16_t>(toolbar.height - 4);
+    const int16_t gap = screen.theme().spaceSm;
+    const int16_t totalWidth = static_cast<int16_t>(buttonSize * 4 + gap * 3);
+    const int16_t startX = static_cast<int16_t>(toolbar.x + (toolbar.width - totalWidth) / 2);
+
+    auto addToolbarButton = [&](const int16_t index, const fui::ActionId action, const fui::BitmapRef icon) {
+      fui::ButtonProps props;
+      props.icon = icon;
+      props.iconSize = 24;
+      props.action = action;
+      props.inputMask = fui::InputTouch;
+      props.styles = fui::plainStyles();
+      props.radius = 8;
+      screen.button(props, fui::Rect{static_cast<int16_t>(startX + index * (buttonSize + gap)),
+                                     static_cast<int16_t>(toolbar.y + 2), buttonSize, buttonSize});
+    };
+
+    addToolbarButton(0, ACTION_BACK, fui::bitmapFromIcon(icon_arrow_left_32));
+    addToolbarButton(1, ACTION_HOME, fui::bitmapFromIcon(icon_house_24));
+    addToolbarButton(2, ACTION_NEW_NOTE, listIconFor(UIIcon::NewNote));
+    addToolbarButton(3, ACTION_NEW_FOLDER, fui::bitmapFromIcon(icon_folder_plus_24));
+  }
+
   screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
 
   if (loadFailed_) {
@@ -606,8 +695,8 @@ void MarkdownVaultActivity::buildScreen(UiScreen& screen) {
 
 void MarkdownVaultActivity::drawFooter() {
   const auto labels =
-      mappedInput.mapLabels(tr(STR_BACK), listCount() == 0 ? "" : tr(STR_OPEN), listCount() == 0 ? "" : tr(STR_DIR_UP),
-                            listCount() == 0 ? "" : tr(STR_DIR_DOWN));
+      mappedInput.mapLabels(tr(STR_BACK), listCount() == 0 ? "" : tr(STR_OPEN), listCount() == 0 ? "" : tr(STR_DIR_LEFT),
+                            listCount() == 0 ? "" : tr(STR_DIR_RIGHT));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 }
 

@@ -23,7 +23,8 @@ class UiListActivity : public Activity, protected UiAppHost {
  protected:
   // Base-owned row action; subclass-registered actions start at ACTION_USER.
   static constexpr freeink::ui::ActionId ACTION_ROW = 1;
-  static constexpr freeink::ui::ActionId ACTION_USER = 2;
+  static constexpr freeink::ui::ActionId ACTION_BACK = 2;
+  static constexpr freeink::ui::ActionId ACTION_USER = 3;
 
   UiListActivity(const char* name, GfxRenderer& renderer, MappedInputManager& mappedInput,
                  bool wantsTouchLongPress = false);
@@ -85,6 +86,7 @@ class UiListActivity : public Activity, protected UiAppHost {
  private:
   static void screenTrampoline(UiScreen& screen, void* user);
   static void rowActionTrampoline(const freeink::ui::ActionEvent& event, void* user);
+  static void backActionTrampoline(const freeink::ui::ActionEvent& event, void* user);
   // Named apart from UiAppHost::routeTouch so the host overload stays visible
   // (not name-hidden) to subclasses with extra touch surfaces.
   bool routeListTouch();

@@ -14,20 +14,26 @@
 #include <utility>
 
 #include "activities/micromarkd/MarkdownIndexStorage.h"
+#include "activities/micromarkd/MarkdownCatalogStorage.h"
 
 namespace {
 constexpr char MODULE[] = "MDX";
 }
 
-MarkdownVaultIndexer::~MarkdownVaultIndexer() { closeActiveFile(); }
+MarkdownVaultIndexer::~MarkdownVaultIndexer() {
+  closeActiveFile();
+  closeCacheValidationFile();
+}
 
 std::string MarkdownVaultIndexer::joinPath(const std::string& directory, const std::string& name) {
   return directory + (directory.back() == '/' ? "" : "/") + name;
 }
 
-void MarkdownVaultIndexer::begin(std::string rootPath) {
+void MarkdownVaultIndexer::begin(std::string rootPath, const size_t maxNotes) {
   closeActiveFile();
+  closeCacheValidationFile();
   rootPath_ = std::move(rootPath);
+  maxNotes_ = std::min(maxNotes == 0 ? MAX_NOTES : maxNotes, MAX_NOTES);
   directories_.clear();
   notePaths_.clear();
   directoryIndex_ = 0;
@@ -38,6 +44,9 @@ void MarkdownVaultIndexer::begin(std::string rootPath) {
   activeBytes_ = 0;
   readyRecord_ = {};
   recordReady_ = false;
+  cachedRecord_ = {};
+  cacheValidationFingerprint_ = micromarkd::MARKDOWN_FINGERPRINT_SEED;
+  cacheValidationBytes_ = 0;
 
   if (!Storage.exists(rootPath_.c_str())) {
     phase_ = Phase::Complete;
@@ -68,7 +77,11 @@ micromarkd::MarkdownIndexRecord MarkdownVaultIndexer::takeRecord() {
 
 void MarkdownVaultIndexer::enumerateNextDirectory() {
   if (directoryIndex_ >= directories_.size() || report_.noteLimitReached) {
-    phase_ = notePaths_.empty() ? Phase::Complete : Phase::Indexing;
+    if (notePaths_.empty()) {
+      finishIndexing();
+    } else {
+      phase_ = Phase::Indexing;
+    }
     return;
   }
 
@@ -101,7 +114,7 @@ void MarkdownVaultIndexer::enumerateNextDirectory() {
 
     const std::string path = joinPath(directoryPath, name.data());
     if (!micromarkd::isVaultMarkdownPath(path)) continue;
-    if (notePaths_.size() >= MAX_NOTES) {
+    if (notePaths_.size() >= maxNotes_) {
       report_.noteLimitReached = true;
       break;
     }
@@ -113,13 +126,17 @@ void MarkdownVaultIndexer::enumerateNextDirectory() {
   if (directoryIndex_ >= directories_.size() || report_.noteLimitReached) {
     std::sort(notePaths_.begin(), notePaths_.end());
     notePaths_.erase(std::unique(notePaths_.begin(), notePaths_.end()), notePaths_.end());
-    phase_ = notePaths_.empty() ? Phase::Complete : Phase::Indexing;
+    if (notePaths_.empty()) {
+      finishIndexing();
+    } else {
+      phase_ = Phase::Indexing;
+    }
   }
 }
 
 bool MarkdownVaultIndexer::beginNextNote() {
   if (noteIndex_ >= notePaths_.size()) {
-    phase_ = Phase::Complete;
+    finishIndexing();
     return false;
   }
 
@@ -144,12 +161,14 @@ bool MarkdownVaultIndexer::beginNextNote() {
   }
 
   micromarkd::MarkdownIndexRecord cached;
-  if (loadMarkdownIndexRecord(activePath_, sourceSize, cached)) {
-    report_.indexesReused++;
-    noteIndex_++;
-    activePath_.clear();
-    publishRecord(std::move(cached));
-    return false;
+  const std::string cachePath = micromarkd::markdownIndexCachePath(activePath_);
+  if (loadMarkdownIndexCacheRecord(cachePath, cached) && cached.path == activePath_ &&
+      cached.sourceSize == sourceSize && Storage.openFileForRead(MODULE, activePath_, cacheValidationFile_)) {
+    cachedRecord_ = std::move(cached);
+    cacheValidationFingerprint_ = micromarkd::MARKDOWN_FINGERPRINT_SEED;
+    cacheValidationBytes_ = 0;
+    cacheValidationOpen_ = true;
+    return true;
   }
 
   if (!Storage.openFileForRead(MODULE, activePath_, activeFile_)) {
@@ -167,13 +186,19 @@ bool MarkdownVaultIndexer::beginNextNote() {
 }
 
 void MarkdownVaultIndexer::indexStep(const size_t byteBudget) {
-  if (!activeFileOpen_) {
-    while (!recordReady_ && noteIndex_ < notePaths_.size() && !activeFileOpen_) beginNextNote();
+  if (!activeFileOpen_ && !cacheValidationOpen_) {
+    while (!recordReady_ && noteIndex_ < notePaths_.size() && !activeFileOpen_ && !cacheValidationOpen_)
+      beginNextNote();
     if (recordReady_ || phase_ == Phase::Complete) return;
-    if (!activeFileOpen_ && noteIndex_ >= notePaths_.size()) {
-      phase_ = Phase::Complete;
+    if (!activeFileOpen_ && !cacheValidationOpen_ && noteIndex_ >= notePaths_.size()) {
+      finishIndexing();
       return;
     }
+  }
+
+  if (cacheValidationOpen_) {
+    validateCachedNoteStep(std::max<size_t>(1, byteBudget));
+    return;
   }
 
   std::array<uint8_t, READ_CHUNK_BYTES> buffer{};
@@ -202,6 +227,66 @@ void MarkdownVaultIndexer::indexStep(const size_t byteBudget) {
   if (activeFileOpen_ && !activeFile_.available()) finishActiveNote();
 }
 
+void MarkdownVaultIndexer::validateCachedNoteStep(const size_t byteBudget) {
+  std::array<uint8_t, READ_CHUNK_BYTES> buffer{};
+  size_t stepBytes = 0;
+  while (cacheValidationOpen_ && cacheValidationFile_.available() && stepBytes < byteBudget) {
+    const size_t readLimit = std::min(buffer.size(), byteBudget - stepBytes);
+    const int bytesRead = cacheValidationFile_.read(buffer.data(), readLimit);
+    if (bytesRead < 0) {
+      LOG_ERR(MODULE, "Failed while validating Markdown index: %s", activePath_.c_str());
+      closeCacheValidationFile();
+      cachedRecord_ = {};
+      report_.failures++;
+      noteIndex_++;
+      activePath_.clear();
+      cacheValidationBytes_ = 0;
+      if (noteIndex_ >= notePaths_.size()) finishIndexing();
+      return;
+    }
+    if (bytesRead == 0) break;
+
+    const size_t readSize = static_cast<size_t>(bytesRead);
+    cacheValidationFingerprint_ = micromarkd::updateMarkdownFingerprint(
+        cacheValidationFingerprint_,
+        std::string_view(reinterpret_cast<const char*>(buffer.data()), readSize));
+    cacheValidationBytes_ += readSize;
+    stepBytes += readSize;
+  }
+
+  if (cacheValidationOpen_ && !cacheValidationFile_.available()) finishCachedNoteValidation();
+}
+
+void MarkdownVaultIndexer::finishCachedNoteValidation() {
+  closeCacheValidationFile();
+  const bool matches = cacheValidationBytes_ == cachedRecord_.sourceSize &&
+                       cacheValidationFingerprint_ == cachedRecord_.sourceFingerprint;
+  if (matches) {
+    report_.indexesReused++;
+    noteIndex_++;
+    activePath_.clear();
+    cacheValidationBytes_ = 0;
+    publishRecord(std::move(cachedRecord_));
+    if (noteIndex_ >= notePaths_.size()) finishIndexing();
+    return;
+  }
+
+  cachedRecord_ = {};
+  cacheValidationFingerprint_ = micromarkd::MARKDOWN_FINGERPRINT_SEED;
+  cacheValidationBytes_ = 0;
+  if (!Storage.openFileForRead(MODULE, activePath_, activeFile_)) {
+    LOG_ERR(MODULE, "Failed to reopen note after stale Markdown index: %s", activePath_.c_str());
+    report_.failures++;
+    noteIndex_++;
+    activePath_.clear();
+    if (noteIndex_ >= notePaths_.size()) finishIndexing();
+    return;
+  }
+  activeFileOpen_ = true;
+  activeBuilder_ = micromarkd::MarkdownIndexStreamBuilder{};
+  activeBytes_ = 0;
+}
+
 void MarkdownVaultIndexer::finishActiveNote() {
   closeActiveFile();
   auto record = activeBuilder_.finish(activePath_);
@@ -214,7 +299,7 @@ void MarkdownVaultIndexer::finishActiveNote() {
   activePath_.clear();
   activeBytes_ = 0;
   publishRecord(std::move(record));
-  if (noteIndex_ >= notePaths_.size()) phase_ = Phase::Complete;
+  if (noteIndex_ >= notePaths_.size()) finishIndexing();
 }
 
 void MarkdownVaultIndexer::skipActiveNote(const bool tooLarge) {
@@ -227,13 +312,26 @@ void MarkdownVaultIndexer::skipActiveNote(const bool tooLarge) {
   noteIndex_++;
   activePath_.clear();
   activeBytes_ = 0;
-  if (noteIndex_ >= notePaths_.size()) phase_ = Phase::Complete;
+  if (noteIndex_ >= notePaths_.size()) finishIndexing();
+}
+
+void MarkdownVaultIndexer::finishIndexing() {
+  phase_ = Phase::Complete;
+  if (report_.directoriesSkipped == 0 && report_.indexesWriteFailed == 0 && report_.failures == 0) {
+    writeMarkdownIndexCatalogReady(report_.partial());
+  }
 }
 
 void MarkdownVaultIndexer::closeActiveFile() {
   if (!activeFileOpen_) return;
   activeFile_.close();
   activeFileOpen_ = false;
+}
+
+void MarkdownVaultIndexer::closeCacheValidationFile() {
+  if (!cacheValidationOpen_) return;
+  cacheValidationFile_.close();
+  cacheValidationOpen_ = false;
 }
 
 void MarkdownVaultIndexer::publishRecord(micromarkd::MarkdownIndexRecord record) {

@@ -18,6 +18,8 @@ class EndOfBookOptions : private UiAppHost {
   enum class Action { None, Redraw, OpenBook, GoHome, LastPage };
 
   static constexpr size_t MAX_SUGGESTIONS = 3;
+  static constexpr freeink::ui::ActionId ACTION_BACK = 2;
+  static constexpr freeink::ui::ActionId ACTION_HOME = 3;
 
   explicit EndOfBookOptions(GfxRenderer& renderer);
 
@@ -46,6 +48,7 @@ class EndOfBookOptions : private UiAppHost {
   // the title and button hints stay on the legacy UITheme calls.
   static void listScreen(UiScreen& screen, void* user);
   static void onRowEvent(const freeink::ui::ActionEvent& event, void* user);
+  static void onNavigationEvent(const freeink::ui::ActionEvent& event, void* user);
   void buildListScreen(UiScreen& screen);
 
   GfxRenderer& renderer;

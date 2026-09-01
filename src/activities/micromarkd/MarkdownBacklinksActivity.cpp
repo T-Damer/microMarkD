@@ -15,6 +15,7 @@
 
 #include "activities/micromarkd/MarkdownCatalogStorage.h"
 #include "activities/micromarkd/MarkdownEditorActivity.h"
+#include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
 
@@ -53,6 +54,7 @@ void MarkdownBacklinksActivity::beginScan() {
   rowSubtitles_.clear();
   cacheIndex_ = 0;
   partial_ = false;
+  cachedIndexPartial_ = false;
 
   if (!micromarkd::isVaultMarkdownPath(targetPath_)) {
     phase_ = Phase::Complete;
@@ -60,6 +62,17 @@ void MarkdownBacklinksActivity::beginScan() {
     emptyMessage_ = "Invalid note path";
     requestUpdate();
     return;
+  }
+
+  bool cachedPartial = false;
+  if (markdownIndexCatalogReady(&cachedPartial)) {
+    MarkdownCatalogLoadReport report;
+    if (loadMarkdownCatalogFromCache(catalog_, report) && !report.partial()) {
+      cachedIndexPartial_ = cachedPartial;
+      beginLinkScan();
+      return;
+    }
+    invalidateMarkdownIndexCatalog();
   }
 
   phase_ = Phase::IndexingVault;
@@ -97,7 +110,7 @@ void MarkdownBacklinksActivity::beginLinkScan() {
   targetRecord.path = targetPath_;
   catalog_.addRecord(targetRecord);
   catalog_.finalize();
-  partial_ = indexer_.report().partial() || catalog_.truncated();
+  partial_ = cachedIndexPartial_ || indexer_.report().partial() || catalog_.truncated();
 
   bool truncated = false;
   if (!listMarkdownIndexCacheFiles(cachePaths_, MAX_CACHE_RECORDS, truncated)) {

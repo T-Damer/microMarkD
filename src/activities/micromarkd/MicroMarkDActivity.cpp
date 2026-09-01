@@ -14,6 +14,8 @@
 #include <vector>
 
 #include "activities/micromarkd/MarkdownEditorActivity.h"
+#include "activities/micromarkd/MarkdownGraphActivity.h"
+#include "activities/micromarkd/MarkdownSyncActivity.h"
 #include "activities/micromarkd/MarkdownRecentActivity.h"
 #include "activities/micromarkd/MarkdownRecovery.h"
 #include "activities/micromarkd/MarkdownSearchActivity.h"
@@ -22,6 +24,7 @@
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
+#include "components/icons/customListIcons.h"
 
 namespace fui = freeink::ui;
 
@@ -30,8 +33,9 @@ constexpr int VAULT_INDEX = 0;
 constexpr int RECENT_INDEX = 1;
 constexpr int SEARCH_INDEX = 2;
 constexpr int TAGS_INDEX = 3;
-constexpr int NEW_NOTE_INDEX = 4;
-constexpr int SYNC_INDEX = 5;
+constexpr int GRAPH_INDEX = 4;
+constexpr int NEW_NOTE_INDEX = 5;
+constexpr int SYNC_INDEX = 6;
 constexpr char VAULT_ROOT[] = "/vault";
 constexpr size_t MAX_NOTE_TITLE_BYTES = 96;
 constexpr size_t MAX_SEARCH_QUERY_BYTES = 96;
@@ -50,17 +54,18 @@ MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager
 
   setTranslatedRow(VAULT_INDEX, StrId::STR_MICROMARKD_VAULT, StrId::STR_MICROMARKD_VAULT_DESC, UIIcon::Folder);
   setTranslatedRow(RECENT_INDEX, StrId::STR_MICROMARKD_RECENT, StrId::STR_MICROMARKD_RECENT_DESC, UIIcon::Recent);
-  setTranslatedRow(SEARCH_INDEX, StrId::STR_MICROMARKD_SEARCH, StrId::STR_MICROMARKD_SEARCH_DESC, UIIcon::Text);
+  setTranslatedRow(SEARCH_INDEX, StrId::STR_MICROMARKD_SEARCH, StrId::STR_MICROMARKD_SEARCH_DESC, UIIcon::Search);
 
   fui::ListItem tags{};
-  tags.label = "Tags";
-  tags.subtitle = "Browse indexed tags and tagged notes";
-  tags.icon = listIconFor(UIIcon::Text, 32);
+  tags.label = I18N.get(StrId::STR_MICROMARKD_TAGS);
+  tags.subtitle = I18N.get(StrId::STR_MICROMARKD_TAGS_DESC);
+  tags.icon = listIconFor(UIIcon::Tag, 32);
   tags.actionValue = TAGS_INDEX;
   rowItems_[TAGS_INDEX] = tags;
 
-  setTranslatedRow(NEW_NOTE_INDEX, StrId::STR_MICROMARKD_NEW_NOTE, StrId::STR_MICROMARKD_NEW_NOTE_DESC, UIIcon::File);
-  setTranslatedRow(SYNC_INDEX, StrId::STR_MICROMARKD_SYNC, StrId::STR_MICROMARKD_SYNC_DESC, UIIcon::Transfer);
+  setTranslatedRow(GRAPH_INDEX, StrId::STR_MICROMARKD_GRAPH, StrId::STR_MICROMARKD_GRAPH_DESC, UIIcon::Graph);
+  setTranslatedRow(NEW_NOTE_INDEX, StrId::STR_MICROMARKD_NEW_NOTE, StrId::STR_MICROMARKD_NEW_NOTE_DESC, UIIcon::NewNote);
+  setTranslatedRow(SYNC_INDEX, StrId::STR_MICROMARKD_SYNC, StrId::STR_MICROMARKD_SYNC_DESC, UIIcon::Git);
 }
 
 void MicroMarkDActivity::onEnter() {
@@ -126,13 +131,19 @@ void MicroMarkDActivity::activateIndex(const int index) {
     return;
   }
 
+  if (index == GRAPH_INDEX) {
+    activityManager.pushActivity(std::make_unique<MarkdownGraphActivity>(renderer, mappedInput, std::string{}));
+    return;
+  }
+
   if (index == NEW_NOTE_INDEX) {
     startNewNote();
     return;
   }
 
-  rowItems_[index].subtitle = tr(STR_MICROMARKD_PLANNED);
-  requestUpdate();
+  if (index == SYNC_INDEX) {
+    activityManager.pushActivity(std::make_unique<MarkdownSyncActivity>(renderer, mappedInput));
+  }
 }
 
 void MicroMarkDActivity::startSearch() {
@@ -224,6 +235,13 @@ void MicroMarkDActivity::showCreateError() {
 
 void MicroMarkDActivity::buildScreen(UiScreen& screen) {
   const auto& metrics = UITheme::getInstance().getMetrics();
+  if (mappedInput.hasTouch()) {
+    screen.target().bitmap(
+        fui::Rect{4, static_cast<int16_t>(metrics.topPadding + 4),
+                  static_cast<int16_t>(metrics.headerHeight - 8),
+                  static_cast<int16_t>(metrics.headerHeight - 8)},
+        fui::bitmapFromIcon(icon_micromarkd_32), fui::BitmapMode::Center);
+  }
   screen.setContentMargin(fui::Insets{static_cast<int16_t>(metrics.topPadding + metrics.headerHeight), 0,
                                       static_cast<int16_t>(metrics.buttonHintsHeight), 0});
   screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));

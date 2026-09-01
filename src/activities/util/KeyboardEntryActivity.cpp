@@ -2,12 +2,14 @@
 
 #include <HalGPIO.h>
 #include <I18n.h>
+#include <FreeInkUIIcon.h>
 
 #include <algorithm>
 #include <cstring>
 
 #include "MappedInputManager.h"
 #include "components/UITheme.h"
+#include "components/icons/back32.h"
 #include "fontIds.h"
 
 namespace fui = freeink::ui;
@@ -15,6 +17,7 @@ namespace fui = freeink::ui;
 namespace {
 
 constexpr fui::ActionId ACTION_KEY = 1;
+constexpr int16_t CANCEL_KEY = -5;
 
 // ---------------------------------------------------------------------------
 // URL layers. The SDK builtin layouts have no URL variant (":", "/", ".", the
@@ -263,6 +266,9 @@ bool KeyboardEntryActivity::backspaceUtf8() {
 
 bool KeyboardEntryActivity::activateValue(const int16_t value, const bool longPress) {
   switch (value) {
+    case CANCEL_KEY:
+      onCancel();
+      return false;
     case fui::QWERTY_KEY_SHIFT:
       delPressCount = 0;
       hintVisible = false;
@@ -290,6 +296,10 @@ bool KeyboardEntryActivity::activateValue(const int16_t value, const bool longPr
       clampSelection();
       return true;
     case fui::QWERTY_KEY_ENTER:
+      if (inputType == InputType::Multiline && !longPress) {
+        insertUtf8("\n");
+        return true;
+      }
       onComplete(text);
       return false;
     case fui::QWERTY_KEY_BACKSPACE:
@@ -372,7 +382,8 @@ int KeyboardEntryActivity::measureRange(std::string& s, const int start, const i
 }
 
 int KeyboardEntryActivity::lineBreakEnd(std::string& s, const int start, const int maxWidth) const {
-  const int len = static_cast<int>(s.length());
+  const size_t newline = s.find('\n', static_cast<size_t>(start));
+  const int len = newline == std::string::npos ? static_cast<int>(s.length()) : static_cast<int>(newline);
   if (measureRange(s, start, len) <= maxWidth) return len;
   int lo = start + 1;
   int hi = len - 1;
@@ -461,7 +472,7 @@ bool KeyboardEntryActivity::cursorPositionFromPoint(const int x, const int y, si
     }
 
     lineY += lineHeight;
-    lineStartIdx = lineEndIdx;
+    lineStartIdx = displayText[lineEndIdx] == '\n' ? lineEndIdx + 1 : lineEndIdx;
   }
 
   const int underlineBottom = lineY + lineHeight + metrics.verticalSpacing + 8;
@@ -657,7 +668,10 @@ void KeyboardEntryActivity::loop() {
 
   if (confirmHeld && !confirmLongHandled && mappedInput.isPressed(MappedInputManager::Button::Confirm) &&
       mappedInput.getHeldTime() > LONG_PRESS_MS) {
-    if (!selectedDel && clearAllOrAltOnSelected()) {
+    if (inputType == InputType::Multiline && selKey && selKey->value == fui::QWERTY_KEY_ENTER) {
+      onComplete(text);
+      confirmLongHandled = true;
+    } else if (!selectedDel && clearAllOrAltOnSelected()) {
       requestUpdate();
       confirmLongHandled = true;
     }
@@ -692,7 +706,11 @@ void KeyboardEntryActivity::render(RenderLock&&) {
   const auto pageWidth = renderer.getScreenWidth();
   const auto& metrics = UITheme::getInstance().getMetrics();
 
-  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, title.c_str());
+  const int16_t leftReserve = gpio.hasTouch()
+                                  ? static_cast<int16_t>(metrics.headerHeight + metrics.headerSidePadding)
+                                  : 0;
+  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, title.c_str(), nullptr,
+                 leftReserve);
 
   const int lineHeight = renderer.getLineHeight(UI_12_FONT_ID);
   const int inputStartY = metrics.topPadding + metrics.headerHeight + metrics.verticalSpacing +
@@ -717,7 +735,7 @@ void KeyboardEntryActivity::render(RenderLock&&) {
   const bool centerText = metrics.keyboardCenteredText;
 
   int cursorCharWidth = 6;
-  if (cursorPos < text.length()) {
+  if (cursorPos < text.length() && text[cursorPos] != '\n') {
     int w = renderer.getTextWidth(UI_12_FONT_ID, text.substr(cursorPos, 1).c_str());
     if (w > cursorCharWidth) cursorCharWidth = w;
   }
@@ -733,10 +751,8 @@ void KeyboardEntryActivity::render(RenderLock&&) {
     const std::string lineText = displayText.substr(lineStartIdx, lineEndIdx - lineStartIdx);
     textWidth = renderer.getTextAdvanceX(UI_12_FONT_ID, lineText.c_str(), EpdFontFamily::REGULAR);
     {
-      const bool isLastLine = (lineEndIdx == static_cast<int>(displayText.length()));
       bool isCursorLine = false;
-      if (!cursorDrawn && cursorPos >= lineStartIdx &&
-          (isLastLine ? cursorPos <= lineEndIdx : cursorPos < lineEndIdx)) {
+      if (!cursorDrawn && cursorPos >= lineStartIdx && cursorPos <= lineEndIdx) {
         std::string beforeCursor;
         if (isPassword && !passwordVisible && cursorMode) {
           beforeCursor = std::string(cursorPos - lineStartIdx, '*');
@@ -745,7 +761,7 @@ void KeyboardEntryActivity::render(RenderLock&&) {
         }
         int beforeWidth = renderer.getTextAdvanceX(UI_12_FONT_ID, beforeCursor.c_str(), EpdFontFamily::REGULAR);
         int kernOffset = 0;
-        if (cursorPos < displayText.length()) {
+        if (cursorPos < displayText.length() && displayText[cursorPos] != '\n') {
           std::string beforeAndCursor = beforeCursor + displayText.substr(cursorPos, 1);
           int beforeAndCursorWidth =
               renderer.getTextAdvanceX(UI_12_FONT_ID, beforeAndCursor.c_str(), EpdFontFamily::REGULAR);
@@ -786,7 +802,7 @@ void KeyboardEntryActivity::render(RenderLock&&) {
       }
 
       inputHeight += lineHeight;
-      lineStartIdx = lineEndIdx;
+      lineStartIdx = displayText[lineEndIdx] == '\n' ? lineEndIdx + 1 : lineEndIdx;
     }
   }
 
@@ -798,7 +814,7 @@ void KeyboardEntryActivity::render(RenderLock&&) {
   if (cursorMode && !togglePos && cursorPos <= displayText.length()) {
     static constexpr int blockPadding = 1;
     renderer.fillRect(cursorPixelX - blockPadding, cursorLineY, cursorCharWidth + blockPadding * 2, lineHeight, true);
-    if (cursorPos < text.length()) {
+    if (cursorPos < text.length() && text[cursorPos] != '\n') {
       const char buf[2] = {text[cursorPos], '\0'};
       renderer.drawText(UI_12_FONT_ID, cursorPixelX, cursorLineY, buf, false);
     }
@@ -943,6 +959,18 @@ void KeyboardEntryActivity::render(RenderLock&&) {
   const int hintsTop = renderer.getScreenHeight() - metrics.buttonHintsHeight;
   props.bottomHitOverflow = static_cast<int16_t>(std::max(0, hintsTop - (kbRect.y + kbRect.height)));
   fui::keyboard(frame, kbRect, props);
+
+  if (gpio.hasTouch()) {
+    fui::ButtonProps back;
+    back.icon = fui::bitmapFromIcon(icon_arrow_left_32);
+    back.action = ACTION_KEY;
+    back.value = CANCEL_KEY;
+    back.inputMask = fui::InputTouch;
+    back.styles = fui::plainStyles();
+    back.radius = 8;
+    const int16_t buttonSize = static_cast<int16_t>(metrics.headerHeight - 8);
+    fui::button(frame, fui::Rect{4, static_cast<int16_t>(metrics.topPadding + 4), buttonSize, buttonSize}, back);
+  }
   interactions.publish();
   interactionsReady = true;
 

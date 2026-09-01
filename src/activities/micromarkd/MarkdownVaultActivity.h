@@ -24,7 +24,10 @@ class MarkdownVaultActivity final : public UiListActivity {
   static constexpr size_t MAX_ENTRY_NAME_BYTES = 96;
   static constexpr size_t MAX_RENAME_DIRECTORIES = 512;
   static constexpr size_t MAX_RENAME_NOTES = 1024;
-  static constexpr int ACTION_ROW_COUNT = 2;
+  static constexpr int ACTION_ROW_COUNT = 4;
+  static constexpr freeink::ui::ActionId ACTION_HOME = ACTION_USER;
+  static constexpr freeink::ui::ActionId ACTION_NEW_NOTE = ACTION_USER + 1;
+  static constexpr freeink::ui::ActionId ACTION_NEW_FOLDER = ACTION_USER + 2;
 
   std::string path_;
   std::string header_;
@@ -39,9 +42,11 @@ class MarkdownVaultActivity final : public UiListActivity {
 
   int listCount() const override;
   void buildScreen(UiScreen& screen) override;
+  static void toolbarActionTrampoline(const freeink::ui::ActionEvent& event, void* user);
   void activateIndex(int index) override;
   void onRowLongPress(int index) override;
   bool handleCustomInput() override;
+  void navigateButtons() override;
   void onBackButton() override;
   const char* headerTitle() const override;
   void drawFooter() override;
@@ -61,6 +66,7 @@ class MarkdownVaultActivity final : public UiListActivity {
 
   void openDirectory(const std::string& entry);
   void openNote(const std::string& fullPath);
+  void openReader(const std::string& fullPath);
   void editNote(const std::string& fullPath);
   void showNoteActions(const std::string& entry, const std::string& fullPath);
   void showFolderActions(const std::string& entry, const std::string& fullPath);
@@ -71,6 +77,7 @@ class MarkdownVaultActivity final : public UiListActivity {
   void migrateNoteState(const std::string& oldPath, const std::string& newPath);
   bool collectMarkdownFiles(const std::string& rootPath, std::vector<std::string>& files);
   void confirmDelete(const std::string& entry, const std::string& fullPath);
+  void navigateToParent();
 
   std::string fullPath(const std::string& entry) const;
   static std::string displayName(const std::string& entry);

@@ -420,6 +420,7 @@ void MarkdownSearchActivity::buildScreen(UiScreen& screen) {
   props.inputMask = fui::InputTouch | fui::InputLongPress;
   fui::TextStyle label = screen.theme().smallText;
   label.bold = true;
+  label.maxLines = 2;
   props.labelText = label;
   fui::TextStyle subtitle = screen.theme().smallText;
   subtitle.maxLines = 2;

@@ -5,6 +5,8 @@
 #include <HalGPIO.h>
 #include <I18n.h>
 
+#include <algorithm>
+
 #include "CrossPointSettings.h"
 #include "ReaderUtils.h"
 // ReaderUtils.h pulls in ActivityManager.h, which only forward-declares Activity while holding
@@ -37,13 +39,13 @@ void EndOfBookOptions::loadOnce(const std::string& currentBookPath) {
   folder = FsHelpers::extractFolderPath(currentBookPath);
   names = NextBookFinder::findNextBooks(currentBookPath, MAX_SUGGESTIONS);
   selector = 0;
-  if (!names.empty()) {
-    // One-time app setup on the render task, before the first render/route.
-    resetUi();
-    app.on(ACTION_ROW, &EndOfBookOptions::onRowEvent, this);
-    app.setScreen(&EndOfBookOptions::listScreen, this);
-    buildRowItems();
-  }
+  // One-time app setup on the render task, before the first render/route.
+  resetUi();
+  app.on(ACTION_ROW, &EndOfBookOptions::onRowEvent, this);
+  app.on(ACTION_BACK, &EndOfBookOptions::onNavigationEvent, this);
+  app.on(ACTION_HOME, &EndOfBookOptions::onNavigationEvent, this);
+  app.setScreen(&EndOfBookOptions::listScreen, this);
+  buildRowItems();
   // Release-publish so the main task, which gates all access on isLoaded, never
   // observes a partially built list (rowItems/rowLabels included)
   isLoaded.store(true, std::memory_order_release);
@@ -91,11 +93,17 @@ void EndOfBookOptions::onRowEvent(const fui::ActionEvent& event, void* user) {
   self->tappedRow = event.value;
 }
 
+void EndOfBookOptions::onNavigationEvent(const fui::ActionEvent&, void* user) {
+  static_cast<EndOfBookOptions*>(user)->app.clearTapFlash();
+}
+
 EndOfBookOptions::Action EndOfBookOptions::handleMenuInput(const MappedInputManager& input, std::string* openPath) {
   // Touch goes through the FreeInkApp: render() registered the row hit rects;
   // route the snapshot and let onRowEvent record the tapped row.
   tappedRow = -1;
   const auto route = routeTouch(input);
+  if (route && route.event.action == ACTION_BACK) return Action::LastPage;
+  if (route && route.event.action == ACTION_HOME) return Action::GoHome;
   // cppcheck can't see that route() dispatches into onRowEvent (registered via
   // app.on(ACTION_ROW, ...)), which sets tappedRow, so it flags this as always false.
   // cppcheck-suppress knownConditionTrueFalse
@@ -162,9 +170,11 @@ void EndOfBookOptions::buildListScreen(UiScreen& screen) {
   const int titleY = safe.y + safe.height / 8;
   const int subtitleY = titleY + renderer.getLineHeight(UI_12_FONT_ID) + metrics.verticalSpacing;
   const int listTop = subtitleY + renderer.getLineHeight(UI_10_FONT_ID) + metrics.verticalSpacing * 2;
+  const int buttonHeight = std::max(1, metrics.headerHeight - 4);
+  const int bottomReserve = gpio.hasTouch() ? buttonHeight + metrics.verticalSpacing * 2 : metrics.verticalSpacing;
   screen.setContentMargin(fui::Insets{
       static_cast<int16_t>(listTop), static_cast<int16_t>(renderer.getScreenWidth() - (safe.x + safe.width)),
-      static_cast<int16_t>(renderer.getScreenHeight() - (safe.y + safe.height) + metrics.verticalSpacing),
+      static_cast<int16_t>(renderer.getScreenHeight() - (safe.y + safe.height) + bottomReserve),
       static_cast<int16_t>(safe.x)});
 
   // rowLabels/rowItems were built once in loadOnce() (see buildRowItems())
@@ -183,7 +193,40 @@ void EndOfBookOptions::buildListScreen(UiScreen& screen) {
     // this reads the capability directly like BaseTheme's draw code does.
     props.rowHeight = static_cast<int16_t>(metrics.listRowHeight);
   }
-  screen.list(props);
+  if (!names.empty()) screen.list(props);
+
+  // Register these after the list so the bottom navigation wins if a touch
+  // target is expanded into the reserved area.
+  if (gpio.hasTouch()) {
+    constexpr int buttonWidth = 96;
+    constexpr int buttonGap = 8;
+    int orientedMarginTop = 0;
+    int orientedMarginRight = 0;
+    int orientedMarginBottom = 0;
+    int orientedMarginLeft = 0;
+    renderer.getOrientedViewableTRBL(&orientedMarginTop, &orientedMarginRight, &orientedMarginBottom,
+                                     &orientedMarginLeft);
+    const int totalWidth = buttonWidth * 2 + buttonGap;
+    const int startX = (renderer.getScreenWidth() - totalWidth) / 2;
+    const int bottom = renderer.getScreenHeight() - orientedMarginBottom - UITheme::getStatusBarHeight() -
+                       metrics.verticalSpacing;
+    const int top = bottom - buttonHeight;
+
+    fui::ButtonProps back;
+    back.label = tr(STR_BACK);
+    back.action = ACTION_BACK;
+    back.inputMask = fui::InputTouch;
+    back.radius = 5;
+    screen.button(back, fui::Rect{static_cast<int16_t>(startX), static_cast<int16_t>(top), buttonWidth, buttonHeight});
+
+    fui::ButtonProps home;
+    home.label = tr(STR_HOME);
+    home.action = ACTION_HOME;
+    home.inputMask = fui::InputTouch;
+    home.radius = 5;
+    screen.button(home, fui::Rect{static_cast<int16_t>(startX + buttonWidth + buttonGap), static_cast<int16_t>(top),
+                                  buttonWidth, buttonHeight});
+  }
 }
 
 void EndOfBookOptions::render(GfxRenderer& renderer, const MappedInputManager& input) {
@@ -194,6 +237,7 @@ void EndOfBookOptions::render(GfxRenderer& renderer, const MappedInputManager& i
     // the previous fixed position on the 480x800 panel and scales to other resolutions.
     renderer.drawCenteredText(UI_12_FONT_ID, renderer.getScreenHeight() * 3 / 8, tr(STR_END_OF_BOOK), true,
                               EpdFontFamily::BOLD);
+    if (input.hasTouch()) renderUi();
     return;
   }
 

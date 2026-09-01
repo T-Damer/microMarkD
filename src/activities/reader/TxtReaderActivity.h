@@ -45,13 +45,19 @@ class TxtReaderActivity final : public ReaderActivity {
   std::vector<size_t> markdownPageTextOffsets;
   std::vector<MarkdownLinkHit> markdownLinkHits;
   std::vector<MarkdownHistoryEntry> markdownHistory;
+  int selectedMarkdownLink = -1;
 
   bool loadMarkdownPageAtCursor(GfxRenderer& renderer, size_t sourceOffset, size_t textOffset,
                                 std::vector<std::string>& outLines,
                                 std::vector<micromarkd::ParsedLine>& outMarkdownLines, size_t& nextSourceOffset,
                                 size_t& nextTextOffset);
   bool openMarkdownFile(const std::string& path, int page, bool rememberCurrent);
+  bool openMarkdownTarget(const std::string& target);
   std::string resolveWikiLink(const std::string& target) const;
+  std::string resolveMarkdownImagePath(const std::string& target) const;
+  int markdownImageHeight(const std::string& path, int maxHeight, uint16_t& width) const;
+  bool renderMarkdownImage(GfxRenderer& renderer, const std::string& path, int x, int y, int width,
+                           int height) const;
 #endif
 
   // Cached settings for cache validation
@@ -75,6 +81,7 @@ class TxtReaderActivity final : public ReaderActivity {
 
   bool loadBook() override;
   bool handleFormatInput() override;
+  bool handleTouchBackNavigation() override;
   std::string getBookTitle() const override { return txt ? txt->getTitle() : ""; }
   void renderBook() override;
 

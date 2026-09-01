@@ -60,6 +60,9 @@ void appendWikiLink(ParsedLine& parsed, std::string_view target, std::string_vie
 ParsedLine sliceParsedLine(const ParsedLine& source, const size_t start, const size_t length) {
   ParsedLine result;
   result.block = source.block;
+  result.imagePath = source.imagePath;
+  result.imageWidth = source.imageWidth;
+  result.imageHeight = source.imageHeight;
   result.headingLevel = source.headingLevel;
   result.bold = source.bold;
   result.italic = source.italic;
@@ -134,6 +137,34 @@ ParsedLine parseMarkdownLine(std::string_view source) {
   if (parsed.block == BlockKind::Code) {
     parsed.text.assign(source.data(), source.size());
     return parsed;
+  }
+
+  if (source.starts_with("![[") && source.size() > 5 && source.ends_with("]]")) {
+    const std::string_view target = trim(source.substr(3, source.size() - 5));
+    if (!target.empty()) {
+      parsed.block = BlockKind::Image;
+      parsed.imagePath.assign(target.data(), target.size());
+      parsed.text = parsed.imagePath;
+      return parsed;
+    }
+  }
+
+  if (source.starts_with("![")) {
+    const size_t labelEnd = source.find("](", 2);
+    if (labelEnd != std::string_view::npos && source.back() == ')' && labelEnd + 3 <= source.size()) {
+      std::string_view target = trim(source.substr(labelEnd + 2, source.size() - labelEnd - 3));
+      if (target.size() >= 2 && target.front() == '<' && target.back() == '>') {
+        target = trim(target.substr(1, target.size() - 2));
+      }
+      if (!target.empty()) {
+        parsed.block = BlockKind::Image;
+        parsed.imagePath.assign(target.data(), target.size());
+        const std::string_view alt = trim(source.substr(2, labelEnd - 2));
+        parsed.text.assign(alt.data(), alt.size());
+        if (parsed.text.empty()) parsed.text = parsed.imagePath;
+        return parsed;
+      }
+    }
   }
 
   parsed.text.reserve(source.size());

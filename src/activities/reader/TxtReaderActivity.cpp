@@ -1,6 +1,9 @@
 #include "TxtReaderActivity.h"
 
 #include <BidiUtils.h>
+#include <Bitmap.h>
+#include <Epub/converters/JpegToFramebufferConverter.h>
+#include <Epub/converters/PngToFramebufferConverter.h>
 #include <FontCacheManager.h>
 #include <FsHelpers.h>
 #include <GfxRenderer.h>
@@ -19,6 +22,9 @@
 #include "ReaderUtils.h"
 #include "RecentBooksStore.h"
 #include "components/UITheme.h"
+#ifdef MICROMARKD_APP
+#include "activities/micromarkd/MarkdownReaderMenuActivity.h"
+#endif
 #include "fontIds.h"
 
 namespace {
@@ -29,7 +35,7 @@ constexpr uint8_t CACHE_VERSION = 3;          // Increment when cache format cha
 
 #ifdef MICROMARKD_APP
 constexpr uint32_t MARKDOWN_CACHE_MAGIC = 0x4D444958;  // "MDIX"
-constexpr uint8_t MARKDOWN_CACHE_VERSION = 1;
+constexpr uint8_t MARKDOWN_CACHE_VERSION = 2;
 
 int markdownIndent(const micromarkd::BlockKind block) {
   switch (block) {
@@ -43,6 +49,7 @@ int markdownIndent(const micromarkd::BlockKind block) {
     case micromarkd::BlockKind::Paragraph:
     case micromarkd::BlockKind::Heading:
     case micromarkd::BlockKind::Separator:
+    case micromarkd::BlockKind::Image:
       return 0;
   }
   return 0;
@@ -127,6 +134,27 @@ size_t findMarkdownWrapEnd(GfxRenderer& renderer, const int fontId, const microm
 
   return best;
 }
+
+bool getMarkdownImageDimensions(const std::string& path, ImageDimensions& dimensions) {
+  if (FsHelpers::hasPngExtension(path)) {
+    return PngToFramebufferConverter::getDimensionsStatic(path, dimensions);
+  }
+  if (FsHelpers::hasJpgExtension(path)) {
+    return JpegToFramebufferConverter::getDimensionsStatic(path, dimensions);
+  }
+  if (!FsHelpers::hasBmpExtension(path)) return false;
+
+  HalFile file;
+  if (!Storage.openFileForRead("MD", path, file)) return false;
+  Bitmap bitmap(file, true);
+  const bool valid = bitmap.parseHeaders() == BmpReaderError::Ok;
+  if (valid) {
+    dimensions.width = static_cast<int16_t>(bitmap.getWidth());
+    dimensions.height = static_cast<int16_t>(bitmap.getHeight());
+  }
+  file.close();
+  return valid && dimensions.width > 0 && dimensions.height > 0;
+}
 #endif
 }  // namespace
 
@@ -169,6 +197,9 @@ void TxtReaderActivity::initializeReader(GfxRenderer& renderer) {
   cachedOrientedMarginRight += cachedScreenMargin;
   cachedOrientedMarginBottom +=
       std::max(cachedScreenMargin, static_cast<uint8_t>(UITheme::getInstance().getStatusBarHeight()));
+  if (mappedInput.hasTouch()) {
+    cachedOrientedMarginBottom += touchNavigationHeight();
+  }
 
   viewportWidth = renderer.getScreenWidth() - cachedOrientedMarginLeft - cachedOrientedMarginRight;
   const int viewportHeight = renderer.getScreenHeight() - cachedOrientedMarginTop - cachedOrientedMarginBottom;
@@ -417,10 +448,13 @@ bool TxtReaderActivity::loadMarkdownPageAtCursor(GfxRenderer& renderer, const si
 
   size_t cursorSourceOffset = sourceOffset;
   size_t cursorTextOffset = textOffset;
+  const int lineHeight = renderer.getLineHeight(cachedFontId);
+  const int pageHeight = std::max(lineHeight, linesPerPage * lineHeight);
+  int usedHeight = 0;
 
   // A page normally needs only one 8 KiB read. If an unusually markup-heavy
   // chunk produces fewer visible lines, continue with the next sequential chunk.
-  while (cursorSourceOffset < fileSize && static_cast<int>(outLines.size()) < linesPerPage) {
+  while (cursorSourceOffset < fileSize && usedHeight < pageHeight) {
     const size_t chunkLimit = std::min(CHUNK_SIZE, fileSize - cursorSourceOffset);
     const size_t probeSize = std::min(chunkLimit + 1, fileSize - cursorSourceOffset);
     auto* buffer = static_cast<uint8_t*>(malloc(probeSize));
@@ -435,7 +469,7 @@ bool TxtReaderActivity::loadMarkdownPageAtCursor(GfxRenderer& renderer, const si
     }
 
     size_t pos = 0;
-    while (pos < chunkLimit && static_cast<int>(outLines.size()) < linesPerPage) {
+    while (pos < chunkLimit && usedHeight < pageHeight) {
       const size_t lineStart = pos;
       size_t lineEnd = pos;
       while (lineEnd < chunkLimit && buffer[lineEnd] != '\n') lineEnd++;
@@ -454,14 +488,40 @@ bool TxtReaderActivity::loadMarkdownPageAtCursor(GfxRenderer& renderer, const si
         followingSourceOffset = std::min(fileSize, cursorSourceOffset + lineStart + 1);
       }
 
-      const auto parsed = micromarkd::parseMarkdownLine(sourceLine);
+      auto parsed = micromarkd::parseMarkdownLine(sourceLine);
       size_t lineTextOffset = cursorTextOffset;
       cursorTextOffset = 0;  // Only the first source fragment can resume mid-line.
       if (lineTextOffset > parsed.text.size()) lineTextOffset = 0;
 
+      if (parsed.block == micromarkd::BlockKind::Image) {
+        const std::string imagePath = resolveMarkdownImagePath(parsed.imagePath);
+        if (!imagePath.empty()) {
+          parsed.imageHeight = static_cast<uint16_t>(markdownImageHeight(imagePath, pageHeight, parsed.imageWidth));
+        }
+        const int imageHeight = parsed.imageHeight > 0 ? parsed.imageHeight : lineHeight;
+        if (!outLines.empty() && usedHeight + imageHeight > pageHeight) {
+          free(buffer);
+          nextSourceOffset = cursorSourceOffset + lineStart;
+          nextTextOffset = 0;
+          return true;
+        }
+        outLines.push_back(parsed.text);
+        outMarkdownLines.push_back(std::move(parsed));
+        usedHeight += imageHeight;
+        pos = followingSourceOffset - cursorSourceOffset;
+        continue;
+      }
+
       if (parsed.block == micromarkd::BlockKind::Separator || parsed.text.empty()) {
+        if (!outLines.empty() && usedHeight + lineHeight > pageHeight) {
+          free(buffer);
+          nextSourceOffset = cursorSourceOffset + lineStart;
+          nextTextOffset = 0;
+          return true;
+        }
         outLines.push_back(parsed.text);
         outMarkdownLines.push_back(parsed);
+        usedHeight += lineHeight;
         pos = followingSourceOffset - cursorSourceOffset;
         continue;
       }
@@ -471,7 +531,7 @@ bool TxtReaderActivity::loadMarkdownPageAtCursor(GfxRenderer& renderer, const si
       }
 
       const int availableWidth = std::max(1, viewportWidth - markdownIndent(parsed.block));
-      while (lineTextOffset < parsed.text.size() && static_cast<int>(outLines.size()) < linesPerPage) {
+      while (lineTextOffset < parsed.text.size() && usedHeight + lineHeight <= pageHeight) {
         size_t wrapEnd = findMarkdownWrapEnd(renderer, cachedFontId, parsed, lineTextOffset, availableWidth);
         if (wrapEnd <= lineTextOffset) {
           LOG_ERR("TRS", "Markdown wrapper stalled at %zu:%zu; forcing one UTF-8 code point",
@@ -487,6 +547,7 @@ bool TxtReaderActivity::loadMarkdownPageAtCursor(GfxRenderer& renderer, const si
         auto fragment = micromarkd::sliceParsedLine(parsed, lineTextOffset, wrapEnd - lineTextOffset);
         outLines.push_back(fragment.text);
         outMarkdownLines.push_back(std::move(fragment));
+        usedHeight += lineHeight;
 
         lineTextOffset = wrapEnd;
         while (lineTextOffset < parsed.text.size() &&
@@ -534,6 +595,7 @@ void TxtReaderActivity::renderBook() {
   if (pageOffsets.empty()) {
     renderer.clearScreen();
     renderer.drawCenteredText(UI_12_FONT_ID, 300, tr(STR_EMPTY_FILE), true, EpdFontFamily::BOLD);
+    drawTouchNavigation();
     renderer.displayBuffer();
     return;
   }
@@ -582,7 +644,10 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
   // Render text lines with alignment
   auto renderLines = [&](const bool recordLinks) {
 #ifdef MICROMARKD_APP
-    if (recordLinks) markdownLinkHits.clear();
+    if (recordLinks) {
+      markdownLinkHits.clear();
+      selectedMarkdownLink = -1;
+    }
 #endif
     int y = cachedOrientedMarginTop;
     for (size_t lineIndex = 0; lineIndex < currentPageLines.size(); lineIndex++) {
@@ -631,8 +696,28 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
             forceLeft = true;
             drawSeparator = true;
             break;
+          case micromarkd::BlockKind::Image:
+            break;
           case micromarkd::BlockKind::Paragraph:
             break;
+        }
+
+        if (markdownLine->block == micromarkd::BlockKind::Image) {
+          const int imageHeight = markdownLine->imageHeight > 0 ? markdownLine->imageHeight : lineHeight;
+          if (recordLinks && markdownLine->imageWidth > 0 && markdownLine->imageHeight > 0) {
+            const std::string imagePath = resolveMarkdownImagePath(markdownLine->imagePath);
+            const int imageX = cachedOrientedMarginLeft + (contentWidth - markdownLine->imageWidth) / 2;
+            if (!imagePath.empty() &&
+                renderMarkdownImage(renderer, imagePath, imageX, y, markdownLine->imageWidth, imageHeight)) {
+              y += imageHeight;
+              continue;
+            }
+          }
+          if (recordLinks && text[0] != '\0') {
+            renderer.drawText(cachedFontId, cachedOrientedMarginLeft, y, text, true, style);
+          }
+          y += imageHeight;
+          continue;
         }
       }
 #endif
@@ -700,6 +785,10 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
 
             renderer.drawLine(linkX, y + lineHeight - 2, linkX + linkWidth, y + lineHeight - 2, true);
             if (markdownLinkHits.size() < 32) {
+              const int linkHitIndex = static_cast<int>(markdownLinkHits.size());
+              if (selectedMarkdownLink == linkHitIndex) {
+                renderer.drawRect(linkX - 4, y - 3, linkWidth + 8, lineHeight + 6, 1, true);
+              }
               markdownLinkHits.push_back({linkX - 2, y - 2, linkWidth + 4, lineHeight + 4, link.target});
             }
           }
@@ -719,6 +808,7 @@ void TxtReaderActivity::renderPage(GfxRenderer& renderer) {
   // BW rendering
   renderLines(true);
   renderStatusBar();
+  drawTouchNavigation();
 
   if (SETTINGS.textAntiAliasing) {
     ReaderUtils::displayBaseWithRefreshCycle(renderer, pagesUntilFullRefresh);
@@ -740,20 +830,75 @@ bool TxtReaderActivity::handleFormatInput() {
 
   int tapX = 0;
   int tapY = 0;
-  if (!mappedInput.wasScreenTapped(tapX, tapY)) return false;
+  const bool hasTap = mappedInput.hasTouch() && mappedInput.wasScreenTapped(tapX, tapY);
+  if (hasTap && handleTouchNavigationTap(tapX, tapY)) return true;
+
+  if (!markdownLinkHits.empty()) {
+    if (mappedInput.wasReleased(MappedInputManager::Button::Left) ||
+        mappedInput.wasReleased(MappedInputManager::Button::ScreenLeft)) {
+      selectedMarkdownLink = selectedMarkdownLink <= 0 ? static_cast<int>(markdownLinkHits.size()) - 1
+                                                        : selectedMarkdownLink - 1;
+      requestUpdate();
+      return true;
+    }
+    if (mappedInput.wasReleased(MappedInputManager::Button::Right) ||
+        mappedInput.wasReleased(MappedInputManager::Button::ScreenRight)) {
+      selectedMarkdownLink = (selectedMarkdownLink + 1) % static_cast<int>(markdownLinkHits.size());
+      requestUpdate();
+      return true;
+    }
+    if (mappedInput.wasReleased(MappedInputManager::Button::Confirm)) {
+      if (selectedMarkdownLink >= 0 && selectedMarkdownLink < static_cast<int>(markdownLinkHits.size())) {
+        return openMarkdownTarget(markdownLinkHits[static_cast<size_t>(selectedMarkdownLink)].target);
+      }
+      saveProgress();
+      activityManager.pushActivity(std::make_unique<MarkdownReaderMenuActivity>(renderer, mappedInput, bookPath));
+      return true;
+    }
+  } else if (mappedInput.wasReleased(MappedInputManager::Button::Confirm)) {
+    saveProgress();
+    activityManager.pushActivity(std::make_unique<MarkdownReaderMenuActivity>(renderer, mappedInput, bookPath));
+    return true;
+  }
+
+  if (!hasTap) return false;
 
   std::string target;
   {
     RenderLock lock(*this);
-    for (const auto& hit : markdownLinkHits) {
+    for (size_t index = 0; index < markdownLinkHits.size(); index++) {
+      const auto& hit = markdownLinkHits[index];
       if (tapX >= hit.x && tapX < hit.x + hit.width && tapY >= hit.y && tapY < hit.y + hit.height) {
         target = hit.target;
+        selectedMarkdownLink = static_cast<int>(index);
         break;
       }
     }
   }
 
   if (target.empty()) return false;
+  return openMarkdownTarget(target);
+#else
+  return false;
+#endif
+}
+
+bool TxtReaderActivity::handleTouchBackNavigation() {
+#ifdef MICROMARKD_APP
+  if (!markdownHistory.empty()) {
+    const auto previous = markdownHistory.back();
+    if (openMarkdownFile(previous.path, previous.page, false)) {
+      markdownHistory.pop_back();
+      return true;
+    }
+  }
+#endif
+  return false;
+}
+
+#ifdef MICROMARKD_APP
+
+bool TxtReaderActivity::openMarkdownTarget(const std::string& target) {
   const std::string path = resolveWikiLink(target);
   if (path.empty()) {
     LOG_INF("MD", "Wikilink target not found: %s", target.c_str());
@@ -762,12 +907,7 @@ bool TxtReaderActivity::handleFormatInput() {
 
   if (path != bookPath) openMarkdownFile(path, -1, true);
   return true;
-#else
-  return false;
-#endif
 }
-
-#ifdef MICROMARKD_APP
 
 bool TxtReaderActivity::openMarkdownFile(const std::string& path, const int page, const bool rememberCurrent) {
   if (!Storage.exists(path.c_str()) || !FsHelpers::hasMarkdownExtension(path)) return false;
@@ -796,6 +936,7 @@ bool TxtReaderActivity::openMarkdownFile(const std::string& path, const int page
     currentPageLines.clear();
     currentMarkdownLines.clear();
     markdownLinkHits.clear();
+    selectedMarkdownLink = -1;
     pendingMarkdownPage = page;
     initialized = false;
     markdownMode = true;
@@ -838,6 +979,81 @@ std::string TxtReaderActivity::resolveWikiLink(const std::string& rawTarget) con
   std::string resolved = tryCandidate(folder + "/" + target);
   if (!resolved.empty()) return resolved;
   return tryCandidate("/vault/" + target);
+}
+
+std::string TxtReaderActivity::resolveMarkdownImagePath(const std::string& rawTarget) const {
+  std::string target = FsHelpers::decodeUriEscapes(micromarkd::wikiTargetPathPart(rawTarget));
+  if (target.empty()) return {};
+  std::replace(target.begin(), target.end(), '\\', '/');
+
+  const auto tryCandidate = [](const std::string& rawPath) -> std::string {
+    const std::string normalised = FsHelpers::normalisePath(rawPath);
+    if (normalised.empty()) return {};
+    const std::string path = "/" + normalised;
+    if (path.rfind("/vault/", 0) != 0 || !Storage.exists(path.c_str())) return {};
+    if (!FsHelpers::hasBmpExtension(path) && !FsHelpers::hasPngExtension(path) &&
+        !FsHelpers::hasJpgExtension(path)) {
+      return {};
+    }
+    return path;
+  };
+
+  if (target.front() == '/') {
+    if (target == "/vault" || target.rfind("/vault/", 0) == 0) return tryCandidate(target);
+    return tryCandidate("/vault/" + target.substr(1));
+  }
+
+  const std::string folder = FsHelpers::extractFolderPath(bookPath);
+  std::string resolved = tryCandidate(folder + "/" + target);
+  if (!resolved.empty()) return resolved;
+  return tryCandidate("/vault/" + target);
+}
+
+int TxtReaderActivity::markdownImageHeight(const std::string& path, const int maxHeight, uint16_t& width) const {
+  width = 0;
+  ImageDimensions dimensions{};
+  if (!getMarkdownImageDimensions(path, dimensions) || dimensions.width <= 0 || dimensions.height <= 0) return 0;
+
+  const int maxWidth = std::max(1, viewportWidth);
+  const int boundedMaxHeight = std::max(1, maxHeight);
+  int outputWidth = dimensions.width;
+  int outputHeight = dimensions.height;
+  if (outputWidth > maxWidth || outputHeight > boundedMaxHeight) {
+    if (static_cast<int64_t>(outputWidth) * boundedMaxHeight >
+        static_cast<int64_t>(outputHeight) * maxWidth) {
+      outputWidth = maxWidth;
+      outputHeight = std::max(1, dimensions.height * maxWidth / dimensions.width);
+    } else {
+      outputHeight = boundedMaxHeight;
+      outputWidth = std::max(1, dimensions.width * boundedMaxHeight / dimensions.height);
+    }
+  }
+
+  width = static_cast<uint16_t>(std::min(outputWidth, 65535));
+  return std::min(outputHeight, 65535);
+}
+
+bool TxtReaderActivity::renderMarkdownImage(GfxRenderer& renderer, const std::string& path, const int x, const int y,
+                                             const int width, const int height) const {
+  if (FsHelpers::hasPngExtension(path)) {
+    RenderConfig config{x, y, width, height};
+    config.useExactDimensions = true;
+    return PngToFramebufferConverter{}.decodeToFramebuffer(path, renderer, config);
+  }
+  if (FsHelpers::hasJpgExtension(path)) {
+    RenderConfig config{x, y, width, height};
+    config.useExactDimensions = true;
+    return JpegToFramebufferConverter{}.decodeToFramebuffer(path, renderer, config);
+  }
+  if (!FsHelpers::hasBmpExtension(path)) return false;
+
+  HalFile file;
+  if (!Storage.openFileForRead("MD", path, file)) return false;
+  Bitmap bitmap(file, true);
+  const bool valid = bitmap.parseHeaders() == BmpReaderError::Ok;
+  if (valid) renderer.drawBitmap(bitmap, x, y, width, height, 0, 0);
+  file.close();
+  return valid;
 }
 #endif
 

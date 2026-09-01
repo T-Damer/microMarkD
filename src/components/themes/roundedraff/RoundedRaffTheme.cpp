@@ -48,12 +48,12 @@ void drawScrollBar(const GfxRenderer& renderer, Rect rect, int itemCount, int pa
 int coverWidth = 0;
 
 void RoundedRaffTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* title,
-                                  const char* subtitle) const {
+                                  const char* subtitle, const int16_t leftReserve) const {
   // Home screen header is custom-rendered in drawRecentBookCover.
   if (title == nullptr) {
     return;
   }
-  BaseTheme::drawHeader(renderer, rect, title, subtitle);
+  BaseTheme::drawHeader(renderer, rect, title, subtitle, leftReserve);
 }
 
 void RoundedRaffTheme::drawTabBar(const GfxRenderer& renderer, Rect rect, const std::vector<TabInfo>& tabs,

@@ -35,7 +35,7 @@ class MarkdownVaultIndexer {
 
   ~MarkdownVaultIndexer();
 
-  void begin(std::string rootPath = "/vault");
+  void begin(std::string rootPath = "/vault", size_t maxNotes = micromarkd::MAX_CATALOG_NOTES);
   void step(size_t byteBudget = 4 * 1024);
 
   Phase phase() const { return phase_; }
@@ -58,6 +58,7 @@ class MarkdownVaultIndexer {
   size_t directoryIndex_ = 0;
   std::vector<std::string> notePaths_;
   size_t noteIndex_ = 0;
+  size_t maxNotes_ = MAX_NOTES;
   Phase phase_ = Phase::Idle;
   Report report_;
 
@@ -67,15 +68,25 @@ class MarkdownVaultIndexer {
   size_t activeBytes_ = 0;
   bool activeFileOpen_ = false;
 
+  HalFile cacheValidationFile_;
+  micromarkd::MarkdownIndexRecord cachedRecord_;
+  uint64_t cacheValidationFingerprint_ = micromarkd::MARKDOWN_FINGERPRINT_SEED;
+  size_t cacheValidationBytes_ = 0;
+  bool cacheValidationOpen_ = false;
+
   micromarkd::MarkdownIndexRecord readyRecord_;
   bool recordReady_ = false;
 
   void enumerateNextDirectory();
   void indexStep(size_t byteBudget);
   bool beginNextNote();
+  void validateCachedNoteStep(size_t byteBudget);
+  void finishCachedNoteValidation();
   void finishActiveNote();
   void skipActiveNote(bool tooLarge);
+  void finishIndexing();
   void closeActiveFile();
+  void closeCacheValidationFile();
   void publishRecord(micromarkd::MarkdownIndexRecord record);
 
   static std::string joinPath(const std::string& directory, const std::string& name);

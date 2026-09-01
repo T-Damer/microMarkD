@@ -12,6 +12,9 @@
 #include "components/UIThemeTokens.h"
 #include "components/icons/customListIcons.h"
 #include "components/icons/listIcons.h"
+#include "components/icons/settings2.h"
+
+static const freeink::Icon icon_settings_32 = {32, 32, 16, Settings2Icon};
 
 // Shared glue for activities hosting a FreeInkApp: the font-bound render
 // target and the touch snapshot FreeInkApp routing consumes.
@@ -99,6 +102,26 @@ inline freeink::ui::BitmapRef listIconFor(const UIIcon icon, const int size = 24
         return freeink::ui::bitmapFromIcon(icon_radio_tower_32);
       case UIIcon::Bookmark:
         return freeink::ui::bitmapFromIcon(icon_bookmark_32);
+      case UIIcon::Recent:
+        return freeink::ui::bitmapFromIcon(icon_history_32);
+      case UIIcon::Transfer:
+        return freeink::ui::bitmapFromIcon(icon_upload_32);
+      case UIIcon::Search:
+        return freeink::ui::bitmapFromIcon(icon_menu_search_32);
+      case UIIcon::Tag:
+        return freeink::ui::bitmapFromIcon(icon_tag_32);
+      case UIIcon::NewNote:
+        return freeink::ui::bitmapFromIcon(icon_file_plus_32);
+      case UIIcon::Git:
+        return freeink::ui::bitmapFromIcon(icon_git_32);
+      case UIIcon::Edit:
+        return freeink::ui::bitmapFromIcon(icon_pencil_line_32);
+      case UIIcon::Links:
+        return freeink::ui::bitmapFromIcon(icon_link_2_32);
+      case UIIcon::Graph:
+        return freeink::ui::bitmapFromIcon(icon_git_graph_32);
+      case UIIcon::Settings:
+        return freeink::ui::bitmapFromIcon(icon_settings_32);
       default:
         return {};
     }
@@ -122,6 +145,24 @@ inline freeink::ui::BitmapRef listIconFor(const UIIcon icon, const int size = 24
       return freeink::ui::bitmapFromIcon(icon_radio_tower_24);
     case UIIcon::Bookmark:
       return freeink::ui::bitmapFromIcon(icon_bookmark_24);
+    case UIIcon::Recent:
+      return freeink::ui::bitmapFromIcon(icon_history_24);
+    case UIIcon::Transfer:
+      return freeink::ui::bitmapFromIcon(icon_upload_24);
+    case UIIcon::Search:
+      return freeink::ui::bitmapFromIcon(icon_menu_search_24);
+    case UIIcon::Tag:
+      return freeink::ui::bitmapFromIcon(icon_tag_24);
+    case UIIcon::NewNote:
+      return freeink::ui::bitmapFromIcon(icon_file_plus_24);
+    case UIIcon::Git:
+      return freeink::ui::bitmapFromIcon(icon_git_24);
+    case UIIcon::Edit:
+      return freeink::ui::bitmapFromIcon(icon_pencil_line_24);
+    case UIIcon::Links:
+      return freeink::ui::bitmapFromIcon(icon_link_2_24);
+    case UIIcon::Graph:
+      return freeink::ui::bitmapFromIcon(icon_git_graph_24);
     default:
       return {};
   }

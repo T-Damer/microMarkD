@@ -56,6 +56,7 @@ class MarkdownEditorActivity final : public UiListActivity {
   size_t documentSize() const;
 
   void rebuildRows();
+  void editDocument();
   void editLine(size_t index);
   void insertLine(size_t index, bool editImmediately);
   void deleteLine(size_t index);
