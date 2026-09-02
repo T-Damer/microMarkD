@@ -695,8 +695,8 @@ void MarkdownVaultActivity::buildScreen(UiScreen& screen) {
 
 void MarkdownVaultActivity::drawFooter() {
   const auto labels =
-      mappedInput.mapLabels(tr(STR_BACK), listCount() == 0 ? "" : tr(STR_OPEN), listCount() == 0 ? "" : tr(STR_DIR_LEFT),
-                            listCount() == 0 ? "" : tr(STR_DIR_RIGHT));
+      mappedInput.mapLabels(tr(STR_BACK), listCount() == 0 ? "" : tr(STR_OPEN),
+                            listCount() == 0 ? "" : tr(STR_DIR_LEFT), listCount() == 0 ? "" : tr(STR_DIR_RIGHT));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 }
 

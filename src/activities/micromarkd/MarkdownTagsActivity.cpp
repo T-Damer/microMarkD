@@ -11,8 +11,8 @@
 #include <utility>
 #include <variant>
 
-#include "activities/micromarkd/MarkdownEditorActivity.h"
 #include "activities/micromarkd/MarkdownCatalogStorage.h"
+#include "activities/micromarkd/MarkdownEditorActivity.h"
 #include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"

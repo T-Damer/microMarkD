@@ -9,6 +9,7 @@
 #include "CrossPointSettings.h"
 #include "CrossPointState.h"
 #include "EpubReaderActivity.h"
+#include "I18n.h"
 #include "ReaderUtils.h"
 #include "RecentBooksStore.h"
 #include "SdCardFontSystem.h"
@@ -16,7 +17,6 @@
 #include "XtcReaderActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
-#include "I18n.h"
 
 namespace {
 constexpr int TOUCH_NAV_BUTTON_WIDTH = 96;

@@ -1,9 +1,9 @@
 #include "KeyboardEntryActivity.h"
 
 #include <BidiUtils.h>
+#include <FreeInkUIIcon.h>
 #include <HalGPIO.h>
 #include <I18n.h>
-#include <FreeInkUIIcon.h>
 
 #include <algorithm>
 #include <cstring>
@@ -737,9 +737,8 @@ void KeyboardEntryActivity::render(RenderLock&&) {
   const auto pageWidth = renderer.getScreenWidth();
   const auto& metrics = UITheme::getInstance().getMetrics();
 
-  const int16_t leftReserve = gpio.hasTouch()
-                                  ? static_cast<int16_t>(metrics.headerHeight + metrics.headerSidePadding)
-                                  : 0;
+  const int16_t leftReserve =
+      gpio.hasTouch() ? static_cast<int16_t>(metrics.headerHeight + metrics.headerSidePadding) : 0;
   GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, title.c_str(), nullptr,
                  leftReserve);
 

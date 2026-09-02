@@ -15,10 +15,10 @@
 
 #include "activities/micromarkd/MarkdownEditorActivity.h"
 #include "activities/micromarkd/MarkdownGraphActivity.h"
-#include "activities/micromarkd/MarkdownSyncActivity.h"
 #include "activities/micromarkd/MarkdownRecentActivity.h"
 #include "activities/micromarkd/MarkdownRecovery.h"
 #include "activities/micromarkd/MarkdownSearchActivity.h"
+#include "activities/micromarkd/MarkdownSyncActivity.h"
 #include "activities/micromarkd/MarkdownTagsActivity.h"
 #include "activities/micromarkd/MarkdownVaultActivity.h"
 #include "activities/util/KeyboardEntryActivity.h"
@@ -64,7 +64,8 @@ MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager
   rowItems_[TAGS_INDEX] = tags;
 
   setTranslatedRow(GRAPH_INDEX, StrId::STR_MICROMARKD_GRAPH, StrId::STR_MICROMARKD_GRAPH_DESC, UIIcon::Graph);
-  setTranslatedRow(NEW_NOTE_INDEX, StrId::STR_MICROMARKD_NEW_NOTE, StrId::STR_MICROMARKD_NEW_NOTE_DESC, UIIcon::NewNote);
+  setTranslatedRow(NEW_NOTE_INDEX, StrId::STR_MICROMARKD_NEW_NOTE, StrId::STR_MICROMARKD_NEW_NOTE_DESC,
+                   UIIcon::NewNote);
   setTranslatedRow(SYNC_INDEX, StrId::STR_MICROMARKD_SYNC, StrId::STR_MICROMARKD_SYNC_DESC, UIIcon::Git);
 }
 
@@ -237,8 +238,7 @@ void MicroMarkDActivity::buildScreen(UiScreen& screen) {
   const auto& metrics = UITheme::getInstance().getMetrics();
   if (mappedInput.hasTouch()) {
     screen.target().bitmap(
-        fui::Rect{4, static_cast<int16_t>(metrics.topPadding + 4),
-                  static_cast<int16_t>(metrics.headerHeight - 8),
+        fui::Rect{4, static_cast<int16_t>(metrics.topPadding + 4), static_cast<int16_t>(metrics.headerHeight - 8),
                   static_cast<int16_t>(metrics.headerHeight - 8)},
         fui::bitmapFromIcon(icon_micromarkd_32), fui::BitmapMode::Center);
   }

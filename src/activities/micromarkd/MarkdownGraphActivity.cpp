@@ -2,13 +2,13 @@
 
 #ifdef MICROMARKD_APP
 
+#include <FreeInkUIGfxRenderer.h>
+#include <FreeInkUIIcon.h>
 #include <GfxRenderer.h>
 #include <I18n.h>
 #include <MarkdownCatalog.h>
 #include <MarkdownDocument.h>
 #include <MarkdownIndex.h>
-#include <FreeInkUIIcon.h>
-#include <FreeInkUIGfxRenderer.h>
 
 #include <algorithm>
 #include <cmath>
@@ -56,7 +56,7 @@ uint8_t graphNodePattern(const uint32_t globalIndex, const std::string& path, co
   hash ^= static_cast<uint32_t>(degree) * 31u;
   return static_cast<uint8_t>(hash & 0x03u);
 }
-}
+}  // namespace
 
 MarkdownGraphActivity::MarkdownGraphActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
                                              std::string notePath)
@@ -116,9 +116,8 @@ bool MarkdownGraphActivity::loadGraph() {
     if (nodes_.size() >= MAX_GRAPH_NODES) break;
     const std::string target = catalog.resolveTarget(notePath_, link.target);
     if (target.empty() || target == notePath_) continue;
-    const bool duplicate = std::any_of(nodes_.begin() + 1, nodes_.end(), [&target](const Node& node) {
-      return node.path == target;
-    });
+    const bool duplicate =
+        std::any_of(nodes_.begin() + 1, nodes_.end(), [&target](const Node& node) { return node.path == target; });
     if (duplicate) continue;
     Node node;
     node.path = target;
@@ -196,8 +195,7 @@ void MarkdownGraphActivity::drawCurve(const Node& from, const Node& to) const {
     control2Y -= deltaY >= 0 ? bend : -bend;
   }
 
-  const auto cubicPoint = [startX, startY, control1X, control1Y, control2X, control2Y, endX,
-                           endY](const float t) {
+  const auto cubicPoint = [startX, startY, control1X, control1Y, control2X, control2Y, endX, endY](const float t) {
     const float inverse = 1.0F - t;
     return GraphPoint{
         inverse * inverse * inverse * startX + 3.0F * inverse * inverse * t * control1X +
@@ -221,8 +219,8 @@ void MarkdownGraphActivity::drawCurve(const Node& from, const Node& to) const {
   };
   const auto pathHitsNode = [this, &from, &to](const GraphPath& path, const Node& node) {
     if (&node == &from || &node == &to) return false;
-    const float nodeRadius = static_cast<float>(
-        std::max(3, std::min(16, 6 + static_cast<int>(node.degree) * 2) * zoomPercent_ / 100));
+    const float nodeRadius =
+        static_cast<float>(std::max(3, std::min(16, 6 + static_cast<int>(node.degree) * 2) * zoomPercent_ / 100));
     const float hitRadius = nodeRadius + 2.0F;
     const float hitRadiusSquared = hitRadius * hitRadius;
     for (size_t index = 1; index < path.size(); index++) {
@@ -233,10 +231,10 @@ void MarkdownGraphActivity::drawCurve(const Node& from, const Node& to) const {
       const float segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
       const float pointX = static_cast<float>(node.x) - segmentStartX;
       const float pointY = static_cast<float>(node.y) - segmentStartY;
-      const float projection = segmentLengthSquared > 0.0F
-                                   ? std::clamp((pointX * segmentX + pointY * segmentY) / segmentLengthSquared, 0.0F,
-                                                1.0F)
-                                   : 0.0F;
+      const float projection =
+          segmentLengthSquared > 0.0F
+              ? std::clamp((pointX * segmentX + pointY * segmentY) / segmentLengthSquared, 0.0F, 1.0F)
+              : 0.0F;
       const float closestX = segmentStartX + projection * segmentX;
       const float closestY = segmentStartY + projection * segmentY;
       const float distanceX = static_cast<float>(node.x) - closestX;
@@ -275,10 +273,10 @@ void MarkdownGraphActivity::drawCurve(const Node& from, const Node& to) const {
       const float blockerSide = (static_cast<float>(blocker->x) - midpointX) * normalX +
                                 (static_cast<float>(blocker->y) - midpointY) * normalY;
       const float preferredSide = blockerSide >= 0.0F ? -1.0F : 1.0F;
-      const float blockerRadius = static_cast<float>(
-          std::max(3, std::min(16, 6 + static_cast<int>(blocker->degree) * 2) * zoomPercent_ / 100));
-      const float detourDistance = std::max(
-          24.0F, blockerRadius + static_cast<float>(fromRadius + toRadius) * 0.5F + 8.0F);
+      const float blockerRadius =
+          static_cast<float>(std::max(3, std::min(16, 6 + static_cast<int>(blocker->degree) * 2) * zoomPercent_ / 100));
+      const float detourDistance =
+          std::max(24.0F, blockerRadius + static_cast<float>(fromRadius + toRadius) * 0.5F + 8.0F);
       size_t bestCollisions = nodes_.size() + 1;
       GraphPoint bestControl{midpointX, midpointY};
       for (int attempt = 0; attempt < 4; attempt++) {
@@ -286,8 +284,7 @@ void MarkdownGraphActivity::drawCurve(const Node& from, const Node& to) const {
         const float offset = detourDistance * (attempt < 2 ? 2.0F : 3.5F);
         const GraphPoint control{midpointX + normalX * side * offset, midpointY + normalY * side * offset};
         for (int segment = 0; segment <= CURVE_SEGMENTS; segment++) {
-          path[static_cast<size_t>(segment)] =
-              quadraticPoint(control, static_cast<float>(segment) / CURVE_SEGMENTS);
+          path[static_cast<size_t>(segment)] = quadraticPoint(control, static_cast<float>(segment) / CURVE_SEGMENTS);
         }
         const size_t collisions = collisionCount(path);
         if (collisions < bestCollisions) {
@@ -297,8 +294,7 @@ void MarkdownGraphActivity::drawCurve(const Node& from, const Node& to) const {
         if (bestCollisions == 0) break;
       }
       for (int segment = 0; segment <= CURVE_SEGMENTS; segment++) {
-        path[static_cast<size_t>(segment)] =
-            quadraticPoint(bestControl, static_cast<float>(segment) / CURVE_SEGMENTS);
+        path[static_cast<size_t>(segment)] = quadraticPoint(bestControl, static_cast<float>(segment) / CURVE_SEGMENTS);
       }
     }
   }
@@ -365,9 +361,9 @@ void MarkdownGraphActivity::loop() {
   const int zoomY = contentTop + 4;
   const int zoomX = safe.x + safe.width - ZOOM_CONTROL_SIZE * 2 - ZOOM_CONTROL_GAP;
   const auto changeZoom = [this](const int delta) {
-    zoomPercent_ = static_cast<uint8_t>(std::clamp(static_cast<int>(zoomPercent_) + delta,
-                                                   static_cast<int>(ZOOM_MIN_PERCENT),
-                                                   static_cast<int>(ZOOM_MAX_PERCENT)));
+    zoomPercent_ =
+        static_cast<uint8_t>(std::clamp(static_cast<int>(zoomPercent_) + delta, static_cast<int>(ZOOM_MIN_PERCENT),
+                                        static_cast<int>(ZOOM_MAX_PERCENT)));
     if (Node* node = selectedNode()) {
       panX_ = static_cast<int16_t>(node->worldX);
       panY_ = static_cast<int16_t>(node->worldY);
@@ -445,9 +441,9 @@ void MarkdownGraphActivity::loop() {
       selected_ = hit;
       panX_ = static_cast<int16_t>(nodes_[hit].worldX);
       panY_ = static_cast<int16_t>(nodes_[hit].worldY);
-      zoomPercent_ = static_cast<uint8_t>(std::min(static_cast<int>(ZOOM_MAX_PERCENT),
-                                                    std::max(static_cast<int>(ZOOM_DEFAULT_PERCENT),
-                                                             static_cast<int>(zoomPercent_) + ZOOM_STEP)));
+      zoomPercent_ = static_cast<uint8_t>(
+          std::min(static_cast<int>(ZOOM_MAX_PERCENT),
+                   std::max(static_cast<int>(ZOOM_DEFAULT_PERCENT), static_cast<int>(zoomPercent_) + ZOOM_STEP)));
     } else {
       zoomPercent_ = static_cast<uint8_t>(
           std::max(static_cast<int>(ZOOM_MIN_PERCENT), static_cast<int>(zoomPercent_) - ZOOM_STEP));
@@ -489,9 +485,8 @@ void MarkdownGraphActivity::render(RenderLock&&) {
   renderer.clearScreen();
   const auto& metrics = UITheme::getInstance().getMetrics();
   const Rect safe = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
-  const int16_t leftReserve = mappedInput.hasTouch()
-                                  ? static_cast<int16_t>(metrics.headerHeight + metrics.headerSidePadding)
-                                  : 0;
+  const int16_t leftReserve =
+      mappedInput.hasTouch() ? static_cast<int16_t>(metrics.headerHeight + metrics.headerSidePadding) : 0;
   GUI.drawHeader(renderer, Rect{safe.x, safe.y + metrics.topPadding, safe.width, metrics.headerHeight},
                  tr(STR_MICROMARKD_GRAPH), nullptr, leftReserve);
 
@@ -505,7 +500,7 @@ void MarkdownGraphActivity::render(RenderLock&&) {
     back.radius = 8;
     fui::button(frame.frame,
                 fui::Rect{static_cast<int16_t>(safe.x + 4), static_cast<int16_t>(safe.y + metrics.topPadding + 4),
-                           back.iconSize, back.iconSize},
+                          back.iconSize, back.iconSize},
                 back);
   }
 
@@ -567,10 +562,11 @@ void MarkdownGraphActivity::render(RenderLock&&) {
 
   if (!nodes_.empty()) {
     char graphStatus[32];
-    const size_t pageCount = vaultGraph_ ? std::max<size_t>(1, (graphNodeCount_ + GRAPH_PAGE_SIZE - 1) / GRAPH_PAGE_SIZE) : 1;
+    const size_t pageCount =
+        vaultGraph_ ? std::max<size_t>(1, (graphNodeCount_ + GRAPH_PAGE_SIZE - 1) / GRAPH_PAGE_SIZE) : 1;
     snprintf(graphStatus, sizeof(graphStatus), "%u/%u  p%u/%u  %u%%", static_cast<unsigned>(selected_ + 1),
-             static_cast<unsigned>(nodes_.size()), static_cast<unsigned>(page_ + 1),
-             static_cast<unsigned>(pageCount), static_cast<unsigned>(zoomPercent_));
+             static_cast<unsigned>(nodes_.size()), static_cast<unsigned>(page_ + 1), static_cast<unsigned>(pageCount),
+             static_cast<unsigned>(zoomPercent_));
     renderer.drawCenteredText(SMALL_FONT_ID, contentBottom - renderer.getLineHeight(SMALL_FONT_ID), graphStatus, true);
   }
   if (!indexing_) {

@@ -7,9 +7,9 @@
 #include <HalStorage.h>
 #include <I18n.h>
 #include <Logging.h>
+#include <MarkdownDocument.h>
 #include <MarkdownIndexDocument.h>
 #include <MarkdownRecoveryPlan.h>
-#include <MarkdownDocument.h>
 #include <Txt.h>
 
 #include <algorithm>
@@ -315,22 +315,20 @@ void MarkdownEditorActivity::rebuildRows() {
 void MarkdownEditorActivity::editDocument() {
   app.clearTapFlash();
   const std::string initialText = micromarkd::joinMarkdownLines(lines_, trailingNewline_);
-  startActivityForResult(
-      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_EDIT_NOTE), initialText,
-                                               MAX_FILE_BYTES,
-                                               InputType::Multiline),
-      [this](const ActivityResult& result) {
-        if (result.isCancelled) return;
-        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
-        if (!keyboard) return;
+  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_EDIT_NOTE),
+                                                                 initialText, MAX_FILE_BYTES, InputType::Multiline),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) return;
+                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+                           if (!keyboard) return;
 
-        RenderLock lock(*this);
-        lines_ = micromarkd::splitMarkdownLines(keyboard->text, trailingNewline_);
-        if (lines_.empty()) lines_.emplace_back();
-        markChanged();
-        nav.selected = 0;
-        nav.follow(listCount());
-      });
+                           RenderLock lock(*this);
+                           lines_ = micromarkd::splitMarkdownLines(keyboard->text, trailingNewline_);
+                           if (lines_.empty()) lines_.emplace_back();
+                           markChanged();
+                           nav.selected = 0;
+                           nav.follow(listCount());
+                         });
 }
 
 void MarkdownEditorActivity::markChanged() {

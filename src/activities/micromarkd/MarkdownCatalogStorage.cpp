@@ -10,9 +10,9 @@
 #include <array>
 #include <cctype>
 #include <cstdint>
-#include <cstring>
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -227,8 +227,8 @@ std::string resolveGraphTarget(const std::string_view sourcePath, const std::str
   };
 
   if (const std::string resolved = findByRelativeKey(relativeCandidate); !resolved.empty()) return resolved;
-  if (!rootCandidate.empty() && micromarkd::normalizeCatalogKey(rootCandidate) !=
-                                      micromarkd::normalizeCatalogKey(relativeCandidate)) {
+  if (!rootCandidate.empty() &&
+      micromarkd::normalizeCatalogKey(rootCandidate) != micromarkd::normalizeCatalogKey(relativeCandidate)) {
     if (const std::string resolved = findByRelativeKey(rootCandidate); !resolved.empty()) return resolved;
   }
   if (rootOnly || target.find('/') != std::string::npos) return {};
@@ -468,8 +468,7 @@ bool rebuildMarkdownGraphCache() {
   char marker[64];
   const int markerLength = snprintf(marker, sizeof(marker), "MMDGRAPH\t1\t%u\t%u\n",
                                     static_cast<unsigned>(notes.size()), static_cast<unsigned>(edgeCount));
-  success = markerLength > 0 &&
-            writeGraphLine(readyFile, std::string_view(marker, static_cast<size_t>(markerLength)));
+  success = markerLength > 0 && writeGraphLine(readyFile, std::string_view(marker, static_cast<size_t>(markerLength)));
   readyFile.close();
   if (!success || !Storage.rename(GRAPH_NODES_TEMPORARY_PATH, GRAPH_NODES_PATH) ||
       !Storage.rename(GRAPH_EDGES_TEMPORARY_PATH, GRAPH_EDGES_PATH) ||

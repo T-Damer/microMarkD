@@ -56,8 +56,7 @@ class TxtReaderActivity final : public ReaderActivity {
   std::string resolveWikiLink(const std::string& target) const;
   std::string resolveMarkdownImagePath(const std::string& target) const;
   int markdownImageHeight(const std::string& path, int maxHeight, uint16_t& width) const;
-  bool renderMarkdownImage(GfxRenderer& renderer, const std::string& path, int x, int y, int width,
-                           int height) const;
+  bool renderMarkdownImage(GfxRenderer& renderer, const std::string& path, int x, int y, int width, int height) const;
 #endif
 
   // Cached settings for cache validation

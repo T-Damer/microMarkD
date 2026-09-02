@@ -1,8 +1,8 @@
 #include "UiListActivity.h"
 
+#include <FreeInkUIIcon.h>
 #include <GfxRenderer.h>
 #include <I18n.h>
-#include <FreeInkUIIcon.h>
 
 #include <algorithm>
 
@@ -161,11 +161,10 @@ void UiListActivity::drawChrome() {
   const char* title = headerTitle();
   if (!title) return;
   const auto& metrics = UITheme::getInstance().getMetrics();
-  const int16_t leftReserve = mappedInput.hasTouch()
-                                  ? static_cast<int16_t>(metrics.headerHeight + metrics.headerSidePadding)
-                                  : 0;
-  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, renderer.getScreenWidth(), metrics.headerHeight}, title,
-                 nullptr, leftReserve);
+  const int16_t leftReserve =
+      mappedInput.hasTouch() ? static_cast<int16_t>(metrics.headerHeight + metrics.headerSidePadding) : 0;
+  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, renderer.getScreenWidth(), metrics.headerHeight}, title, nullptr,
+                 leftReserve);
 }
 
 void UiListActivity::drawFooter() {

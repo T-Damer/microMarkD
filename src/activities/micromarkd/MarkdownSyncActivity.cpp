@@ -127,21 +127,18 @@ int gitFileExists(const char* path) {
   return file && !file.isDirectory() ? 1 : 0;
 }
 
-int gitMakeDirectories(const char* path) {
-  return path && Storage.ensureDirectoryExists(path) ? 0 : -1;
-}
+int gitMakeDirectories(const char* path) { return path && Storage.ensureDirectoryExists(path) ? 0 : -1; }
 
 void* gitFileOpen(const char* path, const int write) {
   if (!path) return nullptr;
   auto file = makeUniqueNoThrow<HalFile>();
   if (!file) return nullptr;
-  const bool ok = write ? Storage.openFileForWrite(GIT_MODULE, path, *file)
-                        : Storage.openFileForRead(GIT_MODULE, path, *file);
+  const bool ok =
+      write ? Storage.openFileForWrite(GIT_MODULE, path, *file) : Storage.openFileForRead(GIT_MODULE, path, *file);
   return ok ? file.release() : nullptr;
 }
 
-int gitFileRead(void* handle, uint8_t* buffer, const size_t capacity,
-                size_t* outLength) {
+int gitFileRead(void* handle, uint8_t* buffer, const size_t capacity, size_t* outLength) {
   if (!handle || !outLength || (capacity > 0 && !buffer)) return -1;
   *outLength = 0;
   if (capacity == 0) return 0;
@@ -169,22 +166,15 @@ int gitFileClose(void* handle) {
   return ok ? 0 : -1;
 }
 
-int gitFileRemove(const char* path) {
-  return path && Storage.remove(path) ? 0 : -1;
-}
+int gitFileRemove(const char* path) { return path && Storage.remove(path) ? 0 : -1; }
 
 const esp32git_fs_port GIT_FS_PORT = {
-    gitFileSize,
-    gitReadFile,
-    gitWriteFile,
-    gitFileExists,
-    gitMakeDirectories,
-    {gitFileOpen, gitFileRead, gitFileWrite, gitFileSeek, gitFileClose},
+    gitFileSize,   gitReadFile,        gitWriteFile,
+    gitFileExists, gitMakeDirectories, {gitFileOpen, gitFileRead, gitFileWrite, gitFileSeek, gitFileClose},
     gitFileRemove};
 
-int gitHttpRequest(const char* url, const int isPost, const char* user, const char* token,
-                   const char* contentType, const uint8_t* body, const size_t bodyLength,
-                   uint8_t** outBody, size_t* outLength) {
+int gitHttpRequest(const char* url, const int isPost, const char* user, const char* token, const char* contentType,
+                   const uint8_t* body, const size_t bodyLength, uint8_t** outBody, size_t* outLength) {
   if (!url || !outBody || !outLength || strncmp(url, "https://", 8) != 0) return -1;
   *outBody = nullptr;
   *outLength = 0;
@@ -197,16 +187,13 @@ int gitHttpRequest(const char* url, const int isPost, const char* user, const ch
   http.setUserAgent("CrossPoint-ESP32-microMarkD");
   if (user && *user) http.setBasicAuth(user, token ? token : "");
   if (contentType && *contentType) http.addHeader("Content-Type", contentType);
-  http.addHeader("Accept", isPost ? "application/x-git-upload-pack-result"
-                                  : "application/x-git-upload-pack-advertisement");
+  http.addHeader("Accept",
+                 isPost ? "application/x-git-upload-pack-result" : "application/x-git-upload-pack-advertisement");
   if (!http.begin(url)) return -1;
 
   ResponseBuffer response;
-  const auto onData = [&response](const uint8_t* chunk, const size_t length) {
-    return response.append(chunk, length);
-  };
-  const int status = isPost ? http.sendRequest("POST", body, bodyLength, onData)
-                            : http.GET(onData);
+  const auto onData = [&response](const uint8_t* chunk, const size_t length) { return response.append(chunk, length); };
+  const int status = isPost ? http.sendRequest("POST", body, bodyLength, onData) : http.GET(onData);
   if (status < 0 || !http.responseComplete() || http.callbackAborted()) return -1;
   const size_t responseLength = response.size;
   *outBody = response.release();
@@ -214,11 +201,9 @@ int gitHttpRequest(const char* url, const int isPost, const char* user, const ch
   return status;
 }
 
-int gitHttpRequestStream(const char* url, const int isPost, const char* user,
-                         const char* token, const char* contentType,
-                         const uint8_t* body, const size_t bodyLength,
-                         const esp32git_http_write_callback write,
-                         void* context, size_t* outLength) {
+int gitHttpRequestStream(const char* url, const int isPost, const char* user, const char* token,
+                         const char* contentType, const uint8_t* body, const size_t bodyLength,
+                         const esp32git_http_write_callback write, void* context, size_t* outLength) {
   if (!url || !write || !outLength || strncmp(url, "https://", 8) != 0) {
     return -1;
   }
@@ -231,8 +216,8 @@ int gitHttpRequestStream(const char* url, const int isPost, const char* user,
   http.setUserAgent("CrossPoint-ESP32-microMarkD");
   if (user && *user) http.setBasicAuth(user, token ? token : "");
   if (contentType && *contentType) http.addHeader("Content-Type", contentType);
-  http.addHeader("Accept", isPost ? "application/x-git-upload-pack-result"
-                                  : "application/x-git-upload-pack-advertisement");
+  http.addHeader("Accept",
+                 isPost ? "application/x-git-upload-pack-result" : "application/x-git-upload-pack-advertisement");
   if (!http.begin(url)) return -1;
 
   size_t received = 0;
@@ -241,8 +226,7 @@ int gitHttpRequestStream(const char* url, const int isPost, const char* user,
     received += length;
     return true;
   };
-  const int status = isPost ? http.sendRequest("POST", body, bodyLength, onData)
-                            : http.GET(onData);
+  const int status = isPost ? http.sendRequest("POST", body, bodyLength, onData) : http.GET(onData);
   *outLength = received;
   if (status < 0 || !http.responseComplete() || http.callbackAborted()) return -1;
   return status;
@@ -278,7 +262,7 @@ bool isSupportedRepositoryUrl(const std::string& url) {
   constexpr std::string_view prefix = "https://github.com/";
   return url.size() > prefix.size() && url.compare(0, prefix.size(), prefix) == 0;
 }
-}
+}  // namespace
 
 MarkdownSyncActivity::MarkdownSyncActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
     : UiListActivity("MarkdownSync", renderer, mappedInput) {}
@@ -328,13 +312,10 @@ void MarkdownSyncActivity::loop() {
   requestUpdate();
 }
 
-bool MarkdownSyncActivity::handleCustomInput() {
-  return phase_ == Phase::Connecting || phase_ == Phase::Syncing;
-}
+bool MarkdownSyncActivity::handleCustomInput() { return phase_ == Phase::Connecting || phase_ == Phase::Syncing; }
 
 void MarkdownSyncActivity::activateIndex(const int index) {
-  if (index != GIT_ACTION_INDEX ||
-      (phase_ != Phase::Ready && phase_ != Phase::Complete && phase_ != Phase::Failed)) {
+  if (index != GIT_ACTION_INDEX || (phase_ != Phase::Ready && phase_ != Phase::Complete && phase_ != Phase::Failed)) {
     return;
   }
   promptRemoteUrl();
@@ -349,43 +330,42 @@ void MarkdownSyncActivity::refreshActionRow() {
 
 void MarkdownSyncActivity::promptRemoteUrl() {
   phase_ = Phase::EnteringUrl;
-  startActivityForResult(
-      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_GIT_URL), "https://",
-                                              MAX_REMOTE_URL_BYTES, InputType::Url),
-      [this](const ActivityResult& result) {
-        if (result.isCancelled) {
-          phase_ = Phase::Ready;
-          return;
-        }
-        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
-        if (!keyboard) return;
-        remoteUrl_ = keyboard->text;
-        while (!remoteUrl_.empty() && (remoteUrl_.back() == '/' || remoteUrl_.back() == ' ')) remoteUrl_.pop_back();
-        if (!isSupportedRepositoryUrl(remoteUrl_)) {
-          status_ = tr(STR_MICROMARKD_GIT_FAILED);
-          phase_ = Phase::Failed;
-          requestUpdate();
-          return;
-        }
-        promptAccessToken();
-      });
+  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_GIT_URL),
+                                                                 "https://", MAX_REMOTE_URL_BYTES, InputType::Url),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) {
+                             phase_ = Phase::Ready;
+                             return;
+                           }
+                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+                           if (!keyboard) return;
+                           remoteUrl_ = keyboard->text;
+                           while (!remoteUrl_.empty() && (remoteUrl_.back() == '/' || remoteUrl_.back() == ' '))
+                             remoteUrl_.pop_back();
+                           if (!isSupportedRepositoryUrl(remoteUrl_)) {
+                             status_ = tr(STR_MICROMARKD_GIT_FAILED);
+                             phase_ = Phase::Failed;
+                             requestUpdate();
+                             return;
+                           }
+                           promptAccessToken();
+                         });
 }
 
 void MarkdownSyncActivity::promptAccessToken() {
   phase_ = Phase::EnteringToken;
-  startActivityForResult(
-      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_GIT_TOKEN), "",
-                                              MAX_ACCESS_TOKEN_BYTES, InputType::Password),
-      [this](const ActivityResult& result) {
-        if (result.isCancelled) {
-          phase_ = Phase::Ready;
-          return;
-        }
-        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
-        if (!keyboard) return;
-        accessToken_ = keyboard->text;
-        connectAndSync();
-      });
+  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_GIT_TOKEN),
+                                                                 "", MAX_ACCESS_TOKEN_BYTES, InputType::Password),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) {
+                             phase_ = Phase::Ready;
+                             return;
+                           }
+                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+                           if (!keyboard) return;
+                           accessToken_ = keyboard->text;
+                           connectAndSync();
+                         });
 }
 
 void MarkdownSyncActivity::connectAndSync() {
@@ -419,8 +399,7 @@ bool MarkdownSyncActivity::vaultIsEmpty() const {
 
 void MarkdownSyncActivity::syncRepository() {
   phase_ = Phase::Syncing;
-  status_ = Storage.exists("/vault/.git/HEAD") ? tr(STR_MICROMARKD_GIT_PULLING)
-                                                : tr(STR_MICROMARKD_GIT_CLONING);
+  status_ = Storage.exists("/vault/.git/HEAD") ? tr(STR_MICROMARKD_GIT_PULLING) : tr(STR_MICROMARKD_GIT_CLONING);
   requestUpdateAndWait();
 
 #ifdef SIMULATOR
@@ -430,16 +409,16 @@ void MarkdownSyncActivity::syncRepository() {
   return;
 #else
   registerGitPorts();
-  const esp32git_remote auth = accessToken_.empty() ? esp32git_remote{nullptr, nullptr, nullptr}
-                                                    : esp32git_remote{remoteUrl_.c_str(), GITHUB_TOKEN_USER,
-                                                                      accessToken_.c_str()};
+  const esp32git_remote auth = accessToken_.empty()
+                                   ? esp32git_remote{nullptr, nullptr, nullptr}
+                                   : esp32git_remote{remoteUrl_.c_str(), GITHUB_TOKEN_USER, accessToken_.c_str()};
   esp32git_status result = ESP32GIT_IO_ERROR;
   if (Storage.exists("/vault/.git/HEAD")) {
     result = esp32git_fetch_url_auth(remoteUrl_.c_str(), DEFAULT_GIT_BRANCH, VAULT_ROOT,
                                      accessToken_.empty() ? nullptr : &auth);
   } else if (vaultIsEmpty()) {
-    result = esp32git_clone_url(remoteUrl_.c_str(), DEFAULT_GIT_BRANCH, VAULT_ROOT,
-                                accessToken_.empty() ? nullptr : &auth);
+    result =
+        esp32git_clone_url(remoteUrl_.c_str(), DEFAULT_GIT_BRANCH, VAULT_ROOT, accessToken_.empty() ? nullptr : &auth);
   } else {
     status_ = tr(STR_MICROMARKD_GIT_NOT_EMPTY);
     phase_ = Phase::Failed;
