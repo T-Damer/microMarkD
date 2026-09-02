@@ -133,6 +133,7 @@ enum UIIcon {
   Wifi,
   Hotspot,
   Bookmark,
+  Usb,
   Search,
   Tag,
   NewNote,

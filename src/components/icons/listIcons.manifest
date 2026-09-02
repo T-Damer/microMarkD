@@ -21,6 +21,7 @@ moon = moon
 upload = upload
 download = download
 bookmark = bookmark
+usb = usb
 history = history
 menu-search = search
 tag = hash

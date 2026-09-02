@@ -271,113 +271,6 @@ void BaseTheme::drawSideButtonHints(const GfxRenderer& renderer, const char* top
   }
 }
 
-int BaseTheme::getListRowStep(bool hasSubtitle) const {
-  int rowHeight = (hasSubtitle) ? BaseMetrics::values.listWithSubtitleRowHeight : BaseMetrics::values.listRowHeight;
-  return rowHeight;
-}
-
-int BaseTheme::getListPageItems(int contentHeight, bool hasSubtitle) const {
-  const int rowStep = getListRowStep(hasSubtitle);
-  if (rowStep <= 0) return 1;
-  return std::max(1, contentHeight / rowStep);
-}
-
-void BaseTheme::drawList(const GfxRenderer& renderer, Rect rect, int itemCount, int selectedIndex,
-                         const std::function<std::string(int index)>& rowTitle,
-                         const std::function<std::string(int index)>& rowSubtitle,
-                         const std::function<UIIcon(int index)>& rowIcon,
-                         const std::function<std::string(int index)>& rowValue, bool highlightValue,
-                         const std::function<bool(int index)>& rowDimmed) const {
-  int rowHeight =
-      (rowSubtitle != nullptr) ? BaseMetrics::values.listWithSubtitleRowHeight : BaseMetrics::values.listRowHeight;
-  int pageItems = rowHeight > 0 ? std::max(1, rect.height / rowHeight) : 1;
-
-  const int totalPages = (itemCount + pageItems - 1) / pageItems;
-  if (totalPages > 1) {
-    constexpr int indicatorWidth = 20;
-    constexpr int arrowSize = 6;
-    constexpr int margin = 15;  // Offset from right edge
-
-    const int centerX = rect.x + rect.width - indicatorWidth / 2 - margin;
-    const int indicatorTop = rect.y;  // Offset to avoid overlapping side button hints
-    const int indicatorBottom = rect.y + rect.height - arrowSize;
-
-    // Draw up arrow at top (^) - narrow point at top, wide base at bottom
-    for (int i = 0; i < arrowSize; ++i) {
-      const int lineWidth = 1 + i * 2;
-      const int startX = centerX - i;
-      renderer.drawLine(startX, indicatorTop + i, startX + lineWidth - 1, indicatorTop + i);
-    }
-
-    // Draw down arrow at bottom (v) - wide base at top, narrow point at bottom
-    for (int i = 0; i < arrowSize; ++i) {
-      const int lineWidth = 1 + (arrowSize - 1 - i) * 2;
-      const int startX = centerX - (arrowSize - 1 - i);
-      renderer.drawLine(startX, indicatorBottom - arrowSize + 1 + i, startX + lineWidth - 1,
-                        indicatorBottom - arrowSize + 1 + i);
-    }
-  }
-
-  // Draw selection
-  int contentWidth = rect.width - 5;
-  if (selectedIndex >= 0) {
-    renderer.fillRect(rect.x, rect.y + selectedIndex % pageItems * rowHeight - 2, rect.width, rowHeight);
-  }
-  constexpr int minValueGap = 10;
-
-  // Draw all items
-  const auto pageStartIndex = selectedIndex / pageItems * pageItems;
-  for (int i = pageStartIndex; i < itemCount && i < pageStartIndex + pageItems; i++) {
-    const int itemY = rect.y + (i % pageItems) * rowHeight;
-
-    int rowTextWidth = contentWidth - BaseMetrics::values.contentSidePadding * 2;
-    std::string valueText;
-    if (rowValue != nullptr) {
-      valueText = rowValue(i);
-      if (!valueText.empty()) {
-        int maxValW = std::max(0, rowTextWidth - 40 - minValueGap);
-        valueText = renderer.truncatedText(UI_10_FONT_ID, valueText.c_str(), maxValW);
-        int valueWidth = renderer.getTextWidth(UI_10_FONT_ID, valueText.c_str()) + minValueGap;
-        rowTextWidth -= valueWidth;
-      }
-    }
-
-    auto itemName = rowTitle(i);
-    auto font = UI_10_FONT_ID;
-    auto item = renderer.truncatedText(font, itemName.c_str(), rowTextWidth);
-    renderer.drawText(font, rect.x + BaseMetrics::values.contentSidePadding, itemY, item.c_str(), i != selectedIndex);
-
-    // Apply checkerboard dither to create gray text effect for dimmed items
-    if (rowDimmed && rowDimmed(i) && i != selectedIndex) {
-      const int titleWidth = renderer.getTextWidth(font, item.c_str());
-      const int lineH = renderer.getLineHeight(font);
-      const int tx = rect.x + BaseMetrics::values.contentSidePadding;
-      for (int py = itemY; py < itemY + lineH; py++)
-        for (int px = tx; px < tx + titleWidth; px++)
-          if ((px + py) % 2 == 0) renderer.drawPixel(px, py, false);
-    }
-
-    if (rowSubtitle != nullptr) {
-      std::string subtitleText = rowSubtitle(i);
-      if (!subtitleText.empty()) {
-        auto subtitle = renderer.truncatedText(SMALL_FONT_ID, subtitleText.c_str(), rowTextWidth);
-        renderer.drawText(SMALL_FONT_ID, rect.x + BaseMetrics::values.contentSidePadding, itemY + 22, subtitle.c_str(),
-                          i != selectedIndex);
-      }
-    }
-
-    if (!valueText.empty()) {
-      const auto valueTextWidth = renderer.getTextWidth(UI_10_FONT_ID, valueText.c_str());
-      int valueY = itemY;
-      if (rowSubtitle != nullptr) {
-        valueY = itemY + 10;
-      }
-      renderer.drawText(UI_10_FONT_ID, rect.x + contentWidth - BaseMetrics::values.contentSidePadding - valueTextWidth,
-                        valueY, valueText.c_str(), i != selectedIndex);
-    }
-  }
-}
-
 void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* title, const char* subtitle,
                            const int16_t leftReserve) const {
   // Every activity header renders through the FreeInkUI header + battery
@@ -409,28 +302,12 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
   // The icon glyph extends 2px past glyphWidth (terminal nub); reserve it or
   // the percent label's rect comes up short and the text truncates.
   constexpr int16_t batteryNubWidth = 2;
-  const int16_t batteryGlyphWidth = static_cast<int16_t>(metrics.batteryWidth + batteryNubWidth);
-  int16_t batteryLabelWidth = 0;
-  int16_t batteryReserve = batteryGlyphWidth;
+  int16_t batteryReserve = static_cast<int16_t>(metrics.batteryWidth + batteryNubWidth);
   if (showBatteryPercentage) {
-    batteryLabelWidth = static_cast<int16_t>(
+    batteryReserve = static_cast<int16_t>(
+        batteryReserve + batteryPercentSpacing +
         ui.target.measureText(fui::GfxRendererTarget::FONT_SMALL, percentText, tokens.smallText).width);
-    batteryReserve = static_cast<int16_t>(batteryReserve + batteryPercentSpacing + batteryLabelWidth);
   }
-
-  const auto statusBar = SETTINGS.statusBarSpec();
-  char clockText[9] = {};
-  const bool showClock = statusBar.showsClock() && halClock.isAvailable() &&
-                         halClock.formatTime(clockText, sizeof(clockText), statusBar.clockUtcOffsetQ,
-                                             statusBar.clock12h);
-  const bool clockLeft = statusBar.clockMode == CrossPointSettings::STATUS_BAR_CLOCK_LEFT;
-  const int16_t clockWidth = showClock ? static_cast<int16_t>(
-                                            ui.target.measureText(fui::GfxRendererTarget::FONT_SMALL, clockText,
-                                                                  tokens.smallText)
-                                                .width)
-                                      : 0;
-  constexpr int16_t headerStatusGap = 6;
-  const int16_t clockReserve = showClock ? static_cast<int16_t>(clockWidth + headerStatusGap) : 0;
 
   fui::HeaderProps props;
   props.title = title;
@@ -470,21 +347,6 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
       props.rightReserve = reserve;
     }
   }
-  if (showClock) {
-    const bool sharesBatterySide = clockLeft == batteryLeft;
-    if (sharesBatterySide) {
-      const int16_t reserve = static_cast<int16_t>(batteryReserve + clockReserve + tokens.spaceMd);
-      if (batteryLeft) {
-        props.leftReserve = std::max(props.leftReserve, reserve);
-      } else {
-        props.rightReserve = std::max(props.rightReserve, reserve);
-      }
-    } else if (clockLeft) {
-      props.leftReserve = std::max(props.leftReserve, clockReserve);
-    } else {
-      props.rightReserve = std::max(props.rightReserve, clockReserve);
-    }
-  }
   props.leftReserve = std::max(props.leftReserve, leftReserve);
   // Underline only under a titled header: an untitled band (Lyra home screen)
   // historically drew no rule, and the old themes keyed the line on the title.
@@ -497,43 +359,21 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
   fui::BatteryIndicatorProps battery;
   battery.percent = static_cast<uint8_t>(percentage > 100 ? 100 : percentage);
   battery.charging = gpio.isUsbConnected();
-  battery.label = nullptr;
+  battery.label = showBatteryPercentage ? percentText : nullptr;
   battery.text = tokens.smallText;
   battery.glyphWidth = static_cast<int16_t>(metrics.batteryWidth);
   battery.glyphHeight = static_cast<int16_t>(metrics.batteryHeight);
   battery.gap = batteryPercentSpacing;
-  // Detached headers keep the battery in the corner strip; shared-line headers
-  // center it vertically beside the title instead of leaving a dead top band.
+  // Detached: hug the corner (12px, the legacy inset) within the battery
+  // strip; shared line: sit on the content grid. Both anchor to the band's top
+  // strip (batteryBarHeight) — the legacy shared-line headers drew the battery
+  // at the top edge, and it keeps the lower-right corner free for the manual
+  // right label below.
   const int16_t batteryEdgeInset = batteryDetached ? 12 : tokens.headerSidePadding;
-  const bool clockSharesBatterySide = showClock && clockLeft == batteryLeft;
-  const int16_t batteryX = batteryLeft
-                               ? static_cast<int16_t>(band.x + batteryEdgeInset +
-                                                      (clockSharesBatterySide && clockLeft ? clockReserve : 0))
-                               : static_cast<int16_t>(band.right() - batteryEdgeInset - batteryReserve);
+  const int16_t batteryX = batteryLeft ? static_cast<int16_t>(band.x + batteryEdgeInset)
+                                       : static_cast<int16_t>(band.right() - batteryEdgeInset - batteryReserve);
   const int16_t batteryH = static_cast<int16_t>(metrics.batteryBarHeight);
-  const int16_t batteryY = batteryDetached ? band.y : static_cast<int16_t>(band.y + (band.height - batteryH) / 2);
-  fui::batteryIndicator(ui.frame, fui::Rect{batteryX, batteryY, batteryGlyphWidth, batteryH}, battery);
-
-  if (showBatteryPercentage && batteryLabelWidth > 0) {
-    fui::TextStyle batteryLabelStyle = tokens.smallText;
-    batteryLabelStyle.align = fui::TextAlign::Left;
-    const int16_t labelH = ui.target.lineHeight(fui::GfxRendererTarget::FONT_SMALL);
-    const int16_t labelY = static_cast<int16_t>(band.y + (band.height - labelH) / 2);
-    ui.target.text(fui::Rect{static_cast<int16_t>(batteryX + batteryGlyphWidth + batteryPercentSpacing), labelY,
-                             batteryLabelWidth, labelH},
-                   percentText, batteryLabelStyle);
-  }
-
-  if (showClock && clockWidth > 0) {
-    const int16_t clockX = clockSharesBatterySide
-                               ? static_cast<int16_t>(clockLeft ? band.x + batteryEdgeInset
-                                                                 : batteryX - headerStatusGap - clockWidth)
-                               : static_cast<int16_t>(clockLeft ? band.x + batteryEdgeInset
-                                                                 : band.right() - batteryEdgeInset - clockWidth);
-    const int16_t clockH = ui.target.lineHeight(fui::GfxRendererTarget::FONT_SMALL);
-    const int16_t clockY = static_cast<int16_t>(band.y + (band.height - clockH) / 2);
-    ui.target.text(fui::Rect{clockX, clockY, clockWidth, clockH}, clockText, tokens.smallText);
-  }
+  fui::batteryIndicator(ui.frame, fui::Rect{batteryX, band.y, batteryReserve, batteryH}, battery);
 
   if (manualRightLabel) {
     const fui::Size labelSize = ui.target.measureText(fui::GfxRendererTarget::FONT_SMALL, subtitle, tokens.smallText);

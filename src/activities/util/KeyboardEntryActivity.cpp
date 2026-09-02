@@ -793,6 +793,8 @@ void KeyboardEntryActivity::render(RenderLock&&) {
     const std::string lineText = displayText.substr(lineStartIdx, lineEndIdx - lineStartIdx);
     textWidth = renderer.getTextAdvanceX(UI_12_FONT_ID, lineText.c_str(), EpdFontFamily::REGULAR);
     {
+      const bool isRtl = rangeIsRtl(displayText, lineStartIdx, lineEndIdx);
+      const int lineStartX = centerText ? effectiveMargin + (maxLineWidth - textWidth) / 2 : effectiveMargin;
       bool isCursorLine = false;
       if (!cursorDrawn && cursorPos >= lineStartIdx && cursorPos <= lineEndIdx) {
         std::string beforeCursor;

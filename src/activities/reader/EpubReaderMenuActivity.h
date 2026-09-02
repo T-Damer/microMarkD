@@ -30,13 +30,6 @@ class EpubReaderMenuActivity final : public UiListActivity {
     DICTIONARY
   };
 
-  struct MenuItem {
-    MenuAction action;
-    StrId labelId;
-  };
-
-  static void buildMenuItems(std::vector<MenuItem>& items, bool hasFootnotes, bool hasBookmarks);
-
   explicit EpubReaderMenuActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, const std::string& title,
                                   const int currentPage, const int totalPages, const int bookProgressPercent,
                                   const uint8_t currentOrientation, const bool hasFootnotes, bool hasBookmarks);
@@ -74,7 +67,7 @@ class EpubReaderMenuActivity final : public UiListActivity {
   void closeCancelled();
 
   // Fixed menu layout
-  std::vector<MenuItem> menuItems;
+  const std::vector<MenuItem> menuItems;
 
   OptionPopup optionPopup;
   std::string title = "Reader Menu";

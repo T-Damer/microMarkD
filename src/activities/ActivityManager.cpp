@@ -286,7 +286,7 @@ void ActivityManager::goToFullScreenMessage(std::string message, EpdFontFamily::
   replaceActivity(std::make_unique<FullScreenMessageActivity>(renderer, mappedInput, std::move(message), style));
 }
 
-void ActivityManager::goHome(HomeMenuItem initialMenuItem) {
+void ActivityManager::goHome(HomeMenuItem initialMenuItem, const bool cleanInitialRefresh) {
 #ifdef MICROMARKD_APP
   (void)initialMenuItem;
   replaceActivity(std::make_unique<MicroMarkDActivity>(renderer, mappedInput));

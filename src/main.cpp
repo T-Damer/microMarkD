@@ -53,8 +53,6 @@ static unsigned long lastX4ProPowerClickAt = 0;
 namespace {
 constexpr unsigned long X4PRO_POWER_DOUBLE_CLICK_MS = 500;
 constexpr unsigned long X4PRO_POWER_CLICK_MAX_HOLD_MS = 300;
-constexpr unsigned long X4PRO_RECOVERY_SETTLE_MS = 20;
-constexpr unsigned long DEFAULT_RECOVERY_SETTLE_MS = 500;
 }  // namespace
 
 // A wake hold must never become an in-app power-button action.  Boot may continue
@@ -193,6 +191,17 @@ void silentRestartToReader() {
   LOG_DBG("MAIN", "Silent restart (target=reader)");
   GUI.drawPopup(renderer, tr(STR_LOADING_POPUP));
   delay(50);
+  ESP.restart();
+}
+
+void restartToHomeAfterStorageHandoff() {
+  if (deepSleepInProgress) return;  // sleeping supersedes the storage handoff reboot
+  silentRebootTarget = SILENT_REBOOT_TARGET_HOME;
+  silentRebootMagic = SILENT_REBOOT_MAGIC;
+  LOG_DBG("MAIN", "Restart after storage handoff (target=home)");
+  GUI.drawPopup(renderer, tr(STR_LOADING_POPUP));
+  delay(50);
+  handoffUsbOtgToSerialJtag();
   ESP.restart();
 }
 
@@ -380,40 +389,6 @@ void setup() {
   halTiltSensor.begin();
   halClock.begin();
 
-  // First of two USB samples (second below, before display bring-up): the SOF
-  // verdict needs two samples a frame apart, and it must be settled before the
-  // first refresh — the boot paint's light-sleep slices would otherwise kill a
-  // live CDC link whenever the charge-based check reads false (full battery,
-  // data-only cable). See HalGPIO::pollUsbState().
-  gpio.pollUsbState();
-
-  const auto wakeupReason = gpio.getWakeupReason();
-
-  // Latch the recovery chord before SD and settings I/O. X4 Pro uses a plain
-  // digital button with 5 ms debounce; other Xteink inputs retain their legacy
-  // settling window. BTN_DOWN avoids the X4 Pro's GPIO0 boot-strap pin.
-  bool recoveryFirmwareMode = false;
-  if (wakeupReason == HalGPIO::WakeupReason::PowerButton) {
-    const unsigned long settleMs = BoardConfig::isX4Pro() ? X4PRO_RECOVERY_SETTLE_MS : DEFAULT_RECOVERY_SETTLE_MS;
-    const unsigned long settleStart = millis();
-    while (millis() - settleStart < settleMs) {
-      gpio.update();
-      delay(10);
-    }
-
-    const uint8_t recoveryButton = BoardConfig::isX4Pro() ? HalGPIO::BTN_DOWN : HalGPIO::BTN_UP;
-    if (gpio.isPressed(recoveryButton)) {
-      recoveryFirmwareMode = true;
-      LOG_INF("MAIN", "Recovery firmware mode (%s + POWER held at boot)", BoardConfig::isX4Pro() ? "DOWN" : "UP");
-    }
-  }
-
-  // Light-sleep through the render task's e-ink BUSY wait (0.3-2 s of pure pin
-  // polling) in short slices, waking exactly on the BUSY pin's completion level
-  // (falls back to plain polling when WiFi/USB blocks light sleep)
-  display.setBusyWaitSliceHook(
-      [](int8_t busyPin, uint8_t busyLevel) { return powerManager.onEinkBusyWaitSlice(busyPin, busyLevel); });
-
 #if FREEINK_DEVICE_X4 || FREEINK_DEVICE_X3
   LOG_INF("MAIN", "Hardware detect: %s", gpio.deviceIsX3() ? "X3" : "X4");
 #else
@@ -475,11 +450,16 @@ void setup() {
     case HalGPIO::WakeupReason::AfterUSBPower:
       // Most devices return to sleep after a USB-powered cold boot.
       LOG_DBG("MAIN", "Wakeup reason: After USB Power");
-#if FREEINK_DEVICE_PAPERMONO
-      // There is no armable GPIO wake because the button is behind the PMIC.
-      // Sleeping here would strand the device in a USB-replug boot loop.
+#if FREEINK_DEVICE_X4PRO || FREEINK_DEVICE_X4CLASSIC || FREEINK_DEVICE_PAPERMONO || FREEINK_DEVICE_EEGO_A4
+      // X4 Pro must stay awake so USB Serial/JTAG remains available after leaving
+      // USB Drive and reconnecting the cable. Paper Mono has no armable GPIO wake
+      // (its button is behind the PMIC). EEGO A4's post-flash reset reads as
+      // POWERON (native-USB), so a flash would otherwise be misclassified as a
+      // USB-power cold boot and sleep. Sleeping any of these here would strand
+      // the device in a USB-replug boot loop (or sleep right after a flash).
       break;
 #else
+      Storage.prepareForDeepSleep();
       powerManager.startDeepSleep(gpio);
       break;
 #endif
@@ -490,7 +470,6 @@ void setup() {
       break;
   }
 
-  // First serial output only here to avoid timing inconsistencies for power button press duration verification
   LOG_DBG("MAIN", "Starting CrossPoint version " CROSSPOINT_VERSION);
 
   // Resolve the single boot-presentation decision. Skipping the splash also
