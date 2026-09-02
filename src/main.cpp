@@ -37,6 +37,7 @@
 #include "components/UITheme.h"
 #include "fontIds.h"
 #include "images/LoadingIcon.h"
+#include "platform/UsbSerialJtagHandoff.h"
 #include "util/ButtonNavigator.h"
 #include "util/ScreenshotUtil.h"
 
@@ -124,10 +125,6 @@ EpdFontFamily ui10FontFamily(&ui10RegularFont, &ui10BoldFont);
 EpdFont ui12RegularFont(&ubuntu_12_regular);
 EpdFont ui12BoldFont(&ubuntu_12_bold);
 EpdFontFamily ui12FontFamily(&ui12RegularFont, &ui12BoldFont);
-
-// measurement of power button press duration calibration value
-unsigned long t1 = 0;
-unsigned long t2 = 0;
 
 // Definitions for SilentRestart.h. RTC_NOINIT survives ESP.restart() but not power loss.
 RTC_NOINIT_ATTR uint32_t silentRebootMagic;
@@ -283,6 +280,7 @@ void enterDeepSleep(bool fromTimeout = false) {
 
   halTiltSensor.deepSleep();
   display.deepSleep();
+  Storage.prepareForDeepSleep();
   LOG_DBG("MAIN", "Entering deep sleep");
 
   powerManager.startDeepSleep(gpio);
@@ -337,15 +335,12 @@ void setupDisplayAndFonts(bool seamless = false) {
 void setup() {
   BoardConfig::holdPowerRails();
 
-  t1 = millis();
-
 #ifdef ENABLE_SERIAL_LOG
-  // Earliest possible Serial setup. The 250 ms stall before begin() lets the
-  // USB Serial/JTAG peripheral finish power-on and lets the host complete USB
-  // enumeration before we touch the CDC state — otherwise cold boot races
-  // and the host has to be physically replugged for logs to flow. Warm reboot
-  // worked without the delay because USB was already enumerated.
+#ifdef CROSSPOINT_WAIT_FOR_USB_SERIAL
+  // Development builds preserve reliable early CDC logs; release builds let
+  // enumeration proceed asynchronously so users do not pay this startup cost.
   delay(250);
+#endif
   Serial.begin(115200);
 #if LOG_SERIAL_HAS_TX_TIMEOUT
   logSerial.setTxTimeoutMs(1);  // This is a load-bearing 1. Do not modify.
@@ -367,6 +362,21 @@ void setup() {
 
   gpio.begin();
   powerManager.begin();
+
+  const auto wakeupReason = gpio.getWakeupReason();
+  // Sample the wake hold now — a click wake is released within milliseconds of
+  // boot — but defer the sleep-or-boot decision until SETTINGS is loaded below:
+  // click-to-wake is a setting, and an X4 battery power-off cuts all power, so
+  // only SD state survives to the next boot.
+  const bool wakeHoldVerified = wakeupReason != HalGPIO::WakeupReason::PowerButton || gpio.verifyPowerButtonWakeup();
+
+  // X4 Pro and X4 Classic both map BTN_UP to GPIO0 — an ESP32-S3 boot strap — so
+  // gate recovery on the non-strap Down key (GPIO7) to avoid a stuck-in-recovery loop.
+  const auto recoveryButton = (BoardConfig::isX4Pro() || BoardConfig::isX4Classic()) ? MappedInputManager::Button::Down
+                                                                                     : MappedInputManager::Button::Up;
+  const bool recoveryFirmwareMode = wakeupReason == HalGPIO::WakeupReason::PowerButton && !BoardConfig::isPaperMono() &&
+                                    mappedInputManager.isPressed(recoveryButton);
+
   halTiltSensor.begin();
   halClock.begin();
 
@@ -414,7 +424,6 @@ void setup() {
   // We need 6 open files concurrently when parsing a new chapter
   if (!Storage.begin()) {
     LOG_ERR("MAIN", "SD card initialization failed");
-    gpio.pollUsbState();  // settle the USB verdict before the error paint (see above)
     setupDisplayAndFonts(isSilentReboot);
     activityManager.goToFullScreenMessage("SD card error", EpdFontFamily::BOLD);
     return;
@@ -422,8 +431,23 @@ void setup() {
 
   HalSystem::checkPanic();
 
-  SETTINGS.loadFromFile();
   APP_STATE.loadFromFile();
+  const bool isSleepWake = wakeupReason == HalGPIO::WakeupReason::PowerButton;
+  const bool isPersistedSleepWake = isSleepWake && !APP_STATE.showBootScreen;
+
+  if (recoveryFirmwareMode) {
+    LOG_INF("MAIN", "Recovery firmware mode (%s + POWER held at boot)",
+            (BoardConfig::isX4Pro() || BoardConfig::isX4Classic()) ? "DOWN" : "UP");
+  }
+
+  // Touch boards default the reader menu to the toolbar overlay instead of the
+  // full-screen list. Seeded before the load: fromJson() falls back to the
+  // in-memory value only when the file carries no readerMenuStyle key, so a
+  // user's saved choice (either style) still wins.
+  if (gpio.hasTouch()) {
+    SETTINGS.readerMenuStyle = CrossPointSettings::READER_MENU_TOOLBAR;
+  }
+  SETTINGS.loadFromFile();
   RECENT_BOOKS.loadFromFile();
   I18N.setLanguage(static_cast<Language>(SETTINGS.language));
   KOREADER_STORE.loadFromFile();
@@ -439,15 +463,17 @@ void setup() {
 
   switch (wakeupReason) {
     case HalGPIO::WakeupReason::PowerButton:
-      LOG_DBG("MAIN", "Verifying power button press duration");
-      if (!gpio.verifyPowerButtonWakeup(SETTINGS.getPowerButtonDuration(),
-                                        SETTINGS.shortPwrBtn == CrossPointSettings::SHORT_PWRBTN::SLEEP)) {
+      // With Short Power Button Press = Sleep, a single click wakes on any
+      // device; otherwise the button must still be held (ghost-wake debounce).
+      if (!wakeHoldVerified && SETTINGS.shortPwrBtn != CrossPointSettings::SHORT_PWRBTN::SLEEP) {
+        LOG_DBG("MAIN", "Power-button wake not held through verification, sleeping");
+        Storage.prepareForDeepSleep();
         powerManager.startDeepSleep(gpio);
       }
       wakePowerReleasePending = true;
       break;
     case HalGPIO::WakeupReason::AfterUSBPower:
-      // If USB power caused a cold boot, go back to sleep
+      // Most devices return to sleep after a USB-powered cold boot.
       LOG_DBG("MAIN", "Wakeup reason: After USB Power");
 #if FREEINK_DEVICE_PAPERMONO
       // There is no armable GPIO wake because the button is behind the PMIC.
@@ -473,15 +499,11 @@ void setup() {
   // retained frame and input dispatches against a visible UI.
   // Only a verified deep-sleep wake may use the one-shot persisted flag.
   // Otherwise a stale flag could suppress the splash on a cold boot.
-  const bool isSleepWake = wakeupReason == HalGPIO::WakeupReason::PowerButton;
-  const BootResume resume = isSilentReboot                             ? BootResume::Silent
-                            : isSleepWake && !APP_STATE.showBootScreen ? BootResume::SplashlessWake
-                                                                       : BootResume::Splash;
+  const BootResume resume = isSilentReboot         ? BootResume::Silent
+                            : isPersistedSleepWake ? BootResume::SplashlessWake
+                                                   : BootResume::Splash;
   bool allowFastInitialReaderRefresh = false;
-
-  // Second USB sample (first one right after powerManager.begin()): settles the
-  // SOF host-link verdict before the first refresh can slice-sleep.
-  gpio.pollUsbState();
+  bool needsWakeRefresh = false;
 
   setupDisplayAndFonts(resume != BootResume::Splash);
 
@@ -512,6 +534,10 @@ void setup() {
         } else {
           renderer.displayBuffer(HalDisplay::HALF_REFRESH);
         }
+      } else {
+        // The first Home/Reader paint is followed by an explicit clean refresh
+        // because the panel still physically shows the sleep image.
+        needsWakeRefresh = true;
       }
       break;
     case BootResume::Splash:
@@ -541,7 +567,7 @@ void setup() {
              mappedInputManager.isPressed(MappedInputManager::Button::Back) || APP_STATE.readerActivityLoadCount > 0) {
     // Boot to home screen if no book is open, last sleep was not from reader, back button is held, or reader activity
     // crashed (indicated by readerActivityLoadCount > 0)
-    activityManager.goHome();
+    activityManager.goHome(HomeMenuItem::NONE, needsWakeRefresh);
   } else {
     // Clear app state to avoid getting into a boot loop if the epub doesn't load
     const auto path = APP_STATE.openEpubPath;
@@ -571,23 +597,30 @@ void setup() {
   allowSleepAt = millis() + 2000;
 }
 
-// delay() counts ticks, and the tick stops while onEinkBusyWaitSlice() light-sleeps
-// the chip (millis() is RTC-corrected on wake; the tick is not). A delay(10) mid-refresh
-// would stretch to ~210 ms and starve button sampling. millis() stays honest.
-static void delayWallClock(const unsigned long ms) {
-  const unsigned long deadline = millis() + ms;
-  while (static_cast<long>(millis() - deadline) < 0) {
-    vTaskDelay(1);
-  }
-}
-
 void loop() {
   static unsigned long maxLoopDuration = 0;
   const unsigned long loopStartTime = millis();
   static unsigned long lastMemPrint = 0;
 
   gpio.setSharedConfirmPowerShortPressEmitsPower(SETTINGS.shortPwrBtn == CrossPointSettings::SHORT_PWRBTN::SLEEP);
-  gpio.update();
+  mappedInputManager.update();
+
+  if (activityManager.requiresExclusiveStorageLoop()) {
+    // USB Drive handed the raw SD card to the host. Do not run screenshots,
+    // sleep, shortcuts, or normal navigation while its filesystem is detached.
+    activityManager.loop();
+    if (activityManager.preventAutoSleep()) {
+      powerManager.setPowerSaving(false);
+      delay(10);
+    } else {
+      // No host is active, so a slower loop is safe. The activity itself times
+      // out the raw-storage handoff rather than entering deep sleep detached.
+      powerManager.setPowerSaving(true);
+      delay(50);
+    }
+    return;
+  }
+
   halTiltSensor.update(SETTINGS.tiltPageTurn, SETTINGS.orientation, activityManager.isReaderActivity());
 
   renderer.setFadingFix(SETTINGS.fadingFix);
@@ -605,20 +638,13 @@ void loop() {
     if (line.startsWith("CMD:")) {
       String cmd = line.substring(4);
       cmd.trim();
-      bool handled = true;
       if (cmd == "SCREENSHOT") {
         const uint32_t bufferSize = display.getBufferSize();
         logSerial.printf("SCREENSHOT_START:%d\n", bufferSize);
         uint8_t* buf = display.getFrameBuffer();
         logSerial.write(buf, bufferSize);
         logSerial.printf("SCREENSHOT_END\n");
-      } else {
-        handled = false;
       }
-      // Raw print, not LOG_*: debugging_monitor.py keys on this ack to report
-      // command success, so it must survive LOG_LEVEL=0 builds. Commands
-      // compiled out of this build report unknown.
-      logSerial.printf(handled ? "CMDACK:%s\n" : "CMDERR:unknown:%s\n", cmd.c_str());
     }
   }
 
@@ -699,6 +725,7 @@ void loop() {
     if (gpio.isPressed(HalGPIO::BTN_DOWN)) {
       return;
     }
+    LOG_DBG("MAIN", "Power button held %lums, sleeping", gpio.getPowerButtonHeldTime());
     enterDeepSleep();
     // This should never be hit as `enterDeepSleep` calls esp_deep_sleep_start
     return;
@@ -728,16 +755,17 @@ void loop() {
 
   // Refresh the battery icon when USB is plugged or unplugged.
   // Placed after sleep guards so we never queue a render that won't be processed.
-  if (gpio.wasUsbStateChanged()) {
+  // Not while reading: there a repaint is a full page re-render (visible
+  // flash, the AA pass re-running, and a frontlight dip under the refresh
+  // load); the reader's status bar picks the charging state up on the next
+  // page turn instead.
+  if (gpio.wasUsbStateChanged() && !activityManager.isReaderActivity()) {
     activityManager.requestUpdate();
   }
 
   const unsigned long activityStartTime = millis();
   activityManager.loop();
   const unsigned long activityDuration = millis() - activityStartTime;
-
-  // Body complete: releases the slice hook's yield (see onEinkBusyWaitSlice).
-  powerManager.noteMainLoopIteration();
 
   const unsigned long loopDuration = millis() - loopStartTime;
   if (loopDuration > maxLoopDuration) {
@@ -754,40 +782,13 @@ void loop() {
     powerManager.setPowerSaving(false);  // Make sure we're at full performance when skipLoopDelay is requested
     yield();                             // Give FreeRTOS a chance to run tasks, but return immediately
   } else {
-    const unsigned long idleMs = millis() - lastActivityTime;
-    if (idleMs >= HalPowerManager::IDLE_LIGHT_SLEEP_MS) {
-      // Idle: light-sleep between input polls instead of busy-delaying (same poll cadence).
-      // Race-to-sleep: run the brief wake windows at normal clock, not LOW_POWER_FREQ.
-      // The board's sleep-floor current is paid per-millisecond regardless of CPU
-      // speed, so finishing the per-wake work ~16x faster and returning to sleep
-      // costs less charge than stretching the window at 10 MHz (measured at 10 MHz:
-      // 8.8 mA for 4.5 ms per wake). The downclock below only serves the pre-sleep
-      // 100 Hz delay-poll phase. The lightSleep()-rejected fallback delay() then
-      // also runs at normal clock, but that only happens when USB (externally
-      // powered), WiFi, or a render Lock (full speed wanted anyway) is active.
-      powerManager.setPowerSaving(false);
-      if (gpio.isDebouncePending()) {
-        // A raw button-state change is mid-debounce: commitment needs a second
-        // matching sample, so poll again quickly instead of sleeping a slice —
-        // a tap shorter than the 50 ms cadence would otherwise land in a single
-        // sample and be dropped, and every press would commit a slice late.
-        delayWallClock(10);
-      } else if (!powerManager.lightSleep(gpio)) {
-        // Light sleep declined = a render Lock, USB, or WiFi is active — the
-        // chip is at full clock anyway, so poll at 100 Hz. A 50 ms cadence
-        // here dropped sub-slice power taps (a press needs two samples >=5 ms
-        // apart to commit), which made short-press sleep flaky during renders
-        // — exactly when a render Lock forces this fallback.
-        delayWallClock(10);
-      }
+    if (millis() - lastActivityTime >= HalPowerManager::IDLE_POWER_SAVING_MS) {
+      // If we've been inactive for a while, increase the delay to save power
+      powerManager.setPowerSaving(true);  // Lower CPU frequency after extended inactivity
+      delay(50);
     } else {
-      // Response window after recent input: keep 100 Hz polling for snappy interaction,
-      // but downclock once rapid-input bursts have settled — renders re-raise the clock
-      // via HalPowerManager::Lock, so full speed only serves loop bookkeeping here
-      if (idleMs >= HalPowerManager::IDLE_DOWNCLOCK_MS) {
-        powerManager.setPowerSaving(true);
-      }
-      delayWallClock(10);
+      // Short delay to prevent tight loop while still being responsive
+      delay(10);
     }
   }
 }

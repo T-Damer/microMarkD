@@ -99,7 +99,7 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   // slot; fromJson() folds that range up (see LEGACY_FONT_SIZE_MAX).
   static constexpr uint8_t LEGACY_FONT_SIZE_MAX = 3;
   static constexpr uint8_t DEFAULT_FONT_POINT_SIZE = 14;
-  enum LINE_COMPRESSION { TIGHT = 0, NORMAL = 1, WIDE = 2, LINE_COMPRESSION_COUNT };
+  enum LINE_COMPRESSION { TIGHT = 0, NORMAL = 1, WIDE = 2, EXTRA_WIDE = 3, LINE_COMPRESSION_COUNT };
   enum PARAGRAPH_ALIGNMENT {
     JUSTIFIED = 0,
     LEFT_ALIGN = 1,
@@ -119,13 +119,14 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
     SLEEP_TIMEOUT_COUNT
   };
 
-  // E-ink refresh frequency (pages between full refreshes)
+  // E-ink refresh frequency (pages between full refreshes).
   enum REFRESH_FREQUENCY {
     REFRESH_1 = 0,
     REFRESH_5 = 1,
     REFRESH_10 = 2,
     REFRESH_15 = 3,
     REFRESH_30 = 4,
+    REFRESH_NEVER = 5,
     REFRESH_FREQUENCY_COUNT
   };
 
@@ -170,6 +171,11 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   // Image rendering in EPUB reader
   enum IMAGE_RENDERING { IMAGES_DISPLAY = 0, IMAGES_PLACEHOLDER = 1, IMAGES_SUPPRESS = 2, IMAGE_RENDERING_COUNT };
 
+  // How Select opens the reader menu: the classic full-screen list, or a toolbar
+  // overlay (top/bottom bars with Contents / Text / More bottom-sheet panels)
+  // painted over the page.
+  enum READER_MENU_STYLE { READER_MENU_LIST = 0, READER_MENU_TOOLBAR = 1, READER_MENU_STYLE_COUNT };
+
   enum TILT_PAGE_TURN { TILT_OFF = 0, TILT_NORMAL = 1, TILT_NVERTED = 2, TILT_PAGE_TURN_COUNT };
 
   enum TOUCH_READER_CONTROLS {
@@ -188,8 +194,8 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
 
   // Sleep screen settings
   uint8_t sleepScreen = DARK;
-  // Night mode: inverted output polarity on the reading surfaces only
-  // (resolved per render by ActivityManager via Activity::appliesNightMode).
+  // Night mode: inverted output polarity, applied to every activity per
+  // render by ActivityManager. The sleep screen opts out itself.
   uint8_t screenInverted = 0;
   // Sleep screen cover mode settings
   uint8_t sleepScreenCoverMode = FIT;
@@ -276,6 +282,7 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t embeddedStyle = 1;
   // Focus Reading - emphasizes the first part of words with bold
   uint8_t focusReadingEnabled = 0;
+  uint8_t readerMenuStyle = READER_MENU_LIST;
   // SD card font family name (empty = use built-in fontFamily)
   char sdFontFamilyName[32] = "";
   // Dictionary folder name under /dictionaries (empty = no dictionary)
@@ -307,6 +314,12 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t frontlightRestoreOnWake = 0;
   // Language setting (Language enum index, default 0 = EN)
   uint8_t language = 0;
+  // Keyboard layouts the user can reach, using keyboard_layouts::ALL table bits.
+  // 0 means "not configured", resolved to the UI language's layout plus English.
+  // Any other value is an explicit choice and is used as-is: the language of the
+  // books someone reads is not necessarily the language of their UI.
+  // See keyboard_layouts:: for the bit assignment and the defaulting rules.
+  uint16_t keyboardLayouts = 0;
   // Quick Resume: keep current content visible with moon icon instead of showing a static sleep screen.
   uint8_t quickResumeSleepScreen = QUICK_RESUME_NEVER;
 

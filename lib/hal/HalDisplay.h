@@ -61,10 +61,6 @@ class HalDisplay {
   // Power management
   void deepSleep();
 
-  // Install the slice hook that replaces the BUSY poll delay on proven-long
-  // waits (see EpdBus::setBusyWaitSliceHook for the contract)
-  void setBusyWaitSliceHook(bool (*sliceHook)(int8_t busyPin, uint8_t busyLevel));
-
   // Access to frame buffer
   uint8_t* getFrameBuffer() const;
 
@@ -94,7 +90,7 @@ class HalDisplay {
   void copyGrayscaleMsbBuffers(const uint8_t* msbBuffer);
   void cleanupGrayscaleBuffers(const uint8_t* bwBuffer);
 
-  void displayGrayBuffer(bool turnOffScreen = false, const unsigned char* lut = nullptr, bool factoryMode = false);
+  void displayGrayBuffer(bool turnOffScreen = false);
 
   // Tiled grayscale: stream one band of a plane (lsbPlane selects LSB/MSB RAM)
   // straight to the controller; supportsStripGrayscale() gates the path. See

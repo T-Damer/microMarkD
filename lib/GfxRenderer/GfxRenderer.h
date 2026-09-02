@@ -28,13 +28,7 @@ enum Color : uint8_t { Clear = 0x00, White = 0x01, LightGray = 0x05, DarkGray = 
 
 class GfxRenderer {
  public:
-  enum RenderMode {
-    BW,                // 1-bit black/white
-    GRAYSCALE_LSB,     // Differential gray: mark pixels for LSB plane (clearScreen(0x00) + drawPixel(false))
-    GRAYSCALE_MSB,     // Differential gray: mark pixels for MSB plane (clearScreen(0x00) + drawPixel(false))
-    FACTORY_GRAY_LSB,  // Factory absolute gray: encode BW RAM = bit0 (clearScreen(0x00) + drawPixel(false))
-    FACTORY_GRAY_MSB,  // Factory absolute gray: encode RED RAM = bit1 (clearScreen(0x00) + drawPixel(false))
-  };
+  enum RenderMode { BW, GRAYSCALE_LSB, GRAYSCALE_MSB };
 
   // Logical screen orientation from the perspective of callers
   enum Orientation {
@@ -43,12 +37,6 @@ class GfxRenderer {
     PortraitInverted,          // 480x800 logical coordinates, inverted
     LandscapeCounterClockwise  // 800x480 logical coordinates, native panel orientation
   };
-
-  // Display state — tracks whether the physical display was last updated via a factory LUT render.
-  // BW: frameBuffer mirrors the display (menus, EPUB reader).
-  // FactoryLut: display holds a grayscale image; frameBuffer has been reset to white by
-  // cleanupGrayscaleWithFrameBuffer() and no longer represents what is visually shown.
-  enum class DisplayState { BW, FactoryLut };
 
  private:
   static constexpr size_t BW_BUFFER_CHUNK_SIZE = 8000;  // 8KB chunks to allow for non-contiguous memory
@@ -64,7 +52,6 @@ class GfxRenderer {
   uint32_t frameBufferSize = HalDisplay::BUFFER_SIZE;
   std::vector<uint8_t*> bwBufferChunks;
   std::map<int, EpdFontFamily> fontMap;
-  mutable DisplayState displayState = DisplayState::BW;
   // Mutable because ensureSdCardFontReady() is const (called from layout code
   // that holds a const GfxRenderer&) but triggers SD card reads and heap
   // allocation inside the SdCardFont objects. Same pragmatic compromise as
@@ -76,6 +63,13 @@ class GfxRenderer {
   // recording to the (non-const) FontCacheManager. Same pragmatic compromise
   // as before, concentrated in a single pointer instead of four fields.
   mutable FontCacheManager* fontCacheManager_ = nullptr;
+
+  // One-shot refresh promotion (see promoteNextRefresh). Mutable because
+  // displayBuffer() is const but must consume the flag.
+  mutable bool promotedRefreshPending_ = false;
+  mutable HalDisplay::RefreshMode promotedRefresh_ = HalDisplay::FAST_REFRESH;
+  // Swap in (and clear) the promoted mode, if one is pending.
+  HalDisplay::RefreshMode applyPromotedRefresh(HalDisplay::RefreshMode refreshMode) const;
 
   // Tiled grayscale strip target. When active, drawPixel()/clearScreen()
   // operate on a caller-owned scratch holding one horizontal band of physical
@@ -146,6 +140,21 @@ class GfxRenderer {
   }
   void setFontCacheManager(FontCacheManager* m) { fontCacheManager_ = m; }
   FontCacheManager* getFontCacheManager() const { return fontCacheManager_; }
+  // Batch-prewarm CJK fallback glyphs for a screenful of static strings in ONE
+  // SD pass. List screens redraw every visible row on each repaint; without an
+  // up-front batch each row's draw prewarms per-string, and under heap
+  // pressure (union merge disabled) each string evicts the previous one — SD
+  // reads on every repaint forever. Call once when the screen's strings are
+  // known (data load); later measures/draws become RAM-only subset hits.
+  // No-op when nothing routes to an SD fallback.
+  // The getter form fetches strings one at a time (allocation-free — callers
+  // must NOT build a concatenated std::string: its bare-new growth aborts on
+  // the heap-tight screens this exists for). A null getter result skips that
+  // index.
+  using TextGetter = const char* (*)(const void* ctx, uint32_t index);
+  void prewarmFallbackText(int fontId, TextGetter getter, const void* ctx, uint32_t textCount,
+                           EpdFontFamily::Style style = EpdFontFamily::REGULAR) const;
+  void prewarmFallbackText(int fontId, const char* text, EpdFontFamily::Style style = EpdFontFamily::REGULAR) const;
   bool isFontCacheScanning() const;
   const std::map<int, EpdFontFamily>& getFontMap() const { return fontMap; }
   void registerSdCardFont(int fontId, SdCardFont* font) { sdCardFonts_[fontId] = font; }
@@ -185,6 +194,15 @@ class GfxRenderer {
   int getScreenHeight() const;
   void tapToLogical(float nx, float ny, int& outX, int& outY) const;
   void displayBuffer(HalDisplay::RefreshMode refreshMode = HalDisplay::FAST_REFRESH) const;
+  // One-shot: the next displayBuffer()/displayBufferAsync() call uses `mode`
+  // instead of what its caller asked for, then the override clears itself.
+  // Lets a closing overlay (the control center's refresh tile) hand a
+  // ghost-cleanup waveform to the repaint of whatever screen is underneath,
+  // which it cannot reach directly.
+  void promoteNextRefresh(const HalDisplay::RefreshMode mode) const {
+    promotedRefreshPending_ = true;
+    promotedRefresh_ = mode;
+  }
   // Non-blocking refresh: starts the waveform and returns so CPU work (e.g.
   // grayscale strip rendering) can overlap the panel's refresh time. The
   // framebuffer must stay untouched until waitRefreshComplete(). Falls back to
@@ -295,8 +313,6 @@ class GfxRenderer {
                            EpdFontFamily::Style style = EpdFontFamily::REGULAR) const;
   int getTextHeight(int fontId) const;
 
-  DisplayState getDisplayState() const { return displayState; }
-
   // Grayscale functions
   void setRenderMode(const RenderMode mode) { this->renderMode = mode; }
   RenderMode getRenderMode() const { return renderMode; }
@@ -312,7 +328,7 @@ class GfxRenderer {
   void displayGrayscaleBase(HalDisplay::RefreshMode fallback = HalDisplay::HALF_REFRESH) const;
   void copyGrayscaleLsbBuffers() const;
   void copyGrayscaleMsbBuffers() const;
-  void displayGrayBuffer(const unsigned char* lut = nullptr, bool factoryMode = false) const;
+  void displayGrayBuffer() const;
 
   // Tiled grayscale (X4): stream one band of a plane straight to controller RAM
   // from `scratch` (panelWidthBytes * numRows, physical rows [yStart, yStart+

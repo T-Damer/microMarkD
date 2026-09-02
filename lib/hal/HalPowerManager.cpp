@@ -4,7 +4,6 @@
 #include <Logging.h>
 #include <PowerManager.h>
 #include <WiFi.h>
-#include <driver/gpio.h>
 #include <esp_sleep.h>
 #include <soc/soc_caps.h>
 
@@ -19,21 +18,18 @@
 
 HalPowerManager powerManager;  // Singleton instance
 
-// GPIO13 must stay high during light sleep on the C3 Xteink boards: it controls
-// the X4 battery latch and the X3 SD power rail. Other boards use it for
-// unrelated signals, including the X4 Pro display chip select.
+// GPIO13 controls the X4 battery latch and the X3 SD power rail on the C3
+// Xteink boards. Other boards use it for unrelated signals, including the
+// X4 Pro display chip select.
 static constexpr gpio_num_t XTEINK_C3_GPIO13 = GPIO_NUM_13;
 
 void HalPowerManager::begin() {
   if (BoardConfig::ACTIVE.batteryAdc >= 0) {
     pinMode(BoardConfig::ACTIVE.batteryAdc, INPUT);
   }
-  mainLoopTask = xTaskGetCurrentTaskHandle();  // Arduino runs setup() on the loop task
   normalFreq = getCpuFrequencyMhz();
   modeMutex = xSemaphoreCreateMutex();
   assert(modeMutex != nullptr);
-  sleepMutex = xSemaphoreCreateMutex();
-  assert(sleepMutex != nullptr);
 }
 
 void HalPowerManager::setPowerSaving(bool enabled) {
@@ -84,18 +80,36 @@ void HalPowerManager::startDeepSleep(HalGPIO& gpio) const {
   if (gpio.isXteinkDevice()) {
     // GPIO13 gates the battery MOSFET on both Xteink C3 boards; driving it low
     // is the battery power-off (the SDK wake source still handles USB power).
-    // Unlike upstream, X3 is included: lightSleep() pad-holds the latch HIGH
-    // persistently while running (the IDF flash-leakage workaround would drop
-    // it mid-slice, hard-powering the device off), so the implicit low that
-    // upstream's X3 relies on never happens here — release the hold and drive
-    // the latch low explicitly. The hold_en survives deep sleep via the SDK's
-    // deepSleep() (esp_sleep_config_gpio_isolate + gpio_deep_sleep_hold_en).
+    // Release any surviving pad hold first: hold_en survives deep sleep via
+    // the SDK's deepSleep() (esp_sleep_config_gpio_isolate +
+    // gpio_deep_sleep_hold_en), and a held pad silently ignores the drive.
     gpio_hold_dis(XTEINK_C3_GPIO13);
     gpio_set_direction(XTEINK_C3_GPIO13, GPIO_MODE_OUTPUT);
     gpio_set_level(XTEINK_C3_GPIO13, 0);
     gpio_hold_en(XTEINK_C3_GPIO13);
   }
 #endif
+
+  // Hold every configured power-latch pin HIGH through deep sleep. These are
+  // keep-alive enables (the X4 Pro's master peripheral rail on GPIO1, the
+  // Sticky's PWR_HOLD/PWR_LOCK): deepSleep() isolates all pads
+  // (esp_sleep_config_gpio_isolate), so a latch without an armed hold loses its
+  // output driver and floats — on the X4 Pro the latch drops as soon as
+  // external power leaves (serial/pogo adapter unplugged), and the next power-
+  // button press cold-boots instead of fast-waking. holdPowerRails() asserted
+  // the latches at boot but arms no sleep hold; arm it here instead. Skips
+  // XTEINK_C3_GPIO13: it IS power.latch0 on the C3 Xteink boards, where the
+  // block above drives it LOW on purpose (battery power-off).
+  for (const int8_t pin : {BoardConfig::ACTIVE.power.latch0, BoardConfig::ACTIVE.power.latch1}) {
+    if (pin < 0 || static_cast<gpio_num_t>(pin) == XTEINK_C3_GPIO13) continue;
+    const auto g = static_cast<gpio_num_t>(pin);
+    // Release any surviving pad hold first: a held pad silently ignores the
+    // drive below (same trap as the GPIO13 block above).
+    gpio_hold_dis(g);
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, HIGH);
+    gpio_hold_en(g);
+  }
 
   // Cut the gated peripheral rails (touch/SD/EPD on boards like the Sticky) and
   // hold the enables off through deep sleep — otherwise the GT911 and SD card
