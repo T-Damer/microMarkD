@@ -767,13 +767,6 @@ void KeyboardEntryActivity::render(RenderLock&&) {
   // The cursor spans a whole code point: a lone byte of it renders as a replacement glyph.
   // Masking is per byte, so displayText keeps text's length and the same span applies to both.
   const size_t cursorCharBytes = (cursorPos < text.length()) ? utf8Next(text, cursorPos) - cursorPos : 0;
-  char cursorChar[8] = {};         // the character under the cursor
-  char displayCursorChar[8] = {};  // same span of displayText, masked for passwords
-  if (cursorCharBytes > 0) {
-    const size_t n = std::min(cursorCharBytes, sizeof(cursorChar) - 1);
-    memcpy(cursorChar, text.data() + cursorPos, n);
-    memcpy(displayCursorChar, displayText.data() + cursorPos, n);
-  }
 
   int cursorCharWidth = 6;
   if (cursorPos < text.length() && text[cursorPos] != '\n') {
@@ -803,18 +796,20 @@ void KeyboardEntryActivity::render(RenderLock&&) {
           beforeCursor = displayText.substr(lineStartIdx, cursorPos - lineStartIdx);
         }
         int beforeWidth = renderer.getTextAdvanceX(UI_12_FONT_ID, beforeCursor.c_str(), EpdFontFamily::REGULAR);
-        int throughCursorWidth = beforeWidth;
+        int beforeAndCursorWidth = beforeWidth;
         int kernOffset = 0;
         if (cursorPos < displayText.length() && displayText[cursorPos] != '\n') {
           std::string beforeAndCursor = beforeCursor + displayText.substr(cursorPos, 1);
-          int beforeAndCursorWidth =
+          beforeAndCursorWidth =
               renderer.getTextAdvanceX(UI_12_FONT_ID, beforeAndCursor.c_str(), EpdFontFamily::REGULAR);
           int charAdvance =
               renderer.getTextAdvanceX(UI_12_FONT_ID, displayText.substr(cursorPos, 1).c_str(), EpdFontFamily::REGULAR);
           kernOffset = beforeAndCursorWidth - beforeWidth - charAdvance;
         }
         if (isRtl) {
-          const int logicalWidth = cursorMode && cursorCharBytes > 0 ? throughCursorWidth : beforeWidth;
+          const int logicalWidth = cursorMode && cursorPos < displayText.length() && displayText[cursorPos] != '\n'
+                                       ? beforeAndCursorWidth
+                                       : beforeWidth;
           cursorPixelX = lineStartX + textWidth - logicalWidth;
         } else {
           cursorPixelX = lineStartX + beforeWidth + kernOffset;
