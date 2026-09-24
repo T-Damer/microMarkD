@@ -2,8 +2,8 @@
 
 #ifdef MICROMARKD_APP
 
-#include <cstdint>
 #include <array>
+#include <cstdint>
 #include <string>
 
 class WeatherWidget {
