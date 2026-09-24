@@ -439,7 +439,8 @@ void MarkdownSyncActivity::loadBookIndex() {
     auto& row = rowItems_[i + 2];
     row.label = bookLabels_[i].c_str();
     row.subtitle = bookSubtitles_[i].c_str();
-    row.icon = listIconFor(UITheme::getFileIcon(path), 32);
+    row.icon = local ? listIconFor(UITheme::getFileIcon(path), 32)
+                     : fui::bitmapFromIcon(icon_book_download_32);
     row.actionValue = static_cast<int16_t>(i + 2);
   }
 }
