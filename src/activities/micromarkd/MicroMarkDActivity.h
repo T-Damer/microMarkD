@@ -11,7 +11,7 @@
 
 class MicroMarkDActivity final : public UiListActivity {
  public:
-  static constexpr int MENU_ITEM_COUNT = 7;
+  static constexpr int MENU_ITEM_COUNT = 8;
 
   explicit MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 

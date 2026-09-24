@@ -10,6 +10,8 @@
 #include <MarkdownRecoveryPlan.h>
 
 #include <algorithm>
+#include <array>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <utility>
@@ -34,18 +36,40 @@ namespace fui = freeink::ui;
 
 namespace {
 constexpr int VAULT_INDEX = 0;
-constexpr int RECENT_INDEX = 1;
-constexpr int SEARCH_INDEX = 2;
-constexpr int TAGS_INDEX = 3;
-constexpr int GRAPH_INDEX = 4;
-constexpr int NEW_NOTE_INDEX = 5;
-constexpr int SYNC_INDEX = 6;
+constexpr int BOOKS_INDEX = 1;
+constexpr int RECENT_INDEX = 2;
+constexpr int SEARCH_INDEX = 3;
+constexpr int TAGS_INDEX = 4;
+constexpr int GRAPH_INDEX = 5;
+constexpr int NEW_NOTE_INDEX = 6;
+constexpr int SYNC_INDEX = 7;
 constexpr freeink::ui::ActionId ACTION_WIDGET_SETTINGS = 3;
 constexpr freeink::ui::ActionId ACTION_WIDGET_NEXT = 4;
 constexpr freeink::ui::ActionId ACTION_WIDGET_OPEN_BOOK = 5;
 constexpr char VAULT_ROOT[] = "/vault";
+constexpr char BOOK_INDEX[] = "/books/.git/esp32git-index";
 constexpr size_t MAX_NOTE_TITLE_BYTES = 96;
 constexpr size_t MAX_SEARCH_QUERY_BYTES = 96;
+
+std::string findBooksFolder() {
+  std::vector<std::string> directories{VAULT_ROOT};
+  std::array<char, 500> name{};
+  for (size_t i = 0; i < directories.size(); ++i) {
+    auto directory = Storage.open(directories[i].c_str());
+    if (!directory || !directory.isDirectory()) continue;
+    for (auto entry = directory.openNextFile(); entry; entry = directory.openNextFile()) {
+      entry.getName(name.data(), name.size());
+      const bool isDirectory = entry.isDirectory();
+      entry.close();
+      if (!isDirectory || name[0] == '.') continue;
+      const std::string path = directories[i] + "/" + name.data();
+      if (std::strcmp(name.data(), "Books") == 0) return path;
+      // ponytail: cap the scan at 128 folders to avoid a large SD tree consuming device RAM.
+      if (directories.size() < 128) directories.push_back(path);
+    }
+  }
+  return {};
+}
 }  // namespace
 
 MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
@@ -60,6 +84,7 @@ MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager
   };
 
   setTranslatedRow(VAULT_INDEX, StrId::STR_MICROMARKD_VAULT, StrId::STR_MICROMARKD_VAULT_DESC, UIIcon::Folder);
+  setTranslatedRow(BOOKS_INDEX, StrId::STR_MICROMARKD_BOOKS, StrId::STR_MICROMARKD_BOOKS_DESC, UIIcon::Book);
   setTranslatedRow(RECENT_INDEX, StrId::STR_MICROMARKD_RECENT, StrId::STR_MICROMARKD_RECENT_DESC, UIIcon::Recent);
   setTranslatedRow(SEARCH_INDEX, StrId::STR_MICROMARKD_SEARCH, StrId::STR_MICROMARKD_SEARCH_DESC, UIIcon::Search);
 
@@ -235,6 +260,16 @@ void MicroMarkDActivity::activateIndex(const int index) {
 
   if (index == VAULT_INDEX) {
     activityManager.pushActivity(std::make_unique<MarkdownVaultActivity>(renderer, mappedInput, VAULT_ROOT));
+    return;
+  }
+
+  if (index == BOOKS_INDEX) {
+    const std::string path = Storage.exists(BOOK_INDEX) ? std::string(VAULT_ROOT) + "/Books" : findBooksFolder();
+    if (path.empty()) {
+      activityManager.pushActivity(std::make_unique<MarkdownSyncActivity>(renderer, mappedInput));
+    } else {
+      activityManager.pushActivity(std::make_unique<MarkdownVaultActivity>(renderer, mappedInput, path));
+    }
     return;
   }
 

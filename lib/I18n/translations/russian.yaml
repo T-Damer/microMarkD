@@ -2,6 +2,12 @@ _language_name: "Русский"
 _language_code: "RU"
 _order: "6"
 
+STR_MICROMARKD_BOOKS: "Книги"
+STR_MICROMARKD_BOOKS_DESC: "Открыть папку Books в хранилище"
+STR_MICROMARKD_NOTHING_YET: "Пока ничего нет"
+STR_MICROMARKD_CREATE_FILE: "Создать файл"
+STR_MICROMARKD_PULL_REPO: "Загрузить репозиторий"
+
 STR_MICROMARKD_GIT_CONFLICT: "Локальные изменения конфликтуют с Git; сохраните обе копии"
 STR_MICROMARKD_GIT_COMPLETE: "Загрузить весь vault на SD"
 STR_MICROMARKD_GIT_COMPLETE_DESC: "Догрузить вложения (большая загрузка)"

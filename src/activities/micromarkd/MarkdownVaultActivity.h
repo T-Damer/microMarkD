@@ -28,6 +28,7 @@ class MarkdownVaultActivity final : public UiListActivity {
   static constexpr freeink::ui::ActionId ACTION_HOME = ACTION_USER;
   static constexpr freeink::ui::ActionId ACTION_NEW_NOTE = ACTION_USER + 1;
   static constexpr freeink::ui::ActionId ACTION_NEW_FOLDER = ACTION_USER + 2;
+  static constexpr freeink::ui::ActionId ACTION_PULL_REPO = ACTION_USER + 3;
 
   std::string path_;
   std::string header_;

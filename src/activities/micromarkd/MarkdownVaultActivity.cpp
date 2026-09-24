@@ -59,6 +59,7 @@ void MarkdownVaultActivity::onEnter() {
   app.on(ACTION_HOME, &MarkdownVaultActivity::toolbarActionTrampoline, this);
   app.on(ACTION_NEW_NOTE, &MarkdownVaultActivity::toolbarActionTrampoline, this);
   app.on(ACTION_NEW_FOLDER, &MarkdownVaultActivity::toolbarActionTrampoline, this);
+  app.on(ACTION_PULL_REPO, &MarkdownVaultActivity::toolbarActionTrampoline, this);
   loadFailed_ = !normalisePath();
   if (!loadFailed_) loadEntries();
 }
@@ -87,7 +88,7 @@ bool MarkdownVaultActivity::normalisePath() {
 }
 
 bool MarkdownVaultActivity::isBookView() const {
-  return path_ == BOOK_PREFIX || path_.rfind(std::string(BOOK_PREFIX) + "/", 0) == 0;
+  return Storage.exists(BOOK_INDEX) && (path_ == BOOK_PREFIX || path_.rfind(std::string(BOOK_PREFIX) + "/", 0) == 0);
 }
 
 std::string MarkdownVaultActivity::storagePath(const std::string& virtualPath) const {
@@ -181,7 +182,8 @@ void MarkdownVaultActivity::loadEntries() {
 
 void MarkdownVaultActivity::rebuildRows() {
   const bool showActionRows = !mappedInput.hasTouch();
-  const int actionCount = isBookView() ? 2 : ACTION_ROW_COUNT;
+  const bool emptyVault = path_ == VAULT_ROOT && entries_.empty();
+  const int actionCount = emptyVault ? 2 : isBookView() ? 2 : ACTION_ROW_COUNT;
   const size_t count = entries_.size() + (showActionRows ? actionCount : 0);
   rowNames_.resize(count);
   rowExtensions_.resize(count);
@@ -213,12 +215,13 @@ void MarkdownVaultActivity::rebuildRows() {
       fui::bitmapFromIcon(icon_folder_plus_24)};
   for (int action = 0; action < actionCount; action++) {
     const size_t index = actionStart + static_cast<size_t>(action);
-    rowNames_[index] = actionLabels[action];
+    rowNames_[index] = emptyVault ? (action == 0 ? tr(STR_MICROMARKD_CREATE_FILE) : tr(STR_MICROMARKD_PULL_REPO))
+                                  : actionLabels[action];
     rowExtensions_[index].clear();
 
     fui::ListItem item{};
     item.label = rowNames_[index].c_str();
-    item.icon = actionIcons[action];
+    item.icon = emptyVault ? listIconFor(action == 0 ? UIIcon::NewNote : UIIcon::Git) : actionIcons[action];
     item.actionValue = static_cast<int16_t>(index);
     rowItems_.push_back(item);
   }
@@ -236,6 +239,9 @@ void MarkdownVaultActivity::toolbarActionTrampoline(const fui::ActionEvent& even
       break;
     case ACTION_NEW_FOLDER:
       self->startNewFolder();
+      break;
+    case ACTION_PULL_REPO:
+      activityManager.pushActivity(std::make_unique<MarkdownSyncActivity>(self->renderer, self->mappedInput));
       break;
     default:
       break;
@@ -265,6 +271,11 @@ void MarkdownVaultActivity::activateIndex(const int index) {
   app.clearTapFlash();
 
   if (!mappedInput.hasTouch() && static_cast<size_t>(index) >= entries_.size()) {
+    if (path_ == VAULT_ROOT && entries_.empty()) {
+      if (index == 0) startNewNoteHere();
+      if (index == 1) activityManager.pushActivity(std::make_unique<MarkdownSyncActivity>(renderer, mappedInput));
+      return;
+    }
     switch (static_cast<size_t>(index) - entries_.size()) {
       case 0:
         navigateToParent();
@@ -680,6 +691,10 @@ void MarkdownVaultActivity::navigateButtons() {
 
 void MarkdownVaultActivity::onBackButton() {
   if (!mappedInput.hasTouch()) {
+    if (path_ == VAULT_ROOT && entries_.empty()) {
+      finish();
+      return;
+    }
     const bool actionFocused = nav.selected >= static_cast<int>(entries_.size());
     moveSelectionTo(actionFocused ? 0 : static_cast<int>(entries_.size()));
     return;
@@ -759,6 +774,31 @@ void MarkdownVaultActivity::buildScreen(UiScreen& screen) {
   if (loadFailed_) {
     screen.centeredText("Could not open vault", screen.theme().bodyText);
     return;
+  }
+
+  if (path_ == VAULT_ROOT && entries_.empty()) {
+    screen.spacer(static_cast<int16_t>(screen.body().height / 4));
+    fui::TextStyle centered = screen.theme().bodyText;
+    centered.align = fui::TextAlign::Center;
+    screen.target().text(screen.takeTop(screen.theme().rowHeight, screen.theme().spaceSm),
+                         tr(STR_MICROMARKD_NOTHING_YET), centered);
+    if (mappedInput.hasTouch()) {
+      fui::ButtonProps create{};
+      create.label = tr(STR_MICROMARKD_CREATE_FILE);
+      create.action = ACTION_NEW_NOTE;
+      create.inputMask = fui::InputTouch;
+      create.styles = fui::outlinedButtonStyles(6);
+      screen.button(create,
+                    screen.takeTop(screen.theme().rowHeight, screen.theme().spaceSm).inset(fui::Insets{0, 16, 0, 16}));
+      fui::ButtonProps pull{};
+      pull.label = tr(STR_MICROMARKD_PULL_REPO);
+      pull.action = ACTION_PULL_REPO;
+      pull.inputMask = fui::InputTouch;
+      pull.styles = fui::outlinedButtonStyles(6);
+      screen.button(pull,
+                    screen.takeTop(screen.theme().rowHeight, screen.theme().spaceSm).inset(fui::Insets{0, 16, 0, 16}));
+      return;
+    }
   }
 
   fui::ListProps props{};
