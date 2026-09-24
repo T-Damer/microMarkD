@@ -348,7 +348,7 @@ void MarkdownSyncActivity::onEnter() {
   if (indexer_.complete()) {
     manifestSaved_ = saveManifest();
     status_ = credentialsSaveFailed_ ? tr(STR_MICROMARKD_GIT_CREDENTIALS_SAVE_FAILED)
-              : manifestSaved_       ? tr(STR_MICROMARKD_SYNC_SAVED)
+              : manifestSaved_       ? ""
                                      : tr(STR_MICROMARKD_SYNC_FAILED);
     phase_ = remoteUrl_.empty() ? Phase::Ready : Phase::Complete;
   }
@@ -372,7 +372,7 @@ void MarkdownSyncActivity::loop() {
   if (indexer_.complete() && !indexer_.hasRecord() && !manifestSaved_) {
     manifestSaved_ = saveManifest();
     status_ = credentialsSaveFailed_ ? tr(STR_MICROMARKD_GIT_CREDENTIALS_SAVE_FAILED)
-              : manifestSaved_       ? tr(STR_MICROMARKD_SYNC_SAVED)
+              : manifestSaved_       ? ""
                                      : tr(STR_MICROMARKD_SYNC_FAILED);
     phase_ = remoteUrl_.empty() ? Phase::Ready : Phase::Complete;
     refreshActionRow();
@@ -636,11 +636,13 @@ void MarkdownSyncActivity::buildScreen(UiScreen& screen) {
   const auto& metrics = UITheme::getInstance().getMetrics();
   screen.setContentMargin(fui::Insets{static_cast<int16_t>(metrics.topPadding + metrics.headerHeight), 0,
                                       static_cast<int16_t>(metrics.buttonHintsHeight), 0});
-  fui::TextStyle statusStyle = screen.theme().bodyText;
-  statusStyle.align = fui::TextAlign::Center;
-  const int16_t lineHeight = screen.target().lineHeight(statusStyle.font);
-  screen.target().text(screen.takeTop(lineHeight), status_.c_str(), statusStyle);
-  screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
+  if (!status_.empty()) {
+    fui::TextStyle statusStyle = screen.theme().bodyText;
+    statusStyle.align = fui::TextAlign::Center;
+    const int16_t lineHeight = screen.target().lineHeight(statusStyle.font);
+    screen.target().text(screen.takeTop(lineHeight), status_.c_str(), statusStyle);
+    screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
+  }
 
   fui::ListProps props{};
   props.items = rowItems_.data();
