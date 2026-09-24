@@ -24,12 +24,14 @@
 #include "activities/micromarkd/MarkdownEditorActivity.h"
 #include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "activities/micromarkd/MarkdownRecovery.h"
+#include "activities/micromarkd/MarkdownSyncActivity.h"
 #include "activities/reader/ReaderActivity.h"
 #include "activities/util/ConfirmationActivity.h"
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
 #include "components/icons/back32.h"
+#include "components/icons/customListIcons.h"
 #include "util/BookCacheUtils.h"
 
 namespace fui = freeink::ui;
@@ -37,6 +39,8 @@ namespace fui = freeink::ui;
 namespace {
 constexpr char VAULT_ROOT[] = "/vault";
 constexpr char VAULT_PREFIX[] = "/vault/";
+constexpr char BOOK_PREFIX[] = "/vault/Books";
+constexpr char BOOK_INDEX[] = "/books/.git/esp32git-index";
 
 bool notePathReserved(const std::string& path) {
   return Storage.exists(path.c_str()) || Storage.exists((path + micromarkd::NOTE_TEMPORARY_SUFFIX).c_str()) ||
@@ -75,10 +79,57 @@ bool MarkdownVaultActivity::normalisePath() {
   if (path_ != VAULT_ROOT && path_.rfind(VAULT_PREFIX, 0) != 0) return false;
 
   if (!Storage.exists(VAULT_ROOT) && !Storage.mkdir(VAULT_ROOT, true)) return false;
+  if (isBookView()) return Storage.exists(BOOK_INDEX);
   auto root = Storage.open(path_.c_str());
   if (!root || !root.isDirectory()) return false;
   root.close();
   return true;
+}
+
+bool MarkdownVaultActivity::isBookView() const {
+  return path_ == BOOK_PREFIX || path_.rfind(std::string(BOOK_PREFIX) + "/", 0) == 0;
+}
+
+std::string MarkdownVaultActivity::storagePath(const std::string& virtualPath) const {
+  if (virtualPath == BOOK_PREFIX || virtualPath.rfind(std::string(BOOK_PREFIX) + "/", 0) == 0) {
+    return "/books" + virtualPath.substr(std::strlen(VAULT_ROOT));
+  }
+  return virtualPath;
+}
+
+void MarkdownVaultActivity::loadBookEntries() {
+  HalFile index;
+  if (!Storage.openFileForRead("MDV", BOOK_INDEX, index)) return;
+  const std::string prefix = path_.substr(std::strlen(VAULT_PREFIX)) + "/";
+  std::string line;
+  uint8_t buffer[192];
+  for (;;) {
+    const int got = index.read(buffer, sizeof(buffer));
+    if (got <= 0) break;
+    for (int i = 0; i < got; ++i) {
+      if (buffer[i] == '\n') {
+        if (line.size() > 41 && line[40] == ' ') {
+          const std::string_view gitPath(line.data() + 41, line.size() - 41);
+          if (gitPath.rfind(prefix, 0) == 0 && gitPath.rfind("Books/files/", 0) == 0) {
+            const std::string_view remaining = gitPath.substr(prefix.size());
+            const size_t separator = remaining.find('/');
+            const std::string entry = separator == std::string_view::npos
+                                          ? std::string(remaining)
+                                          : std::string(remaining.substr(0, separator + 1));
+            const bool supported = separator != std::string_view::npos || FsHelpers::hasEpubExtension(remaining) ||
+                                   FsHelpers::hasXtcExtension(remaining);
+            if (supported && entries_.size() < 256 &&
+                std::find(entries_.begin(), entries_.end(), entry) == entries_.end()) {
+              entries_.push_back(entry);
+            }
+          }
+        }
+        line.clear();
+      } else if (line.size() < 1024) {
+        line.push_back(static_cast<char>(buffer[i]));
+      }
+    }
+  }
 }
 
 void MarkdownVaultActivity::loadEntries() {
@@ -86,30 +137,37 @@ void MarkdownVaultActivity::loadEntries() {
   status_.clear();
   loadFailed_ = false;
 
-  auto root = Storage.open(path_.c_str());
-  if (!root || !root.isDirectory()) {
-    loadFailed_ = true;
-    rebuildRows();
-    return;
-  }
-
-  root.rewindDirectory();
-  for (auto file = root.openNextFile(); file; file = root.openNextFile()) {
-    file.getName(nameBuffer_.data(), nameBuffer_.size());
-    const bool isDirectory = file.isDirectory();
-    file.close();
-
-    if (nameBuffer_[0] == '.' || std::strcmp(nameBuffer_.data(), "System Volume Information") == 0) continue;
-    const std::string_view filename{nameBuffer_.data()};
-
-    if (isDirectory) {
-      entries_.emplace_back(std::string(nameBuffer_.data()) + "/");
-    } else if (FsHelpers::hasMarkdownExtension(filename) || FsHelpers::hasTxtExtension(filename) ||
-               FsHelpers::hasEpubExtension(filename) || FsHelpers::hasXtcExtension(filename)) {
-      entries_.emplace_back(nameBuffer_.data());
+  if (isBookView()) {
+    loadBookEntries();
+  } else {
+    auto root = Storage.open(path_.c_str());
+    if (!root || !root.isDirectory()) {
+      loadFailed_ = true;
+      rebuildRows();
+      return;
     }
+
+    root.rewindDirectory();
+    for (auto file = root.openNextFile(); file; file = root.openNextFile()) {
+      file.getName(nameBuffer_.data(), nameBuffer_.size());
+      const bool isDirectory = file.isDirectory();
+      file.close();
+
+      if (nameBuffer_[0] == '.' || std::strcmp(nameBuffer_.data(), "System Volume Information") == 0) continue;
+      const std::string_view filename{nameBuffer_.data()};
+
+      if (isDirectory) {
+        entries_.emplace_back(std::string(nameBuffer_.data()) + "/");
+      } else if (FsHelpers::hasMarkdownExtension(filename) || FsHelpers::hasTxtExtension(filename) ||
+                 FsHelpers::hasEpubExtension(filename) || FsHelpers::hasXtcExtension(filename)) {
+        entries_.emplace_back(nameBuffer_.data());
+      }
+    }
+    root.close();
+    if (path_ == VAULT_ROOT && Storage.exists(BOOK_INDEX) &&
+        std::find(entries_.begin(), entries_.end(), "Books/") == entries_.end())
+      entries_.emplace_back("Books/");
   }
-  root.close();
 
   FsHelpers::sortFileList(entries_);
   rebuildRows();
@@ -123,7 +181,8 @@ void MarkdownVaultActivity::loadEntries() {
 
 void MarkdownVaultActivity::rebuildRows() {
   const bool showActionRows = !mappedInput.hasTouch();
-  const size_t count = entries_.size() + (showActionRows ? ACTION_ROW_COUNT : 0);
+  const int actionCount = isBookView() ? 2 : ACTION_ROW_COUNT;
+  const size_t count = entries_.size() + (showActionRows ? actionCount : 0);
   rowNames_.resize(count);
   rowExtensions_.resize(count);
   rowItems_.clear();
@@ -136,7 +195,10 @@ void MarkdownVaultActivity::rebuildRows() {
     fui::ListItem item{};
     item.label = rowNames_[i].c_str();
     if (!rowExtensions_[i].empty()) item.value = rowExtensions_[i].c_str();
-    item.icon = listIconFor(UITheme::getFileIcon(entries_[i]));
+    const bool remoteBook = isBookView() && !entries_[i].empty() && entries_[i].back() != '/' &&
+                            !Storage.exists(storagePath(fullPath(entries_[i])).c_str());
+    item.icon =
+        remoteBook ? fui::bitmapFromIcon(icon_book_download_32) : listIconFor(UITheme::getFileIcon(entries_[i]));
     item.actionValue = static_cast<int16_t>(i);
     rowItems_.push_back(item);
   }
@@ -149,7 +211,7 @@ void MarkdownVaultActivity::rebuildRows() {
   const fui::BitmapRef actionIcons[ACTION_ROW_COUNT] = {
       fui::bitmapFromIcon(icon_arrow_left_32), fui::bitmapFromIcon(icon_house_24), listIconFor(UIIcon::NewNote),
       fui::bitmapFromIcon(icon_folder_plus_24)};
-  for (int action = 0; action < ACTION_ROW_COUNT; action++) {
+  for (int action = 0; action < actionCount; action++) {
     const size_t index = actionStart + static_cast<size_t>(action);
     rowNames_[index] = actionLabels[action];
     rowExtensions_[index].clear();
@@ -232,6 +294,7 @@ void MarkdownVaultActivity::activateIndex(const int index) {
 
 void MarkdownVaultActivity::onRowLongPress(const int index) {
   if (index < 0 || static_cast<size_t>(index) >= entries_.size()) return;
+  if (isBookView()) return;
   app.clearTapFlash();
   nav.selected = index;
 
@@ -244,6 +307,7 @@ void MarkdownVaultActivity::onRowLongPress(const int index) {
 }
 
 void MarkdownVaultActivity::startNewNoteHere() {
+  if (isBookView()) return;
   startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "New note title", "",
                                                                  MAX_ENTRY_NAME_BYTES, InputType::Text),
                          [this](const ActivityResult& result) {
@@ -301,6 +365,7 @@ void MarkdownVaultActivity::openNewNoteEditor(const std::string& rawTitle) {
 }
 
 void MarkdownVaultActivity::startNewFolder() {
+  if (isBookView()) return;
   startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, "New folder", "",
                                                                  MAX_ENTRY_NAME_BYTES, InputType::Text),
                          [this](const ActivityResult& result) {
@@ -351,7 +416,24 @@ void MarkdownVaultActivity::openDirectory(const std::string& entry) {
   requestUpdate();
 }
 
-void MarkdownVaultActivity::openNote(const std::string& notePath) { openReader(notePath); }
+void MarkdownVaultActivity::openNote(const std::string& notePath) {
+  if (isBookView()) {
+    const std::string physical = storagePath(notePath);
+    if (!Storage.exists(physical.c_str())) {
+      setStatus(tr(STR_MICROMARKD_BOOK_DOWNLOADING));
+      requestUpdateAndWait();
+      std::string result;
+      if (!MarkdownSyncActivity::downloadBook(notePath.substr(std::strlen(VAULT_PREFIX)), result)) {
+        setStatus(std::move(result));
+        return;
+      }
+      loadEntries();
+    }
+    openReader(physical);
+    return;
+  }
+  openReader(notePath);
+}
 
 void MarkdownVaultActivity::openReader(const std::string& notePath) {
   auto reader = ReaderActivity::create(renderer, mappedInput, notePath, false);
@@ -695,8 +777,8 @@ void MarkdownVaultActivity::buildScreen(UiScreen& screen) {
 
 void MarkdownVaultActivity::drawFooter() {
   const auto labels =
-      mappedInput.mapLabels(tr(STR_BACK), listCount() == 0 ? "" : tr(STR_OPEN), listCount() == 0 ? "" : tr(STR_DIR_LEFT),
-                            listCount() == 0 ? "" : tr(STR_DIR_RIGHT));
+      mappedInput.mapLabels(tr(STR_BACK), listCount() == 0 ? "" : tr(STR_OPEN),
+                            listCount() == 0 ? "" : tr(STR_DIR_LEFT), listCount() == 0 ? "" : tr(STR_DIR_RIGHT));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 }
 

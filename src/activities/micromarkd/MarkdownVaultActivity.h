@@ -53,6 +53,9 @@ class MarkdownVaultActivity final : public UiListActivity {
 
   bool normalisePath();
   void loadEntries();
+  void loadBookEntries();
+  bool isBookView() const;
+  std::string storagePath(const std::string& virtualPath) const;
   void rebuildRows();
   void selectEntry(const std::string& entry);
   void setStatus(std::string message);

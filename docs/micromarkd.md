@@ -8,14 +8,34 @@ hardware support rather than as a feature of the focused reader firmware.
 
 The current bootstrap exposes:
 
-- **Vault** — a Markdown-only browser rooted at `/vault`;
+- **Vault** — a Markdown and book browser rooted at `/vault`;
 - **Recent notes** — persistent reader history filtered to existing vault notes;
 - **Search** — bounded, incremental full-text search over the vault;
 - **Tags** — an indexed tag browser backed by disposable metadata records;
 - **New note** — title entry followed by the line-oriented Markdown editor;
-- **Git sync** — optional verified-HTTPS clone/pull of a single `main` branch
-  from GitHub into the Markdown vault. Pack responses are streamed to SD;
+- **Git sync** — optional verified-HTTPS clone/pull of `main` notes and a
+  separate `books` branch. Pack responses are streamed to SD;
   commit/push and merge recovery remain separate follow-up work.
+- **Home widget** — Miami weather until a user chooses IP-based location or a
+  manual city, postal code, or coordinates. Swipe or tap to see the most recent
+  book and its saved EPUB progress; long-press or tap `...` for weather settings.
+
+Partial Git fetches use `blob:none`: only commits and trees arrive initially.
+Markdown/TXT notes are then downloaded explicitly. `Vault → Books` reads the
+`books` branch index as a virtual folder, marks absent EPUB/XTC files with a
+download icon, and fetches a selected immutable book by Git object ID. There
+is no book listing in the Git menu. The phone/desktop reader's progress and
+highlight files are not yet interoperable with the firmware's reader cache.
+
+After a successful private sync, the HTTPS remote and scoped token are saved
+under `/.micromarkd/sync/credentials.json` on SD so book downloads work after
+reboot. This file is outside both Git worktrees and is not encrypted; removing
+the SD card exposes the token.
+
+The weather widget saves its last response, including Open-Meteo's available
+16-day forecast, under `/.micromarkd/` on SD. The cache remains available
+offline for up to 30 days; it is not a 30-day future forecast. IP location is
+queried only after the user chooses it, and a VPN can make it inaccurate.
 
 The firmware target consumes `esp32-git` as an external dependency. The browser
 emulator keeps that package outside the simulator repository and uses a

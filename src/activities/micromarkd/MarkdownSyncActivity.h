@@ -12,6 +12,7 @@
 class MarkdownSyncActivity final : public UiListActivity {
  public:
   MarkdownSyncActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
+  static bool downloadBook(const std::string& path, std::string& status);
 
   void onEnter() override;
   void onExit() override;
@@ -33,18 +34,14 @@ class MarkdownSyncActivity final : public UiListActivity {
 
   MarkdownVaultIndexer indexer_;
   std::vector<freeink::ui::ListItem> rowItems_;
-  std::vector<std::string> bookPaths_;
-  std::vector<std::string> bookLabels_;
-  std::vector<std::string> bookSubtitles_;
   std::string status_;
   std::string remoteUrl_;
   std::string accessToken_;
   Phase phase_ = Phase::Indexing;
   bool manifestSaved_ = false;
+  bool credentialsSaveFailed_ = false;
 
   void refreshActionRow();
-  void loadBookIndex();
-  void openBook(size_t index);
   void completeVault();
   void promptRemoteUrl();
   void promptAccessToken();

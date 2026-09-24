@@ -2,23 +2,27 @@
 
 #ifdef MICROMARKD_APP
 
+#include <Epub.h>
+#include <FsHelpers.h>
 #include <HalStorage.h>
 #include <I18n.h>
 #include <MarkdownDocument.h>
 #include <MarkdownRecoveryPlan.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
 
+#include "RecentBooksStore.h"
 #include "activities/micromarkd/MarkdownEditorActivity.h"
 #include "activities/micromarkd/MarkdownGraphActivity.h"
-#include "activities/micromarkd/MarkdownSyncActivity.h"
 #include "activities/micromarkd/MarkdownRecentActivity.h"
 #include "activities/micromarkd/MarkdownRecovery.h"
 #include "activities/micromarkd/MarkdownSearchActivity.h"
+#include "activities/micromarkd/MarkdownSyncActivity.h"
 #include "activities/micromarkd/MarkdownTagsActivity.h"
 #include "activities/micromarkd/MarkdownVaultActivity.h"
 #include "activities/util/KeyboardEntryActivity.h"
@@ -29,20 +33,22 @@
 namespace fui = freeink::ui;
 
 namespace {
-constexpr int VAULT_INDEX = 0;
-constexpr int RECENT_INDEX = 1;
-constexpr int SEARCH_INDEX = 2;
-constexpr int TAGS_INDEX = 3;
-constexpr int GRAPH_INDEX = 4;
-constexpr int NEW_NOTE_INDEX = 5;
-constexpr int SYNC_INDEX = 6;
+constexpr int WIDGET_INDEX = 0;
+constexpr int VAULT_INDEX = 1;
+constexpr int RECENT_INDEX = 2;
+constexpr int SEARCH_INDEX = 3;
+constexpr int TAGS_INDEX = 4;
+constexpr int GRAPH_INDEX = 5;
+constexpr int NEW_NOTE_INDEX = 6;
+constexpr int SYNC_INDEX = 7;
+constexpr freeink::ui::ActionId ACTION_WIDGET_SETTINGS = 3;
 constexpr char VAULT_ROOT[] = "/vault";
 constexpr size_t MAX_NOTE_TITLE_BYTES = 96;
 constexpr size_t MAX_SEARCH_QUERY_BYTES = 96;
 }  // namespace
 
 MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
-    : UiListActivity("MicroMarkD", renderer, mappedInput) {
+    : UiListActivity("MicroMarkD", renderer, mappedInput, /*wantsTouchLongPress=*/true) {
   const auto setTranslatedRow = [this](const int index, const StrId label, const StrId description, const UIIcon icon) {
     fui::ListItem item{};
     item.label = I18N.get(label);
@@ -64,13 +70,124 @@ MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager
   rowItems_[TAGS_INDEX] = tags;
 
   setTranslatedRow(GRAPH_INDEX, StrId::STR_MICROMARKD_GRAPH, StrId::STR_MICROMARKD_GRAPH_DESC, UIIcon::Graph);
-  setTranslatedRow(NEW_NOTE_INDEX, StrId::STR_MICROMARKD_NEW_NOTE, StrId::STR_MICROMARKD_NEW_NOTE_DESC, UIIcon::NewNote);
+  setTranslatedRow(NEW_NOTE_INDEX, StrId::STR_MICROMARKD_NEW_NOTE, StrId::STR_MICROMARKD_NEW_NOTE_DESC,
+                   UIIcon::NewNote);
   setTranslatedRow(SYNC_INDEX, StrId::STR_MICROMARKD_SYNC, StrId::STR_MICROMARKD_SYNC_DESC, UIIcon::Git);
+  rowItems_[WIDGET_INDEX].actionValue = WIDGET_INDEX;
 }
 
 void MicroMarkDActivity::onEnter() {
   recoverInterruptedSaves();
   UiListActivity::onEnter();
+  app.on(ACTION_WIDGET_SETTINGS, &MicroMarkDActivity::widgetSettingsTrampoline, this);
+  weather_.load();
+  weather_.refresh();
+  updateWidget();
+  if (weather_.mode() == WeatherWidget::LocationMode::Unset) showWidgetSettings();
+}
+
+void MicroMarkDActivity::updateWidget() {
+  if (showWeather_) {
+    widgetLabel_ = std::string(tr(STR_MICROMARKD_WIDGET_WEATHER)) + " · " + weather_.place();
+    widgetSubtitle_ = weather_.hasWeather() ? std::to_string(weather_.temperature()) + " °C · " +
+                                                  std::to_string(weather_.forecastDays()) + " d"
+                                            : tr(STR_MICROMARKD_WIDGET_UNAVAILABLE);
+  } else {
+    widgetLabel_ = tr(STR_MICROMARKD_WIDGET_LAST_BOOK);
+    widgetSubtitle_ = tr(STR_MICROMARKD_WIDGET_NO_BOOK);
+    recentBookPath_.clear();
+    const auto& recent = RECENT_BOOKS.getBooks();
+    const auto bookIt = std::find_if(recent.begin(), recent.end(), [](const RecentBook& book) {
+      return FsHelpers::hasEpubExtension(book.path) || FsHelpers::hasXtcExtension(book.path);
+    });
+    if (bookIt != recent.end()) {
+      const auto& book = *bookIt;
+      recentBookPath_ = book.path;
+      widgetLabel_ = book.title.empty() ? book.path.substr(book.path.find_last_of('/') + 1) : book.title;
+      widgetSubtitle_ = tr(STR_MICROMARKD_WIDGET_LAST_BOOK);
+      if (FsHelpers::hasEpubExtension(book.path)) {
+        Epub epub(book.path, "/.crosspoint");
+        if (epub.load(false, true)) {
+          HalFile file;
+          if (Storage.openFileForRead("MDW", epub.getCachePath() + "/progress.bin", file)) {
+            uint8_t data[6];
+            if (file.read(data, sizeof(data)) == sizeof(data)) {
+              const int spine = data[0] | (data[1] << 8);
+              const int page = data[2] | (data[3] << 8);
+              const int total = data[4] | (data[5] << 8);
+              if (total > 0 && page <= total) {
+                const int percent = std::clamp(
+                    static_cast<int>(epub.calculateProgress(spine, static_cast<float>(page) / total) * 100), 0, 100);
+                widgetSubtitle_ = std::to_string(percent) + "% · " + std::to_string(page) + "/" + std::to_string(total);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  rowItems_[WIDGET_INDEX].label = widgetLabel_.c_str();
+  rowItems_[WIDGET_INDEX].subtitle = widgetSubtitle_.c_str();
+  rowItems_[WIDGET_INDEX].value = mappedInput.hasTouch() ? nullptr : "...";
+  requestUpdate();
+}
+
+void MicroMarkDActivity::showWidgetSettings() {
+  const char* options[] = {tr(STR_MICROMARKD_WIDGET_AUTO), tr(STR_MICROMARKD_WIDGET_MANUAL),
+                           tr(STR_MICROMARKD_WIDGET_REFRESH)};
+  popup_.show(tr(STR_MICROMARKD_WIDGET_SETUP), options, weather_.mode() == WeatherWidget::LocationMode::Unset ? 2 : 3,
+              0, [this](const int option) {
+                if (option == 0) {
+                  weather_.useAutomatic();
+                  updateWidget();
+                } else if (option == 1) {
+                  promptManualLocation();
+                } else if (option == 2) {
+                  weather_.refresh();
+                  updateWidget();
+                }
+              });
+  requestUpdate();
+}
+
+void MicroMarkDActivity::promptManualLocation() {
+  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_WIDGET_PLACE),
+                                                                 "Miami", 96, InputType::Text),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) return;
+                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+                           if (!keyboard) return;
+                           weather_.setManual(keyboard->text);
+                           updateWidget();
+                         });
+}
+
+void MicroMarkDActivity::widgetSettingsTrampoline(const fui::ActionEvent&, void* user) {
+  static_cast<MicroMarkDActivity*>(user)->showWidgetSettings();
+}
+
+void MicroMarkDActivity::onRowLongPress(const int index) {
+  if (index == WIDGET_INDEX) showWidgetSettings();
+}
+
+bool MicroMarkDActivity::handleCustomInput() {
+  if (popup_.isActive()) return popup_.handleInput(mappedInput, [this] { requestUpdate(); });
+  const auto swipe = mappedInput.wasSwipe();
+  if (swipe == MappedInputManager::SwipeDir::Left || swipe == MappedInputManager::SwipeDir::Right) {
+    showWeather_ = !showWeather_;
+    updateWidget();
+    return true;
+  }
+  return false;
+}
+
+void MicroMarkDActivity::render(RenderLock&&) {
+  renderer.clearScreen();
+  drawChrome();
+  renderUi();
+  drawFooter();
+  if (popup_.processRender(renderer, mappedInput)) return;
+  renderer.displayBuffer();
 }
 
 void MicroMarkDActivity::recoverInterruptedSaves() {
@@ -110,6 +227,16 @@ void MicroMarkDActivity::activateIndex(const int index) {
 
   app.clearTapFlash();
   nav.selected = index;
+
+  if (index == WIDGET_INDEX) {
+    if (showWeather_ || recentBookPath_.empty()) {
+      showWeather_ = !showWeather_;
+      updateWidget();
+    } else {
+      activityManager.goToReader(recentBookPath_);
+    }
+    return;
+  }
 
   if (index == VAULT_INDEX) {
     activityManager.pushActivity(std::make_unique<MarkdownVaultActivity>(renderer, mappedInput, VAULT_ROOT));
@@ -237,8 +364,7 @@ void MicroMarkDActivity::buildScreen(UiScreen& screen) {
   const auto& metrics = UITheme::getInstance().getMetrics();
   if (mappedInput.hasTouch()) {
     screen.target().bitmap(
-        fui::Rect{4, static_cast<int16_t>(metrics.topPadding + 4),
-                  static_cast<int16_t>(metrics.headerHeight - 8),
+        fui::Rect{4, static_cast<int16_t>(metrics.topPadding + 4), static_cast<int16_t>(metrics.headerHeight - 8),
                   static_cast<int16_t>(metrics.headerHeight - 8)},
         fui::bitmapFromIcon(icon_micromarkd_32), fui::BitmapMode::Center);
   }
@@ -250,9 +376,18 @@ void MicroMarkDActivity::buildScreen(UiScreen& screen) {
   props.items = rowItems_;
   props.count = static_cast<uint16_t>(MENU_ITEM_COUNT);
   props.action = ACTION_ROW;
-  props.inputMask = fui::InputTouch;
+  props.inputMask = fui::InputTouch | fui::InputLongPress;
   syncListViewport(screen, props, /*hasSubtitle=*/true);
+  const fui::Rect widgetBand = screen.body();
   screen.list(props);
+  if (mappedInput.hasTouch()) {
+    fui::ButtonProps settings{};
+    settings.label = "...";
+    settings.action = ACTION_WIDGET_SETTINGS;
+    settings.inputMask = fui::InputTouch;
+    settings.styles = fui::plainStyles();
+    screen.button(settings, fui::Rect{static_cast<int16_t>(widgetBand.right() - 48), widgetBand.y, 44, 44});
+  }
 }
 
 #endif  // MICROMARKD_APP
