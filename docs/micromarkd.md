@@ -16,9 +16,13 @@ The current bootstrap exposes:
 - **Git sync** — optional verified-HTTPS clone/pull of `main` notes and a
   separate `books` branch. Pack responses are streamed to SD;
   commit/push and merge recovery remain separate follow-up work.
-- **Home widget** — Miami weather until a user chooses IP-based location or a
-  manual city, postal code, or coordinates. Swipe or tap to see the most recent
-  book and its saved EPUB progress; long-press or tap `...` for weather settings.
+- **Home widget** — a three-page card about 2.5 menu rows tall: current weather
+  with date, conditions, and today's high/low; a graph of the available daily
+  forecast (up to 16 days); and the most recent book with saved EPUB progress.
+  Dots show the current page. Tap or swipe to change pages, long-press or tap
+  `...` for settings, and use `Open` on the book page to resume reading. Miami
+  is shown until a user chooses IP-based location or a manual city, postal
+  code, or coordinates.
 
 Partial Git fetches use `blob:none`: only commits and trees arrive initially.
 Markdown/TXT notes are then downloaded explicitly. `Vault → Books` reads the
@@ -36,6 +40,8 @@ The weather widget saves its last response, including Open-Meteo's available
 16-day forecast, under `/.micromarkd/` on SD. The cache remains available
 offline for up to 30 days; it is not a 30-day future forecast. IP location is
 queried only after the user chooses it, and a VPN can make it inaccurate.
+The browser emulator uses generated sample temperatures to preview the card
+without a network connection; it labels the weather page as a demo.
 
 The firmware target consumes `esp32-git` as an external dependency. The browser
 emulator keeps that package outside the simulator repository and uses a

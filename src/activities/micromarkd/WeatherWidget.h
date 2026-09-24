@@ -3,6 +3,7 @@
 #ifdef MICROMARKD_APP
 
 #include <cstdint>
+#include <array>
 #include <string>
 
 class WeatherWidget {
@@ -20,6 +21,11 @@ class WeatherWidget {
   int temperature() const { return temperature_; }
   int weatherCode() const { return weatherCode_; }
   int forecastDays() const { return forecastDays_; }
+  const char* todayDate() const { return todayDate_.data(); }
+  int todayHigh() const { return high_[0]; }
+  int todayLow() const { return low_[0]; }
+  int forecastHigh(int day) const { return high_[day]; }
+  int forecastLow(int day) const { return low_[day]; }
 
  private:
   bool save() const;
@@ -33,6 +39,9 @@ class WeatherWidget {
   int temperature_ = 0;
   int weatherCode_ = 0;
   int forecastDays_ = 0;
+  std::array<char, 11> todayDate_{};
+  std::array<int16_t, 16> high_{};
+  std::array<int16_t, 16> low_{};
   int64_t fetchedAt_ = 0;
   bool hasWeather_ = false;
 };

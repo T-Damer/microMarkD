@@ -33,15 +33,16 @@
 namespace fui = freeink::ui;
 
 namespace {
-constexpr int WIDGET_INDEX = 0;
-constexpr int VAULT_INDEX = 1;
-constexpr int RECENT_INDEX = 2;
-constexpr int SEARCH_INDEX = 3;
-constexpr int TAGS_INDEX = 4;
-constexpr int GRAPH_INDEX = 5;
-constexpr int NEW_NOTE_INDEX = 6;
-constexpr int SYNC_INDEX = 7;
+constexpr int VAULT_INDEX = 0;
+constexpr int RECENT_INDEX = 1;
+constexpr int SEARCH_INDEX = 2;
+constexpr int TAGS_INDEX = 3;
+constexpr int GRAPH_INDEX = 4;
+constexpr int NEW_NOTE_INDEX = 5;
+constexpr int SYNC_INDEX = 6;
 constexpr freeink::ui::ActionId ACTION_WIDGET_SETTINGS = 3;
+constexpr freeink::ui::ActionId ACTION_WIDGET_NEXT = 4;
+constexpr freeink::ui::ActionId ACTION_WIDGET_OPEN_BOOK = 5;
 constexpr char VAULT_ROOT[] = "/vault";
 constexpr size_t MAX_NOTE_TITLE_BYTES = 96;
 constexpr size_t MAX_SEARCH_QUERY_BYTES = 96;
@@ -73,13 +74,14 @@ MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager
   setTranslatedRow(NEW_NOTE_INDEX, StrId::STR_MICROMARKD_NEW_NOTE, StrId::STR_MICROMARKD_NEW_NOTE_DESC,
                    UIIcon::NewNote);
   setTranslatedRow(SYNC_INDEX, StrId::STR_MICROMARKD_SYNC, StrId::STR_MICROMARKD_SYNC_DESC, UIIcon::Git);
-  rowItems_[WIDGET_INDEX].actionValue = WIDGET_INDEX;
 }
 
 void MicroMarkDActivity::onEnter() {
   recoverInterruptedSaves();
   UiListActivity::onEnter();
   app.on(ACTION_WIDGET_SETTINGS, &MicroMarkDActivity::widgetSettingsTrampoline, this);
+  app.on(ACTION_WIDGET_NEXT, &MicroMarkDActivity::widgetNextTrampoline, this);
+  app.on(ACTION_WIDGET_OPEN_BOOK, &MicroMarkDActivity::widgetOpenBookTrampoline, this);
   weather_.load();
   weather_.refresh();
   updateWidget();
@@ -87,14 +89,9 @@ void MicroMarkDActivity::onEnter() {
 }
 
 void MicroMarkDActivity::updateWidget() {
-  if (showWeather_) {
-    widgetLabel_ = std::string(tr(STR_MICROMARKD_WIDGET_WEATHER)) + " · " + weather_.place();
-    widgetSubtitle_ = weather_.hasWeather() ? std::to_string(weather_.temperature()) + " °C · " +
-                                                  std::to_string(weather_.forecastDays()) + " d"
-                                            : tr(STR_MICROMARKD_WIDGET_UNAVAILABLE);
-  } else {
-    widgetLabel_ = tr(STR_MICROMARKD_WIDGET_LAST_BOOK);
-    widgetSubtitle_ = tr(STR_MICROMARKD_WIDGET_NO_BOOK);
+  if (widgetPage_ == HomeWidgetPage::LastBook) {
+    recentBookTitle_ = tr(STR_MICROMARKD_WIDGET_NO_BOOK);
+    bookProgress_.clear();
     recentBookPath_.clear();
     const auto& recent = RECENT_BOOKS.getBooks();
     const auto bookIt = std::find_if(recent.begin(), recent.end(), [](const RecentBook& book) {
@@ -103,8 +100,7 @@ void MicroMarkDActivity::updateWidget() {
     if (bookIt != recent.end()) {
       const auto& book = *bookIt;
       recentBookPath_ = book.path;
-      widgetLabel_ = book.title.empty() ? book.path.substr(book.path.find_last_of('/') + 1) : book.title;
-      widgetSubtitle_ = tr(STR_MICROMARKD_WIDGET_LAST_BOOK);
+      recentBookTitle_ = book.title.empty() ? book.path.substr(book.path.find_last_of('/') + 1) : book.title;
       if (FsHelpers::hasEpubExtension(book.path)) {
         Epub epub(book.path, "/.crosspoint");
         if (epub.load(false, true)) {
@@ -118,7 +114,7 @@ void MicroMarkDActivity::updateWidget() {
               if (total > 0 && page <= total) {
                 const int percent = std::clamp(
                     static_cast<int>(epub.calculateProgress(spine, static_cast<float>(page) / total) * 100), 0, 100);
-                widgetSubtitle_ = std::to_string(percent) + "% · " + std::to_string(page) + "/" + std::to_string(total);
+                bookProgress_ = std::to_string(percent) + "% · " + std::to_string(page) + "/" + std::to_string(total);
               }
             }
           }
@@ -126,9 +122,6 @@ void MicroMarkDActivity::updateWidget() {
       }
     }
   }
-  rowItems_[WIDGET_INDEX].label = widgetLabel_.c_str();
-  rowItems_[WIDGET_INDEX].subtitle = widgetSubtitle_.c_str();
-  rowItems_[WIDGET_INDEX].value = mappedInput.hasTouch() ? nullptr : "...";
   requestUpdate();
 }
 
@@ -166,15 +159,27 @@ void MicroMarkDActivity::widgetSettingsTrampoline(const fui::ActionEvent&, void*
   static_cast<MicroMarkDActivity*>(user)->showWidgetSettings();
 }
 
-void MicroMarkDActivity::onRowLongPress(const int index) {
-  if (index == WIDGET_INDEX) showWidgetSettings();
+void MicroMarkDActivity::widgetNextTrampoline(const fui::ActionEvent& event, void* user) {
+  auto* self = static_cast<MicroMarkDActivity*>(user);
+  if (event.longPress) {
+    self->showWidgetSettings();
+    return;
+  }
+  self->widgetPage_ = static_cast<HomeWidgetPage>((static_cast<int>(self->widgetPage_) + 1) % 3);
+  self->updateWidget();
+}
+
+void MicroMarkDActivity::widgetOpenBookTrampoline(const fui::ActionEvent&, void* user) {
+  auto* self = static_cast<MicroMarkDActivity*>(user);
+  if (!self->recentBookPath_.empty()) activityManager.goToReader(self->recentBookPath_);
 }
 
 bool MicroMarkDActivity::handleCustomInput() {
   if (popup_.isActive()) return popup_.handleInput(mappedInput, [this] { requestUpdate(); });
   const auto swipe = mappedInput.wasSwipe();
   if (swipe == MappedInputManager::SwipeDir::Left || swipe == MappedInputManager::SwipeDir::Right) {
-    showWeather_ = !showWeather_;
+    widgetPage_ = static_cast<HomeWidgetPage>(
+        (static_cast<int>(widgetPage_) + (swipe == MappedInputManager::SwipeDir::Left ? 1 : 2)) % 3);
     updateWidget();
     return true;
   }
@@ -227,16 +232,6 @@ void MicroMarkDActivity::activateIndex(const int index) {
 
   app.clearTapFlash();
   nav.selected = index;
-
-  if (index == WIDGET_INDEX) {
-    if (showWeather_ || recentBookPath_.empty()) {
-      showWeather_ = !showWeather_;
-      updateWidget();
-    } else {
-      activityManager.goToReader(recentBookPath_);
-    }
-    return;
-  }
 
   if (index == VAULT_INDEX) {
     activityManager.pushActivity(std::make_unique<MarkdownVaultActivity>(renderer, mappedInput, VAULT_ROOT));
@@ -372,22 +367,39 @@ void MicroMarkDActivity::buildScreen(UiScreen& screen) {
                                       static_cast<int16_t>(metrics.buttonHintsHeight), 0});
   screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
 
+  const fui::Rect widgetBand =
+      screen.takeTop(static_cast<int16_t>(screen.theme().rowHeight * 5 / 2), screen.theme().spaceSm);
+  drawHomeWidget(screen.target(), widgetBand, screen.theme(), widgetPage_, weather_, recentBookTitle_.c_str(),
+                 bookProgress_.c_str());
+  if (mappedInput.hasTouch()) {
+    fui::ButtonProps next{};
+    next.action = ACTION_WIDGET_NEXT;
+    next.inputMask = fui::InputTouch | fui::InputLongPress;
+    next.styles = fui::plainStyles();
+    screen.button(next, widgetBand);
+    fui::ButtonProps settings{};
+    settings.label = "...";
+    settings.action = ACTION_WIDGET_SETTINGS;
+    settings.inputMask = fui::InputTouch;
+    settings.styles = fui::plainStyles();
+    screen.button(settings, fui::Rect{static_cast<int16_t>(widgetBand.right() - 55), widgetBand.y, 44, 44});
+    if (widgetPage_ == HomeWidgetPage::LastBook && !recentBookPath_.empty()) {
+      fui::ButtonProps open{};
+      open.label = tr(STR_OPEN);
+      open.action = ACTION_WIDGET_OPEN_BOOK;
+      open.inputMask = fui::InputTouch;
+      screen.button(open, fui::Rect{static_cast<int16_t>(widgetBand.right() - 90),
+                                    static_cast<int16_t>(widgetBand.bottom() - 47), 72, 36});
+    }
+  }
+
   fui::ListProps props{};
   props.items = rowItems_;
   props.count = static_cast<uint16_t>(MENU_ITEM_COUNT);
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch | fui::InputLongPress;
   syncListViewport(screen, props, /*hasSubtitle=*/true);
-  const fui::Rect widgetBand = screen.body();
   screen.list(props);
-  if (mappedInput.hasTouch()) {
-    fui::ButtonProps settings{};
-    settings.label = "...";
-    settings.action = ACTION_WIDGET_SETTINGS;
-    settings.inputMask = fui::InputTouch;
-    settings.styles = fui::plainStyles();
-    screen.button(settings, fui::Rect{static_cast<int16_t>(widgetBand.right() - 48), widgetBand.y, 44, 44});
-  }
 }
 
 #endif  // MICROMARKD_APP

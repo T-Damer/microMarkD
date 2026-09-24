@@ -5,12 +5,13 @@
 #include <string>
 
 #include "activities/UiListActivity.h"
+#include "activities/micromarkd/HomeWidgetView.h"
 #include "activities/micromarkd/WeatherWidget.h"
 #include "components/OptionPopup.h"
 
 class MicroMarkDActivity final : public UiListActivity {
  public:
-  static constexpr int MENU_ITEM_COUNT = 8;
+  static constexpr int MENU_ITEM_COUNT = 7;
 
   explicit MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
@@ -22,7 +23,6 @@ class MicroMarkDActivity final : public UiListActivity {
   int listCount() const override;
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;
-  void onRowLongPress(int index) override;
   bool handleCustomInput() override;
   const char* headerTitle() const override;
 
@@ -36,15 +36,17 @@ class MicroMarkDActivity final : public UiListActivity {
   void showWidgetSettings();
   void promptManualLocation();
   static void widgetSettingsTrampoline(const freeink::ui::ActionEvent& event, void* user);
+  static void widgetNextTrampoline(const freeink::ui::ActionEvent& event, void* user);
+  static void widgetOpenBookTrampoline(const freeink::ui::ActionEvent& event, void* user);
 
   freeink::ui::ListItem rowItems_[MENU_ITEM_COUNT]{};
   std::string vaultStatus_;
-  std::string widgetLabel_;
-  std::string widgetSubtitle_;
+  std::string recentBookTitle_;
+  std::string bookProgress_;
   std::string recentBookPath_;
   WeatherWidget weather_;
   OptionPopup popup_;
-  bool showWeather_ = true;
+  HomeWidgetPage widgetPage_ = HomeWidgetPage::Weather;
 };
 
 #endif  // MICROMARKD_APP
