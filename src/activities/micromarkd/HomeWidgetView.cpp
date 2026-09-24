@@ -173,13 +173,8 @@ void drawHomeWidget(fui::DrawTarget& target, const fui::Rect card, const fui::Th
   target.fill(card, PAPER, 9);
   target.stroke(card, INK, 1, 9);
   char weatherTitle[100];
-#ifdef SIMULATOR
-  std::snprintf(weatherTitle, sizeof(weatherTitle), "%s · %.42s · %s", tr(STR_MICROMARKD_WIDGET_WEATHER),
-                weather.place().c_str(), tr(STR_MICROMARKD_WIDGET_DEMO));
-#else
   std::snprintf(weatherTitle, sizeof(weatherTitle), "%s · %.64s", tr(STR_MICROMARKD_WIDGET_WEATHER),
                 weather.place().c_str());
-#endif
   char forecastTitle[64];
   std::snprintf(forecastTitle, sizeof(forecastTitle), tr(STR_MICROMARKD_WIDGET_FORECAST), weather.forecastDays());
   const char* title = page == HomeWidgetPage::Weather    ? weatherTitle
@@ -191,9 +186,11 @@ void drawHomeWidget(fui::DrawTarget& target, const fui::Rect card, const fui::Th
   target.text(fui::Rect{static_cast<int16_t>(card.x + 16), static_cast<int16_t>(card.y + 6),
                         static_cast<int16_t>(card.width - 70), 27},
               title, heading);
-  heading.align = fui::TextAlign::Right;
-  target.text(fui::Rect{static_cast<int16_t>(card.right() - 52), static_cast<int16_t>(card.y + 6), 36, 27}, "...",
-              heading);
+  const int16_t menuCenterX = static_cast<int16_t>(card.right() - 33);
+  for (int16_t i = 0; i < 3; ++i) {
+    target.fill(fui::Rect{static_cast<int16_t>(menuCenterX - 12 + i * 10), static_cast<int16_t>(card.y + 20), 4, 4},
+                INK, 2);
+  }
   target.line(fui::Point{static_cast<int16_t>(card.x + 12), static_cast<int16_t>(card.y + 32)},
               fui::Point{static_cast<int16_t>(card.right() - 12), static_cast<int16_t>(card.y + 32)}, 1, INK);
   if (page == HomeWidgetPage::Weather)

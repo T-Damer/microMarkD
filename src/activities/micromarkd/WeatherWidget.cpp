@@ -1,4 +1,4 @@
-#include "WeatherWidget.h"
+#include "activities/micromarkd/WeatherWidget.h"
 
 #ifdef MICROMARKD_APP
 
@@ -6,7 +6,9 @@
 #include <HalStorage.h>
 #include <WiFi.h>
 
-#ifndef SIMULATOR
+#ifdef SIMULATOR
+#include "network/HttpDownloader.h"
+#else
 #include <SecureHttpClient.h>
 #endif
 
@@ -36,8 +38,9 @@ bool readDaily(const JsonDocument& doc, std::array<char, 11>& date, std::array<i
   if (!firstDate || std::strlen(firstDate) < 10) return false;
   std::memcpy(date.data(), firstDate, 10);
   date[10] = '\0';
+  count = 0;
   for (size_t day = 0; day < days.size(); ++day) {
-    if (highs[day].isNull() || lows[day].isNull()) return false;
+    if (highs[day].isNull() || lows[day].isNull()) break;
     const double maximum = highs[day].as<double>();
     const double minimum = lows[day].as<double>();
     if (!std::isfinite(maximum) || !std::isfinite(minimum) || maximum < minimum || maximum < -100 || maximum > 100 ||
@@ -45,9 +48,9 @@ bool readDaily(const JsonDocument& doc, std::array<char, 11>& date, std::array<i
       return false;
     high[day] = static_cast<int16_t>(std::lround(maximum));
     low[day] = static_cast<int16_t>(std::lround(minimum));
+    ++count;
   }
-  count = static_cast<int>(days.size());
-  return true;
+  return count > 0;
 }
 }  // namespace
 
@@ -106,32 +109,7 @@ bool WeatherWidget::save() const {
 
 bool WeatherWidget::requestJson(const std::string& url, std::string& body) const {
 #ifdef SIMULATOR
-  if (url.find("api.open-meteo.com/v1/forecast") == std::string::npos) return false;
-  // Offline emulator data exercises the real forecast parser and graph without a network dependency.
-  body = "{\"current\":{\"temperature_2m\":27,\"weather_code\":2},\"daily\":{\"time\":[";
-  for (int day = 0; day < 16; ++day) {
-    const std::time_t when = std::time(nullptr) + day * 86400;
-    const std::tm* date = std::gmtime(&when);
-    if (!date) return false;
-    char formatted[16];
-    std::strftime(formatted, sizeof(formatted), "%Y-%m-%d", date);
-    if (day) body += ',';
-    body += '"';
-    body += formatted;
-    body += '"';
-  }
-  body += "],\"temperature_2m_max\":[";
-  for (int day = 0; day < 16; ++day) {
-    if (day) body += ',';
-    body += std::to_string(29 + (day % 5) - day / 5);
-  }
-  body += "],\"temperature_2m_min\":[";
-  for (int day = 0; day < 16; ++day) {
-    if (day) body += ',';
-    body += std::to_string(21 + (day % 4) - day / 6);
-  }
-  body += "]}}";
-  return true;
+  return HttpDownloader::fetchUrl(url, body) && body.size() <= 8192;
 #else
   if (WiFi.status() != WL_CONNECTED) return false;
   freeink::SecureHttpClient http;

@@ -40,8 +40,9 @@ The weather widget saves its last response, including Open-Meteo's available
 16-day forecast, under `/.micromarkd/` on SD. The cache remains available
 offline for up to 30 days; it is not a 30-day future forecast. IP location is
 queried only after the user chooses it, and a VPN can make it inaccurate.
-The browser emulator uses generated sample temperatures to preview the card
-without a network connection; it labels the weather page as a demo.
+If the API leaves trailing days empty, the graph shows only the valid days.
+The browser emulator uses the live IP-location and Open-Meteo endpoints. It
+requires network access; IP location is queried only after the user selects it.
 
 The firmware target consumes `esp32-git` as an external dependency. The browser
 emulator keeps that package outside the simulator repository and uses a
