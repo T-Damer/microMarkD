@@ -3,6 +3,7 @@
 #ifdef MICROMARKD_APP
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <HalStorage.h>
 #include <I18n.h>
 #include <MarkdownIndex.h>
@@ -35,15 +36,29 @@ namespace fui = freeink::ui;
 
 namespace {
 constexpr char VAULT_ROOT[] = "/vault";
+constexpr char BOOK_ROOT[] = "/books";
 constexpr char SYNC_ROOT[] = "/.micromarkd/sync";
 constexpr char MANIFEST_TEMP[] = "/.micromarkd/sync/HEAD.tmp";
 constexpr char MANIFEST_PATH[] = "/.micromarkd/sync/HEAD";
+constexpr char CREDENTIALS_PATH[] = "/.micromarkd/sync/credentials.json";
+constexpr char CREDENTIALS_TEMP[] = "/.micromarkd/sync/credentials.tmp";
 constexpr char MODULE[] = "MDS";
 constexpr size_t MAX_MANIFEST_ENTRIES = micromarkd::MAX_CATALOG_NOTES;
+
+std::string& sessionRemoteUrl() {
+  static std::string value;
+  return value;
+}
+
+std::string& sessionAccessToken() {
+  static std::string value;
+  return value;
+}
 
 #ifndef SIMULATOR
 constexpr char GIT_MODULE[] = "MDG";
 constexpr char DEFAULT_GIT_BRANCH[] = "main";
+constexpr char BOOK_GIT_BRANCH[] = "books";
 constexpr char GITHUB_TOKEN_USER[] = "x-access-token";
 constexpr size_t INITIAL_HTTP_BODY_CAPACITY = 4096;
 // ponytail: advertisements and push responses stay bounded; upload-pack fetch
@@ -127,21 +142,18 @@ int gitFileExists(const char* path) {
   return file && !file.isDirectory() ? 1 : 0;
 }
 
-int gitMakeDirectories(const char* path) {
-  return path && Storage.ensureDirectoryExists(path) ? 0 : -1;
-}
+int gitMakeDirectories(const char* path) { return path && Storage.ensureDirectoryExists(path) ? 0 : -1; }
 
 void* gitFileOpen(const char* path, const int write) {
   if (!path) return nullptr;
   auto file = makeUniqueNoThrow<HalFile>();
   if (!file) return nullptr;
-  const bool ok = write ? Storage.openFileForWrite(GIT_MODULE, path, *file)
-                        : Storage.openFileForRead(GIT_MODULE, path, *file);
+  const bool ok =
+      write ? Storage.openFileForWrite(GIT_MODULE, path, *file) : Storage.openFileForRead(GIT_MODULE, path, *file);
   return ok ? file.release() : nullptr;
 }
 
-int gitFileRead(void* handle, uint8_t* buffer, const size_t capacity,
-                size_t* outLength) {
+int gitFileRead(void* handle, uint8_t* buffer, const size_t capacity, size_t* outLength) {
   if (!handle || !outLength || (capacity > 0 && !buffer)) return -1;
   *outLength = 0;
   if (capacity == 0) return 0;
@@ -169,22 +181,30 @@ int gitFileClose(void* handle) {
   return ok ? 0 : -1;
 }
 
-int gitFileRemove(const char* path) {
-  return path && Storage.remove(path) ? 0 : -1;
+int gitFileRemove(const char* path) { return path && Storage.remove(path) ? 0 : -1; }
+
+int gitFileRename(const char* from, const char* to) {
+  if (!from || !to) return -1;
+  const std::string backup = std::string(to) + ".esp32git-old";
+  if (!Storage.exists(to) && Storage.exists(backup.c_str()) && !Storage.rename(backup.c_str(), to)) return -1;
+  if (Storage.rename(from, to)) return 0;
+  if (!Storage.exists(to)) return -1;
+  if (Storage.exists(backup.c_str()) || !Storage.rename(to, backup.c_str())) return -1;
+  if (Storage.rename(from, to)) {
+    Storage.remove(backup.c_str());
+    return 0;
+  }
+  Storage.rename(backup.c_str(), to);
+  return -1;
 }
 
 const esp32git_fs_port GIT_FS_PORT = {
-    gitFileSize,
-    gitReadFile,
-    gitWriteFile,
-    gitFileExists,
-    gitMakeDirectories,
-    {gitFileOpen, gitFileRead, gitFileWrite, gitFileSeek, gitFileClose},
-    gitFileRemove};
+    gitFileSize,   gitReadFile,        gitWriteFile,
+    gitFileExists, gitMakeDirectories, {gitFileOpen, gitFileRead, gitFileWrite, gitFileSeek, gitFileClose},
+    gitFileRemove, gitFileRename};
 
-int gitHttpRequest(const char* url, const int isPost, const char* user, const char* token,
-                   const char* contentType, const uint8_t* body, const size_t bodyLength,
-                   uint8_t** outBody, size_t* outLength) {
+int gitHttpRequest(const char* url, const int isPost, const char* user, const char* token, const char* contentType,
+                   const uint8_t* body, const size_t bodyLength, uint8_t** outBody, size_t* outLength) {
   if (!url || !outBody || !outLength || strncmp(url, "https://", 8) != 0) return -1;
   *outBody = nullptr;
   *outLength = 0;
@@ -197,16 +217,13 @@ int gitHttpRequest(const char* url, const int isPost, const char* user, const ch
   http.setUserAgent("CrossPoint-ESP32-microMarkD");
   if (user && *user) http.setBasicAuth(user, token ? token : "");
   if (contentType && *contentType) http.addHeader("Content-Type", contentType);
-  http.addHeader("Accept", isPost ? "application/x-git-upload-pack-result"
-                                  : "application/x-git-upload-pack-advertisement");
+  http.addHeader("Accept",
+                 isPost ? "application/x-git-upload-pack-result" : "application/x-git-upload-pack-advertisement");
   if (!http.begin(url)) return -1;
 
   ResponseBuffer response;
-  const auto onData = [&response](const uint8_t* chunk, const size_t length) {
-    return response.append(chunk, length);
-  };
-  const int status = isPost ? http.sendRequest("POST", body, bodyLength, onData)
-                            : http.GET(onData);
+  const auto onData = [&response](const uint8_t* chunk, const size_t length) { return response.append(chunk, length); };
+  const int status = isPost ? http.sendRequest("POST", body, bodyLength, onData) : http.GET(onData);
   if (status < 0 || !http.responseComplete() || http.callbackAborted()) return -1;
   const size_t responseLength = response.size;
   *outBody = response.release();
@@ -214,11 +231,9 @@ int gitHttpRequest(const char* url, const int isPost, const char* user, const ch
   return status;
 }
 
-int gitHttpRequestStream(const char* url, const int isPost, const char* user,
-                         const char* token, const char* contentType,
-                         const uint8_t* body, const size_t bodyLength,
-                         const esp32git_http_write_callback write,
-                         void* context, size_t* outLength) {
+int gitHttpRequestStream(const char* url, const int isPost, const char* user, const char* token,
+                         const char* contentType, const uint8_t* body, const size_t bodyLength,
+                         const esp32git_http_write_callback write, void* context, size_t* outLength) {
   if (!url || !write || !outLength || strncmp(url, "https://", 8) != 0) {
     return -1;
   }
@@ -231,8 +246,8 @@ int gitHttpRequestStream(const char* url, const int isPost, const char* user,
   http.setUserAgent("CrossPoint-ESP32-microMarkD");
   if (user && *user) http.setBasicAuth(user, token ? token : "");
   if (contentType && *contentType) http.addHeader("Content-Type", contentType);
-  http.addHeader("Accept", isPost ? "application/x-git-upload-pack-result"
-                                  : "application/x-git-upload-pack-advertisement");
+  http.addHeader("Accept",
+                 isPost ? "application/x-git-upload-pack-result" : "application/x-git-upload-pack-advertisement");
   if (!http.begin(url)) return -1;
 
   size_t received = 0;
@@ -241,8 +256,7 @@ int gitHttpRequestStream(const char* url, const int isPost, const char* user,
     received += length;
     return true;
   };
-  const int status = isPost ? http.sendRequest("POST", body, bodyLength, onData)
-                            : http.GET(onData);
+  const int status = isPost ? http.sendRequest("POST", body, bodyLength, onData) : http.GET(onData);
   *outLength = received;
   if (status < 0 || !http.responseComplete() || http.callbackAborted()) return -1;
   return status;
@@ -268,6 +282,8 @@ const char* gitStatusText(const esp32git_status status) {
       return tr(STR_MICROMARKD_GIT_UP_TO_DATE);
     case ESP32GIT_OK:
       return tr(STR_MICROMARKD_GIT_DONE);
+    case ESP32GIT_REMOTE_DIVERGED:
+      return tr(STR_MICROMARKD_GIT_CONFLICT);
     default:
       return tr(STR_MICROMARKD_GIT_FAILED);
   }
@@ -278,7 +294,40 @@ bool isSupportedRepositoryUrl(const std::string& url) {
   constexpr std::string_view prefix = "https://github.com/";
   return url.size() > prefix.size() && url.compare(0, prefix.size(), prefix) == 0;
 }
+
+void loadSavedCredentials() {
+  if (!sessionRemoteUrl().empty()) return;
+  HalFile file;
+  if (!Storage.openFileForRead(MODULE, CREDENTIALS_PATH, file)) return;
+  JsonDocument doc;
+  if (deserializeJson(doc, file)) return;
+  const std::string url = doc["url"] | "";
+  const std::string token = doc["token"] | "";
+  if (!isSupportedRepositoryUrl(url) || url.size() > 256 || token.size() > 160) return;
+  sessionRemoteUrl() = url;
+  sessionAccessToken() = token;
 }
+
+bool saveCredentials(const std::string& url, const std::string& token) {
+  if (!isSupportedRepositoryUrl(url) || url.size() > 256 || token.size() > 160 ||
+      !Storage.ensureDirectoryExists(SYNC_ROOT))
+    return false;
+  HalFile file;
+  if (!Storage.openFileForWrite(MODULE, CREDENTIALS_TEMP, file)) return false;
+  JsonDocument doc;
+  doc["url"] = url;
+  doc["token"] = token;
+  const bool written = serializeJson(doc, file) > 0;
+  file.flush();
+  file.close();
+  if (!written) {
+    Storage.remove(CREDENTIALS_TEMP);
+    return false;
+  }
+  Storage.remove(CREDENTIALS_PATH);
+  return Storage.rename(CREDENTIALS_TEMP, CREDENTIALS_PATH);
+}
+}  // namespace
 
 MarkdownSyncActivity::MarkdownSyncActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
     : UiListActivity("MarkdownSync", renderer, mappedInput) {}
@@ -287,16 +336,21 @@ void MarkdownSyncActivity::onEnter() {
   UiListActivity::onEnter();
   phase_ = Phase::Indexing;
   manifestSaved_ = false;
-  remoteUrl_.clear();
-  accessToken_.clear();
+  credentialsSaveFailed_ = false;
+  loadSavedCredentials();
+  remoteUrl_ = sessionRemoteUrl();
+  accessToken_ = sessionAccessToken();
+  rowItems_.clear();
   status_ = tr(STR_MICROMARKD_SYNC_DESC);
   refreshActionRow();
   invalidateMarkdownIndexCatalog();
   indexer_.begin(VAULT_ROOT);
   if (indexer_.complete()) {
     manifestSaved_ = saveManifest();
-    status_ = manifestSaved_ ? tr(STR_MICROMARKD_SYNC_SAVED) : tr(STR_MICROMARKD_SYNC_FAILED);
-    phase_ = Phase::Ready;
+    status_ = credentialsSaveFailed_ ? tr(STR_MICROMARKD_GIT_CREDENTIALS_SAVE_FAILED)
+              : manifestSaved_       ? ""
+                                     : tr(STR_MICROMARKD_SYNC_FAILED);
+    phase_ = remoteUrl_.empty() ? Phase::Ready : Phase::Complete;
   }
   requestUpdate();
 }
@@ -317,8 +371,10 @@ void MarkdownSyncActivity::loop() {
   if (!indexer_.complete()) indexer_.step();
   if (indexer_.complete() && !indexer_.hasRecord() && !manifestSaved_) {
     manifestSaved_ = saveManifest();
-    status_ = manifestSaved_ ? tr(STR_MICROMARKD_SYNC_SAVED) : tr(STR_MICROMARKD_SYNC_FAILED);
-    phase_ = Phase::Ready;
+    status_ = credentialsSaveFailed_ ? tr(STR_MICROMARKD_GIT_CREDENTIALS_SAVE_FAILED)
+              : manifestSaved_       ? ""
+                                     : tr(STR_MICROMARKD_SYNC_FAILED);
+    phase_ = remoteUrl_.empty() ? Phase::Ready : Phase::Complete;
     refreshActionRow();
   } else if (indexer_.phase() == MarkdownVaultIndexer::Phase::Enumerating) {
     status_ = tr(STR_MICROMARKD_SYNC_SCANNING);
@@ -328,64 +384,114 @@ void MarkdownSyncActivity::loop() {
   requestUpdate();
 }
 
-bool MarkdownSyncActivity::handleCustomInput() {
-  return phase_ == Phase::Connecting || phase_ == Phase::Syncing;
-}
+bool MarkdownSyncActivity::handleCustomInput() { return phase_ == Phase::Connecting || phase_ == Phase::Syncing; }
 
 void MarkdownSyncActivity::activateIndex(const int index) {
-  if (index != GIT_ACTION_INDEX ||
-      (phase_ != Phase::Ready && phase_ != Phase::Complete && phase_ != Phase::Failed)) {
-    return;
+  if (index == COMPLETE_VAULT_INDEX && (phase_ == Phase::Complete || phase_ == Phase::Ready) && !remoteUrl_.empty()) {
+    completeVault();
+  } else if (index == GIT_ACTION_INDEX &&
+             (phase_ == Phase::Ready || phase_ == Phase::Complete || phase_ == Phase::Failed)) {
+    if (phase_ == Phase::Complete && !remoteUrl_.empty()) {
+      connectAndSync();
+    } else {
+      promptRemoteUrl();
+    }
   }
-  promptRemoteUrl();
 }
 
 void MarkdownSyncActivity::refreshActionRow() {
+  if (rowItems_.size() < 2) rowItems_.resize(2);
   rowItems_[GIT_ACTION_INDEX].label = I18N.get(StrId::STR_MICROMARKD_GIT_CLONE);
   rowItems_[GIT_ACTION_INDEX].subtitle = I18N.get(StrId::STR_MICROMARKD_GIT_CLONE_DESC);
   rowItems_[GIT_ACTION_INDEX].icon = listIconFor(UIIcon::Git, 32);
   rowItems_[GIT_ACTION_INDEX].actionValue = GIT_ACTION_INDEX;
+  rowItems_[COMPLETE_VAULT_INDEX].label = I18N.get(StrId::STR_MICROMARKD_GIT_COMPLETE);
+  rowItems_[COMPLETE_VAULT_INDEX].subtitle = I18N.get(StrId::STR_MICROMARKD_GIT_COMPLETE_DESC);
+  rowItems_[COMPLETE_VAULT_INDEX].icon = listIconFor(UIIcon::Folder, 32);
+  rowItems_[COMPLETE_VAULT_INDEX].actionValue = COMPLETE_VAULT_INDEX;
+}
+
+bool MarkdownSyncActivity::downloadBook(const std::string& path, std::string& status) {
+  loadSavedCredentials();
+  if (path.rfind("Books/files/", 0) != 0 || sessionRemoteUrl().empty()) {
+    status = tr(STR_MICROMARKD_BOOK_SYNC_FIRST);
+    return false;
+  }
+#ifndef SIMULATOR
+  registerGitPorts();
+  const auto& remote = sessionRemoteUrl();
+  const auto& token = sessionAccessToken();
+  const esp32git_remote auth = token.empty() ? esp32git_remote{nullptr, nullptr, nullptr}
+                                             : esp32git_remote{remote.c_str(), GITHUB_TOKEN_USER, token.c_str()};
+  const esp32git_status result =
+      esp32git_download_path_url(remote.c_str(), BOOK_ROOT, path.c_str(), token.empty() ? nullptr : &auth);
+  unregisterGitPorts();
+  status = gitStatusText(result);
+  return result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE;
+#else
+  status = tr(STR_MICROMARKD_GIT_SIMULATED);
+  return false;
+#endif
+}
+
+void MarkdownSyncActivity::completeVault() {
+  status_ = tr(STR_MICROMARKD_GIT_COMPLETING);
+  phase_ = Phase::Syncing;
+  requestUpdateAndWait();
+#ifndef SIMULATOR
+  registerGitPorts();
+  const esp32git_remote auth = accessToken_.empty()
+                                   ? esp32git_remote{nullptr, nullptr, nullptr}
+                                   : esp32git_remote{remoteUrl_.c_str(), GITHUB_TOKEN_USER, accessToken_.c_str()};
+  const esp32git_status result =
+      esp32git_download_missing_files_url(remoteUrl_.c_str(), VAULT_ROOT, accessToken_.empty() ? nullptr : &auth);
+  phase_ = result == ESP32GIT_OK ? Phase::Complete : Phase::Failed;
+  status_ = gitStatusText(result);
+#else
+  phase_ = Phase::Failed;
+  status_ = tr(STR_MICROMARKD_GIT_SIMULATED);
+#endif
+  requestUpdate();
 }
 
 void MarkdownSyncActivity::promptRemoteUrl() {
   phase_ = Phase::EnteringUrl;
-  startActivityForResult(
-      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_GIT_URL), "https://",
-                                              MAX_REMOTE_URL_BYTES, InputType::Url),
-      [this](const ActivityResult& result) {
-        if (result.isCancelled) {
-          phase_ = Phase::Ready;
-          return;
-        }
-        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
-        if (!keyboard) return;
-        remoteUrl_ = keyboard->text;
-        while (!remoteUrl_.empty() && (remoteUrl_.back() == '/' || remoteUrl_.back() == ' ')) remoteUrl_.pop_back();
-        if (!isSupportedRepositoryUrl(remoteUrl_)) {
-          status_ = tr(STR_MICROMARKD_GIT_FAILED);
-          phase_ = Phase::Failed;
-          requestUpdate();
-          return;
-        }
-        promptAccessToken();
-      });
+  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_GIT_URL),
+                                                                 "https://", MAX_REMOTE_URL_BYTES, InputType::Url),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) {
+                             phase_ = Phase::Ready;
+                             return;
+                           }
+                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+                           if (!keyboard) return;
+                           remoteUrl_ = keyboard->text;
+                           while (!remoteUrl_.empty() && (remoteUrl_.back() == '/' || remoteUrl_.back() == ' '))
+                             remoteUrl_.pop_back();
+                           if (!isSupportedRepositoryUrl(remoteUrl_)) {
+                             status_ = tr(STR_MICROMARKD_GIT_FAILED);
+                             phase_ = Phase::Failed;
+                             requestUpdate();
+                             return;
+                           }
+                           promptAccessToken();
+                         });
 }
 
 void MarkdownSyncActivity::promptAccessToken() {
   phase_ = Phase::EnteringToken;
-  startActivityForResult(
-      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_GIT_TOKEN), "",
-                                              MAX_ACCESS_TOKEN_BYTES, InputType::Password),
-      [this](const ActivityResult& result) {
-        if (result.isCancelled) {
-          phase_ = Phase::Ready;
-          return;
-        }
-        const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
-        if (!keyboard) return;
-        accessToken_ = keyboard->text;
-        connectAndSync();
-      });
+  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, tr(STR_MICROMARKD_GIT_TOKEN),
+                                                                 "", MAX_ACCESS_TOKEN_BYTES, InputType::Password),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) {
+                             phase_ = Phase::Ready;
+                             return;
+                           }
+                           const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
+                           if (!keyboard) return;
+                           accessToken_ = keyboard->text;
+                           connectAndSync();
+                         });
 }
 
 void MarkdownSyncActivity::connectAndSync() {
@@ -409,9 +515,9 @@ void MarkdownSyncActivity::connectAndSync() {
                          });
 }
 
-bool MarkdownSyncActivity::vaultIsEmpty() const {
-  if (!Storage.exists(VAULT_ROOT)) return true;
-  HalFile directory = Storage.open(VAULT_ROOT);
+bool MarkdownSyncActivity::directoryIsEmpty(const char* path) const {
+  if (!Storage.exists(path)) return true;
+  HalFile directory = Storage.open(path);
   if (!directory || !directory.isDirectory()) return false;
   HalFile entry = directory.openNextFile();
   return !entry;
@@ -419,27 +525,28 @@ bool MarkdownSyncActivity::vaultIsEmpty() const {
 
 void MarkdownSyncActivity::syncRepository() {
   phase_ = Phase::Syncing;
-  status_ = Storage.exists("/vault/.git/HEAD") ? tr(STR_MICROMARKD_GIT_PULLING)
-                                                : tr(STR_MICROMARKD_GIT_CLONING);
+  status_ = Storage.exists("/vault/.git/HEAD") ? tr(STR_MICROMARKD_GIT_PULLING) : tr(STR_MICROMARKD_GIT_CLONING);
   requestUpdateAndWait();
 
 #ifdef SIMULATOR
   status_ = tr(STR_MICROMARKD_GIT_SIMULATED);
   phase_ = Phase::Complete;
+  sessionRemoteUrl() = remoteUrl_;
+  sessionAccessToken() = accessToken_;
   requestUpdate();
   return;
 #else
   registerGitPorts();
-  const esp32git_remote auth = accessToken_.empty() ? esp32git_remote{nullptr, nullptr, nullptr}
-                                                    : esp32git_remote{remoteUrl_.c_str(), GITHUB_TOKEN_USER,
-                                                                      accessToken_.c_str()};
+  const esp32git_remote auth = accessToken_.empty()
+                                   ? esp32git_remote{nullptr, nullptr, nullptr}
+                                   : esp32git_remote{remoteUrl_.c_str(), GITHUB_TOKEN_USER, accessToken_.c_str()};
   esp32git_status result = ESP32GIT_IO_ERROR;
   if (Storage.exists("/vault/.git/HEAD")) {
-    result = esp32git_fetch_url_auth(remoteUrl_.c_str(), DEFAULT_GIT_BRANCH, VAULT_ROOT,
-                                     accessToken_.empty() ? nullptr : &auth);
-  } else if (vaultIsEmpty()) {
-    result = esp32git_clone_url(remoteUrl_.c_str(), DEFAULT_GIT_BRANCH, VAULT_ROOT,
-                                accessToken_.empty() ? nullptr : &auth);
+    result = esp32git_fetch_url_partial(remoteUrl_.c_str(), DEFAULT_GIT_BRANCH, VAULT_ROOT,
+                                        accessToken_.empty() ? nullptr : &auth);
+  } else if (directoryIsEmpty(VAULT_ROOT)) {
+    result = esp32git_clone_url_partial(remoteUrl_.c_str(), DEFAULT_GIT_BRANCH, VAULT_ROOT,
+                                        accessToken_.empty() ? nullptr : &auth);
   } else {
     status_ = tr(STR_MICROMARKD_GIT_NOT_EMPTY);
     phase_ = Phase::Failed;
@@ -447,8 +554,35 @@ void MarkdownSyncActivity::syncRepository() {
     return;
   }
 
+  if (result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE) {
+    const esp32git_status notes =
+        esp32git_download_missing_notes_url(remoteUrl_.c_str(), VAULT_ROOT, accessToken_.empty() ? nullptr : &auth);
+    if (notes != ESP32GIT_OK) result = notes;
+  }
+  if (result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE) {
+    if (Storage.exists("/books/.git/HEAD")) {
+      result = esp32git_fetch_url_partial(remoteUrl_.c_str(), BOOK_GIT_BRANCH, BOOK_ROOT,
+                                          accessToken_.empty() ? nullptr : &auth);
+    } else if (directoryIsEmpty(BOOK_ROOT)) {
+      result = esp32git_clone_url_partial(remoteUrl_.c_str(), BOOK_GIT_BRANCH, BOOK_ROOT,
+                                          accessToken_.empty() ? nullptr : &auth);
+    } else {
+      result = ESP32GIT_REMOTE_DIVERGED;
+    }
+  }
+
   status_ = gitStatusText(result);
   phase_ = result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE ? Phase::Complete : Phase::Failed;
+  if (phase_ == Phase::Complete) {
+    sessionRemoteUrl() = remoteUrl_;
+    sessionAccessToken() = accessToken_;
+    credentialsSaveFailed_ = !saveCredentials(remoteUrl_, accessToken_);
+    invalidateMarkdownIndexCatalog();
+    manifestSaved_ = false;
+    indexer_.begin(VAULT_ROOT);
+    phase_ = Phase::Indexing;
+    status_ = tr(STR_MICROMARKD_SYNC_INDEXING);
+  }
   requestUpdate();
 #endif
 }
@@ -502,15 +636,17 @@ void MarkdownSyncActivity::buildScreen(UiScreen& screen) {
   const auto& metrics = UITheme::getInstance().getMetrics();
   screen.setContentMargin(fui::Insets{static_cast<int16_t>(metrics.topPadding + metrics.headerHeight), 0,
                                       static_cast<int16_t>(metrics.buttonHintsHeight), 0});
-  fui::TextStyle statusStyle = screen.theme().bodyText;
-  statusStyle.align = fui::TextAlign::Center;
-  const int16_t lineHeight = screen.target().lineHeight(statusStyle.font);
-  screen.target().text(screen.takeTop(lineHeight), status_.c_str(), statusStyle);
-  screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
+  if (!status_.empty()) {
+    fui::TextStyle statusStyle = screen.theme().bodyText;
+    statusStyle.align = fui::TextAlign::Center;
+    const int16_t lineHeight = screen.target().lineHeight(statusStyle.font);
+    screen.target().text(screen.takeTop(lineHeight), status_.c_str(), statusStyle);
+    screen.spacer(static_cast<int16_t>(metrics.verticalSpacing));
+  }
 
   fui::ListProps props{};
-  props.items = rowItems_;
-  props.count = 1;
+  props.items = rowItems_.data();
+  props.count = static_cast<uint16_t>(rowItems_.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;
   syncListViewport(screen, props, true);

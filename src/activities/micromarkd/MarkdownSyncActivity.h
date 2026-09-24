@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "activities/UiListActivity.h"
 #include "activities/micromarkd/MarkdownVaultIndexer.h"
@@ -11,6 +12,7 @@
 class MarkdownSyncActivity final : public UiListActivity {
  public:
   MarkdownSyncActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
+  static bool downloadBook(const std::string& path, std::string& status);
 
   void onEnter() override;
   void onExit() override;
@@ -20,29 +22,32 @@ class MarkdownSyncActivity final : public UiListActivity {
   enum class Phase : uint8_t { Indexing, Ready, EnteringUrl, EnteringToken, Connecting, Syncing, Complete, Failed };
 
   static constexpr int GIT_ACTION_INDEX = 0;
+  static constexpr int COMPLETE_VAULT_INDEX = 1;
   static constexpr size_t MAX_REMOTE_URL_BYTES = 256;
   static constexpr size_t MAX_ACCESS_TOKEN_BYTES = 160;
 
-  int listCount() const override { return 1; }
+  int listCount() const override { return static_cast<int>(rowItems_.size()); }
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;
   const char* headerTitle() const override;
   bool handleCustomInput() override;
 
   MarkdownVaultIndexer indexer_;
-  freeink::ui::ListItem rowItems_[1]{};
+  std::vector<freeink::ui::ListItem> rowItems_;
   std::string status_;
   std::string remoteUrl_;
   std::string accessToken_;
   Phase phase_ = Phase::Indexing;
   bool manifestSaved_ = false;
+  bool credentialsSaveFailed_ = false;
 
   void refreshActionRow();
+  void completeVault();
   void promptRemoteUrl();
   void promptAccessToken();
   void connectAndSync();
   void syncRepository();
-  bool vaultIsEmpty() const;
+  bool directoryIsEmpty(const char* path) const;
   bool saveManifest();
 };
 

@@ -4,6 +4,7 @@
 .vscode
 open-x4-sdk
 fs_
+/playwright/
 lib/EpdFont/fontsrc
 lib/I18n/I18nKeys.h
 lib/I18n/I18nStrings.h
