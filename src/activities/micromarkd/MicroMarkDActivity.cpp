@@ -369,27 +369,27 @@ void MicroMarkDActivity::buildScreen(UiScreen& screen) {
 
   const fui::Rect widgetBand =
       screen.takeTop(static_cast<int16_t>(screen.theme().rowHeight * 5 / 2), screen.theme().spaceSm);
-  drawHomeWidget(screen.target(), widgetBand, screen.theme(), widgetPage_, weather_, recentBookTitle_.c_str(),
+  const fui::Rect widgetCard = widgetBand.inset(fui::Insets{0, screen.theme().listInset, 0, screen.theme().listInset});
+  drawHomeWidget(screen.target(), widgetCard, screen.theme(), widgetPage_, weather_, recentBookTitle_.c_str(),
                  bookProgress_.c_str());
   if (mappedInput.hasTouch()) {
     fui::ButtonProps next{};
     next.action = ACTION_WIDGET_NEXT;
     next.inputMask = fui::InputTouch | fui::InputLongPress;
     next.styles = fui::plainStyles();
-    screen.button(next, widgetBand);
+    screen.button(next, widgetCard);
     fui::ButtonProps settings{};
-    settings.label = "...";
     settings.action = ACTION_WIDGET_SETTINGS;
     settings.inputMask = fui::InputTouch;
     settings.styles = fui::plainStyles();
-    screen.button(settings, fui::Rect{static_cast<int16_t>(widgetBand.right() - 55), widgetBand.y, 44, 44});
+    screen.button(settings, fui::Rect{static_cast<int16_t>(widgetCard.right() - 55), widgetCard.y, 44, 44});
     if (widgetPage_ == HomeWidgetPage::LastBook && !recentBookPath_.empty()) {
       fui::ButtonProps open{};
       open.label = tr(STR_OPEN);
       open.action = ACTION_WIDGET_OPEN_BOOK;
       open.inputMask = fui::InputTouch;
-      screen.button(open, fui::Rect{static_cast<int16_t>(widgetBand.right() - 90),
-                                    static_cast<int16_t>(widgetBand.bottom() - 47), 72, 36});
+      screen.button(open, fui::Rect{static_cast<int16_t>(widgetCard.right() - 90),
+                                    static_cast<int16_t>(widgetCard.bottom() - 47), 72, 36});
     }
   }
 

@@ -82,7 +82,7 @@ void dots(fui::DrawTarget& target, const fui::Rect card, const HomeWidgetPage pa
 
 void summary(fui::DrawTarget& target, const fui::Rect card, const fui::ThemeTokens& theme,
              const WeatherWidget& weather) {
-  const int16_t bodyY = static_cast<int16_t>(card.y + 34);
+  const int16_t bodyY = static_cast<int16_t>(card.y + 58);
   if (!weather.hasWeather() || weather.forecastDays() == 0) {
     target.text(fui::Rect{static_cast<int16_t>(card.x + 16), bodyY, static_cast<int16_t>(card.width - 32), 40},
                 tr(STR_MICROMARKD_WIDGET_UNAVAILABLE), theme.bodyText);
@@ -125,7 +125,7 @@ void forecast(fui::DrawTarget& target, const fui::Rect card, const fui::ThemeTok
   const int span = std::max(1, maximum - minimum);
   const int16_t left = static_cast<int16_t>(card.x + 18);
   const int16_t right = static_cast<int16_t>(card.right() - 46);
-  const int16_t top = static_cast<int16_t>(card.y + 40);
+  const int16_t top = static_cast<int16_t>(card.y + 46);
   const int16_t bottom = static_cast<int16_t>(card.bottom() - 24);
   const auto pointY = [&](const int temperature) {
     return static_cast<int16_t>(bottom - (temperature - minimum) * (bottom - top) / span);
@@ -146,14 +146,14 @@ void forecast(fui::DrawTarget& target, const fui::Rect card, const fui::ThemeTok
   char low[12];
   std::snprintf(high, sizeof(high), "%d°", maximum);
   std::snprintf(low, sizeof(low), "%d°", minimum);
-  target.text(fui::Rect{static_cast<int16_t>(right + 4), static_cast<int16_t>(top - 9), 36, 20}, high, theme.smallText);
+  target.text(fui::Rect{static_cast<int16_t>(right + 4), top, 36, 20}, high, theme.smallText);
   target.text(fui::Rect{static_cast<int16_t>(right + 4), static_cast<int16_t>(bottom - 8), 36, 20}, low,
               theme.smallText);
 }
 
 void lastBook(fui::DrawTarget& target, const fui::Rect card, const fui::ThemeTokens& theme, const char* title,
               const char* progress) {
-  const int16_t bodyY = static_cast<int16_t>(card.y + 33);
+  const int16_t bodyY = static_cast<int16_t>(card.y + 56);
   target.stroke(fui::Rect{static_cast<int16_t>(card.x + 17), static_cast<int16_t>(bodyY + 4), 35, 44}, INK, 2, 2);
   target.line(fui::Point{static_cast<int16_t>(card.x + 25), static_cast<int16_t>(bodyY + 5)},
               fui::Point{static_cast<int16_t>(card.x + 25), static_cast<int16_t>(bodyY + 47)}, 1, INK);
@@ -167,10 +167,9 @@ void lastBook(fui::DrawTarget& target, const fui::Rect card, const fui::ThemeTok
 }
 }  // namespace
 
-void drawHomeWidget(fui::DrawTarget& target, const fui::Rect rect, const fui::ThemeTokens& theme,
+void drawHomeWidget(fui::DrawTarget& target, const fui::Rect card, const fui::ThemeTokens& theme,
                     const HomeWidgetPage page, const WeatherWidget& weather, const char* bookTitle,
                     const char* bookProgress) {
-  const fui::Rect card = rect.inset(fui::Insets{0, 6, 0, 6});
   target.fill(card, PAPER, 9);
   target.stroke(card, INK, 1, 9);
   char weatherTitle[100];
@@ -188,9 +187,13 @@ void drawHomeWidget(fui::DrawTarget& target, const fui::Rect rect, const fui::Th
                                                          : tr(STR_MICROMARKD_WIDGET_LAST_BOOK);
   fui::TextStyle heading = theme.bodyText;
   heading.bold = true;
+  heading.maxLines = 1;
   target.text(fui::Rect{static_cast<int16_t>(card.x + 16), static_cast<int16_t>(card.y + 6),
                         static_cast<int16_t>(card.width - 70), 27},
               title, heading);
+  heading.align = fui::TextAlign::Right;
+  target.text(fui::Rect{static_cast<int16_t>(card.right() - 52), static_cast<int16_t>(card.y + 6), 36, 27}, "...",
+              heading);
   target.line(fui::Point{static_cast<int16_t>(card.x + 12), static_cast<int16_t>(card.y + 32)},
               fui::Point{static_cast<int16_t>(card.right() - 12), static_cast<int16_t>(card.y + 32)}, 1, INK);
   if (page == HomeWidgetPage::Weather)
