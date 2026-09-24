@@ -376,7 +376,11 @@ void MarkdownSyncActivity::activateIndex(const int index) {
     completeVault();
   } else if (index == GIT_ACTION_INDEX &&
              (phase_ == Phase::Ready || phase_ == Phase::Complete || phase_ == Phase::Failed)) {
-    promptRemoteUrl();
+    if (phase_ == Phase::Complete && !remoteUrl_.empty()) {
+      connectAndSync();
+    } else {
+      promptRemoteUrl();
+    }
   }
 }
 
@@ -533,8 +537,6 @@ void MarkdownSyncActivity::promptAccessToken() {
         const auto* keyboard = std::get_if<KeyboardResult>(&result.data);
         if (!keyboard) return;
         accessToken_ = keyboard->text;
-        sessionRemoteUrl() = remoteUrl_;
-        sessionAccessToken() = accessToken_;
         connectAndSync();
       });
 }
@@ -577,6 +579,8 @@ void MarkdownSyncActivity::syncRepository() {
 #ifdef SIMULATOR
   status_ = tr(STR_MICROMARKD_GIT_SIMULATED);
   phase_ = Phase::Complete;
+  sessionRemoteUrl() = remoteUrl_;
+  sessionAccessToken() = accessToken_;
   requestUpdate();
   return;
 #else
@@ -618,6 +622,8 @@ void MarkdownSyncActivity::syncRepository() {
   status_ = gitStatusText(result);
   phase_ = result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE ? Phase::Complete : Phase::Failed;
   if (phase_ == Phase::Complete) {
+    sessionRemoteUrl() = remoteUrl_;
+    sessionAccessToken() = accessToken_;
     loadBookIndex();
     invalidateMarkdownIndexCatalog();
     manifestSaved_ = false;
