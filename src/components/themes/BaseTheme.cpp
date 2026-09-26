@@ -420,15 +420,14 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
 
   const auto statusBar = SETTINGS.statusBarSpec();
   char clockText[9] = {};
-  const bool showClock = statusBar.showsClock() && halClock.isAvailable() &&
-                         halClock.formatTime(clockText, sizeof(clockText), statusBar.clockUtcOffsetQ,
-                                             statusBar.clock12h);
+  const bool showClock =
+      statusBar.showsClock() && halClock.isAvailable() &&
+      halClock.formatTime(clockText, sizeof(clockText), statusBar.clockUtcOffsetQ, statusBar.clock12h);
   const bool clockLeft = statusBar.clockMode == CrossPointSettings::STATUS_BAR_CLOCK_LEFT;
-  const int16_t clockWidth = showClock ? static_cast<int16_t>(
-                                            ui.target.measureText(fui::GfxRendererTarget::FONT_SMALL, clockText,
-                                                                  tokens.smallText)
-                                                .width)
-                                      : 0;
+  const int16_t clockWidth =
+      showClock ? static_cast<int16_t>(
+                      ui.target.measureText(fui::GfxRendererTarget::FONT_SMALL, clockText, tokens.smallText).width)
+                : 0;
   constexpr int16_t headerStatusGap = 6;
   const int16_t clockReserve = showClock ? static_cast<int16_t>(clockWidth + headerStatusGap) : 0;
 
@@ -506,10 +505,10 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
   // center it vertically beside the title instead of leaving a dead top band.
   const int16_t batteryEdgeInset = batteryDetached ? 12 : tokens.headerSidePadding;
   const bool clockSharesBatterySide = showClock && clockLeft == batteryLeft;
-  const int16_t batteryX = batteryLeft
-                               ? static_cast<int16_t>(band.x + batteryEdgeInset +
-                                                      (clockSharesBatterySide && clockLeft ? clockReserve : 0))
-                               : static_cast<int16_t>(band.right() - batteryEdgeInset - batteryReserve);
+  const int16_t batteryX =
+      batteryLeft
+          ? static_cast<int16_t>(band.x + batteryEdgeInset + (clockSharesBatterySide && clockLeft ? clockReserve : 0))
+          : static_cast<int16_t>(band.right() - batteryEdgeInset - batteryReserve);
   const int16_t batteryH = static_cast<int16_t>(metrics.batteryBarHeight);
   const int16_t batteryY = batteryDetached ? band.y : static_cast<int16_t>(band.y + (band.height - batteryH) / 2);
   fui::batteryIndicator(ui.frame, fui::Rect{batteryX, batteryY, batteryGlyphWidth, batteryH}, battery);
@@ -525,11 +524,11 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
   }
 
   if (showClock && clockWidth > 0) {
-    const int16_t clockX = clockSharesBatterySide
-                               ? static_cast<int16_t>(clockLeft ? band.x + batteryEdgeInset
-                                                                 : batteryX - headerStatusGap - clockWidth)
-                               : static_cast<int16_t>(clockLeft ? band.x + batteryEdgeInset
-                                                                 : band.right() - batteryEdgeInset - clockWidth);
+    const int16_t clockX =
+        clockSharesBatterySide
+            ? static_cast<int16_t>(clockLeft ? band.x + batteryEdgeInset : batteryX - headerStatusGap - clockWidth)
+            : static_cast<int16_t>(clockLeft ? band.x + batteryEdgeInset
+                                             : band.right() - batteryEdgeInset - clockWidth);
     const int16_t clockH = ui.target.lineHeight(fui::GfxRendererTarget::FONT_SMALL);
     const int16_t clockY = static_cast<int16_t>(band.y + (band.height - clockH) / 2);
     ui.target.text(fui::Rect{clockX, clockY, clockWidth, clockH}, clockText, tokens.smallText);

@@ -9,11 +9,11 @@
 #include <utility>
 #include <variant>
 
+#include "SdCardFontSystem.h"
 #include "activities/micromarkd/MarkdownBacklinksActivity.h"
 #include "activities/micromarkd/MarkdownEditorActivity.h"
 #include "activities/micromarkd/MarkdownGraphActivity.h"
 #include "activities/settings/TextSettingsActivity.h"
-#include "SdCardFontSystem.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
 

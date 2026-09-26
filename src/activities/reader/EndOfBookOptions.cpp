@@ -208,8 +208,8 @@ void EndOfBookOptions::buildListScreen(UiScreen& screen) {
                                      &orientedMarginLeft);
     const int totalWidth = buttonWidth * 2 + buttonGap;
     const int startX = (renderer.getScreenWidth() - totalWidth) / 2;
-    const int bottom = renderer.getScreenHeight() - orientedMarginBottom - UITheme::getStatusBarHeight() -
-                       metrics.verticalSpacing;
+    const int bottom =
+        renderer.getScreenHeight() - orientedMarginBottom - UITheme::getStatusBarHeight() - metrics.verticalSpacing;
     const int top = bottom - buttonHeight;
 
     fui::ButtonProps back;

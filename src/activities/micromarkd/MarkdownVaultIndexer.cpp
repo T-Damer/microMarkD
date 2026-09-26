@@ -13,8 +13,8 @@
 #include <string_view>
 #include <utility>
 
-#include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "activities/micromarkd/MarkdownCatalogStorage.h"
+#include "activities/micromarkd/MarkdownIndexStorage.h"
 
 namespace {
 constexpr char MODULE[] = "MDX";
@@ -248,8 +248,7 @@ void MarkdownVaultIndexer::validateCachedNoteStep(const size_t byteBudget) {
 
     const size_t readSize = static_cast<size_t>(bytesRead);
     cacheValidationFingerprint_ = micromarkd::updateMarkdownFingerprint(
-        cacheValidationFingerprint_,
-        std::string_view(reinterpret_cast<const char*>(buffer.data()), readSize));
+        cacheValidationFingerprint_, std::string_view(reinterpret_cast<const char*>(buffer.data()), readSize));
     cacheValidationBytes_ += readSize;
     stepBytes += readSize;
   }

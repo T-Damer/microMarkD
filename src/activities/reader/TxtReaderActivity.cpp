@@ -836,8 +836,8 @@ bool TxtReaderActivity::handleFormatInput() {
   if (!markdownLinkHits.empty()) {
     if (mappedInput.wasReleased(MappedInputManager::Button::Left) ||
         mappedInput.wasReleased(MappedInputManager::Button::ScreenLeft)) {
-      selectedMarkdownLink = selectedMarkdownLink <= 0 ? static_cast<int>(markdownLinkHits.size()) - 1
-                                                        : selectedMarkdownLink - 1;
+      selectedMarkdownLink =
+          selectedMarkdownLink <= 0 ? static_cast<int>(markdownLinkHits.size()) - 1 : selectedMarkdownLink - 1;
       requestUpdate();
       return true;
     }
@@ -991,8 +991,7 @@ std::string TxtReaderActivity::resolveMarkdownImagePath(const std::string& rawTa
     if (normalised.empty()) return {};
     const std::string path = "/" + normalised;
     if (path.rfind("/vault/", 0) != 0 || !Storage.exists(path.c_str())) return {};
-    if (!FsHelpers::hasBmpExtension(path) && !FsHelpers::hasPngExtension(path) &&
-        !FsHelpers::hasJpgExtension(path)) {
+    if (!FsHelpers::hasBmpExtension(path) && !FsHelpers::hasPngExtension(path) && !FsHelpers::hasJpgExtension(path)) {
       return {};
     }
     return path;
@@ -1019,8 +1018,7 @@ int TxtReaderActivity::markdownImageHeight(const std::string& path, const int ma
   int outputWidth = dimensions.width;
   int outputHeight = dimensions.height;
   if (outputWidth > maxWidth || outputHeight > boundedMaxHeight) {
-    if (static_cast<int64_t>(outputWidth) * boundedMaxHeight >
-        static_cast<int64_t>(outputHeight) * maxWidth) {
+    if (static_cast<int64_t>(outputWidth) * boundedMaxHeight > static_cast<int64_t>(outputHeight) * maxWidth) {
       outputWidth = maxWidth;
       outputHeight = std::max(1, dimensions.height * maxWidth / dimensions.width);
     } else {
@@ -1034,7 +1032,7 @@ int TxtReaderActivity::markdownImageHeight(const std::string& path, const int ma
 }
 
 bool TxtReaderActivity::renderMarkdownImage(GfxRenderer& renderer, const std::string& path, const int x, const int y,
-                                             const int width, const int height) const {
+                                            const int width, const int height) const {
   if (FsHelpers::hasPngExtension(path)) {
     RenderConfig config{x, y, width, height};
     config.useExactDimensions = true;
