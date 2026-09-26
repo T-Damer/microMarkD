@@ -13,6 +13,7 @@
 #include "MappedInputManager.h"
 #include "WifiCredentialStore.h"
 #include "activities/util/KeyboardEntryActivity.h"
+#include "components/HeaderBackArrow.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 
@@ -581,6 +582,20 @@ void WifiSelectionActivity::checkConnectionStatus() {
 }
 
 void WifiSelectionActivity::loop() {
+  const auto& metrics = UITheme::getInstance().getMetrics();
+  const Rect screen = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
+  if (mappedInput.hasTouch() && mappedInput.wasTapInRect(screen.x + 4, screen.y + metrics.topPadding + 4,
+                                                         metrics.headerHeight - 8, metrics.headerHeight - 8)) {
+    if (state == WifiSelectionState::SAVE_PROMPT) {
+      onComplete(true);
+    } else if (state == WifiSelectionState::FORGET_PROMPT) {
+      startWifiScan();
+    } else {
+      if (state == WifiSelectionState::AUTO_CONNECTING) WiFi.disconnect();
+      onComplete(false);
+    }
+    return;
+  }
   // Check scan progress
   if (state == WifiSelectionState::SCANNING) {
     if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
@@ -834,12 +849,21 @@ void WifiSelectionActivity::render(RenderLock&&) {
   Rect screen = theme.getScreenSafeArea(renderer, true, false);
 
   // Draw header
+  const char* rightLabel = nullptr;
+#ifndef MICROMARKD_APP
   // STR_NETWORKS_FOUND is ~37 bytes once the Arabic translation is substituted,
   // so 32 truncated it. See ClockSyncActivity for the same class of bug.
   char countStr[64];
   snprintf(countStr, sizeof(countStr), tr(STR_NETWORKS_FOUND), realNetworkCount);
+  rightLabel = countStr;
+#endif
+  const int16_t leftReserve = mappedInput.hasTouch() ? metrics.headerHeight + metrics.headerSidePadding : 0;
   GUI.drawHeader(renderer, Rect{screen.x, screen.y + metrics.topPadding, screen.width, metrics.headerHeight},
-                 tr(STR_WIFI_NETWORKS), countStr);
+                 tr(STR_WIFI_NETWORKS), rightLabel, leftReserve);
+  if (mappedInput.hasTouch()) {
+    const int buttonSize = metrics.headerHeight - 8;
+    HeaderBackArrow::draw(renderer, screen.x + 4 + buttonSize / 2, screen.y + metrics.topPadding + 4 + buttonSize / 2);
+  }
   GUI.drawSubHeader(
       renderer,
       Rect{screen.x, screen.y + metrics.topPadding + metrics.headerHeight, screen.width, metrics.tabBarHeight},

@@ -1625,8 +1625,11 @@ void GfxRenderer::displayBuffer(const HalDisplay::RefreshMode refreshMode) const
   // Promote the first normal FAST refresh to HALF so both RAM banks are rebased
   // before differential updates resume.
   const bool afterFactoryLut = displayState == DisplayState::FactoryLut;
-  const auto effectiveRefreshMode =
-      afterFactoryLut && refreshMode == HalDisplay::FAST_REFRESH ? HalDisplay::HALF_REFRESH : refreshMode;
+  const auto effectiveRefreshMode = fullRefreshPending ? HalDisplay::FULL_REFRESH
+                                    : afterFactoryLut && refreshMode == HalDisplay::FAST_REFRESH
+                                        ? HalDisplay::HALF_REFRESH
+                                        : refreshMode;
+  fullRefreshPending = false;
   display.displayBuffer(effectiveRefreshMode, fadingFix);
   displayState = DisplayState::BW;
 }

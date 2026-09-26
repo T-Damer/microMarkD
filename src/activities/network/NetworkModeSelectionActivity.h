@@ -1,8 +1,10 @@
 #pragma once
 
+#include <BoardConfig.h>
+
 #include "activities/UiListActivity.h"
 
-enum class NetworkMode { JOIN_NETWORK, CONNECT_CALIBRE, CREATE_HOTSPOT };
+enum class NetworkMode { JOIN_NETWORK, CONNECT_CALIBRE, CREATE_HOTSPOT, USB_DRIVE };
 
 /**
  * NetworkModeSelectionActivity presents the user with a choice:
@@ -19,7 +21,7 @@ class NetworkModeSelectionActivity final : public UiListActivity {
  public:
   explicit NetworkModeSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
-  static constexpr int MENU_ITEM_COUNT = 3;
+  static constexpr int MENU_ITEM_COUNT = 3 + FREEINK_CAP_USB_MSC;
 
   void onModeSelected(NetworkMode mode);
   void onCancel();

@@ -8,6 +8,7 @@
 
 #include "CrossPointSettings.h"
 #include "MappedInputManager.h"
+#include "components/HeaderBackArrow.h"
 #include "components/UITheme.h"
 #include "components/UIThemeTokens.h"
 #include "components/UiAppHelpers.h"
@@ -20,6 +21,7 @@ constexpr fui::ActionId ACTION_WARMTH = 2;
 constexpr fui::ActionId ACTION_TOGGLE = 3;
 constexpr fui::ActionId ACTION_BRIGHTNESS_STEP = 4;
 constexpr fui::ActionId ACTION_WARMTH_STEP = 5;
+constexpr fui::ActionId ACTION_TILE = 6;
 constexpr int BUTTON_BRIGHTNESS_STEP = 5;
 constexpr int FINE_STEP = 1;
 
@@ -43,6 +45,9 @@ void FrontlightPanelActivity::onEnter() {
   warmth = Frontlight.warmth();
   lightOn = Frontlight.isOn();
   lightOnChanged = false;
+  if (SETTINGS.touchReaderControls != CrossPointSettings::TOUCH_READER_OFF) {
+    touchModeRestore = SETTINGS.touchReaderControls;
+  }
 
   uiReady = false;
   applySharedUiTheme(app, uiTarget);
@@ -51,6 +56,7 @@ void FrontlightPanelActivity::onEnter() {
   app.on(ACTION_TOGGLE, &FrontlightPanelActivity::onToggleEvent, this);
   app.on(ACTION_BRIGHTNESS_STEP, &FrontlightPanelActivity::onBrightnessStepEvent, this);
   app.on(ACTION_WARMTH_STEP, &FrontlightPanelActivity::onWarmthStepEvent, this);
+  app.on(ACTION_TILE, &FrontlightPanelActivity::onTileEvent, this);
   app.setScreen(&FrontlightPanelActivity::panelScreen, this);
   requestUpdate();
 }
@@ -103,6 +109,37 @@ void FrontlightPanelActivity::onWarmthStepEvent(const fui::ActionEvent& event, v
   static_cast<FrontlightPanelActivity*>(user)->adjustWarmth(event.value * FINE_STEP);
 }
 
+void FrontlightPanelActivity::onTileEvent(const fui::ActionEvent& event, void* user) {
+  static_cast<FrontlightPanelActivity*>(user)->runTile(event.value);
+}
+
+void FrontlightPanelActivity::runTile(const int index) {
+  switch (index) {
+    case 0:
+      SETTINGS.screenInverted = !SETTINGS.screenInverted;
+      break;
+    case 1:
+      renderer.promoteNextRefresh(HalDisplay::FULL_REFRESH);
+      close();
+      return;
+    case 2:
+      SETTINGS.orientation = static_cast<uint8_t>((SETTINGS.orientation + 1) % 4);
+      break;
+    case 3:
+      if (SETTINGS.touchReaderControls == CrossPointSettings::TOUCH_READER_OFF) {
+        SETTINGS.touchReaderControls = touchModeRestore;
+      } else {
+        touchModeRestore = SETTINGS.touchReaderControls;
+        SETTINGS.touchReaderControls = CrossPointSettings::TOUCH_READER_OFF;
+      }
+      break;
+    default:
+      return;
+  }
+  SETTINGS.saveToFile();
+  requestUpdate();
+}
+
 void FrontlightPanelActivity::adjustBrightness(const int delta) {
   int next = static_cast<int>(brightness) + delta;
   if (next < 0) next = 0;
@@ -143,6 +180,12 @@ bool FrontlightPanelActivity::handleHomeGesture() {
 }
 
 void FrontlightPanelActivity::loop() {
+  const auto& metrics = UITheme::getInstance().getMetrics();
+  if (mappedInput.hasTouch() &&
+      mappedInput.wasTapInRect(4, metrics.topPadding + 4, metrics.headerHeight - 8, metrics.headerHeight - 8)) {
+    close();
+    return;
+  }
   fui::InputSnapshot snap{};
   if (uiReady) {
     snap = touchSnapshotFrom(mappedInput);
@@ -190,6 +233,7 @@ int FrontlightPanelActivity::computePanelBottom() const {
   if (Frontlight.hasColorTemperature()) {
     y += lineHeight + tokens.spaceSm + tokens.rowHeight + tokens.spaceLg;
   }
+  y += 2 * (tokens.rowHeight + tokens.spaceSm) + tokens.spaceLg;
   y += tokens.spaceLg;
   return y;
 }
@@ -238,6 +282,25 @@ void FrontlightPanelActivity::buildPanelScreen(UiApp::ScreenType& screen) {
   }
 
   screen.spacer(theme.spaceLg);
+  const char* labels[] = {tr(STR_NIGHT_MODE), tr(STR_FORCE_REFRESH), tr(STR_QUICK_ROTATE), tr(STR_QUICK_TOUCH)};
+  const bool enabled[] = {SETTINGS.screenInverted != 0, false, false,
+                          SETTINGS.touchReaderControls != CrossPointSettings::TOUCH_READER_OFF};
+  for (int row = 0; row < 2; ++row) {
+    const fui::Rect band = screen.takeTop(theme.rowHeight, theme.spaceSm).inset(sideInset);
+    const int16_t gap = theme.spaceSm;
+    const int16_t width = static_cast<int16_t>((band.width - gap) / 2);
+    for (int col = 0; col < 2; ++col) {
+      const int index = row * 2 + col;
+      const fui::Rect tile{static_cast<int16_t>(band.x + col * (width + gap)), band.y, width, band.height};
+      if (enabled[index]) screen.target().fill(tile, fui::Paint::dither(fui::Color::LightGray), 8);
+      screen.target().stroke(tile, fui::Paint::solid(fui::Color::Black), 1, 8);
+      fui::TextStyle style = theme.bodyText;
+      style.align = fui::TextAlign::Center;
+      style.maxLines = 1;
+      screen.target().text(tile.inset(fui::Insets{0, 8, 0, 8}), labels[index], style);
+      screen.frame().hit(tile, ACTION_TILE, index, fui::InputTouch);
+    }
+  }
 }
 
 void FrontlightPanelActivity::addStepSlider(UiApp::ScreenType& screen, const fui::Rect& row, const uint8_t value,
@@ -271,7 +334,13 @@ void FrontlightPanelActivity::render(RenderLock&&) {
   renderer.fillRect(0, 0, pageWidth, panelBottom, false);
 
   const auto& metrics = UITheme::getInstance().getMetrics();
-  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_FRONTLIGHT));
+  const int16_t leftReserve = mappedInput.hasTouch() ? metrics.headerHeight + metrics.headerSidePadding : 0;
+  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_QUICK_SETTINGS),
+                 nullptr, leftReserve);
+  if (mappedInput.hasTouch()) {
+    const int buttonSize = metrics.headerHeight - 8;
+    HeaderBackArrow::draw(renderer, 4 + buttonSize / 2, metrics.topPadding + 4 + buttonSize / 2);
+  }
 
   uiReady = false;
   app.render();

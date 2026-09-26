@@ -187,7 +187,11 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   };
 
   // Sleep screen settings
+#ifdef MICROMARKD_APP
+  uint8_t sleepScreen = QUICK_RESUME;
+#else
   uint8_t sleepScreen = DARK;
+#endif
   // Night mode: inverted output polarity on the reading surfaces only
   // (resolved per render by ActivityManager via Activity::appliesNightMode).
   uint8_t screenInverted = 0;

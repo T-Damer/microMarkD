@@ -8,11 +8,9 @@
 #include "activities/Activity.h"
 #include "util/ButtonNavigator.h"
 
-// Top-anchored frontlight overlay opened by a top-edge down-swipe. It drives
-// brightness and warmth live, and includes only a sun on/off control; Night
-// Mode deliberately lives in the reader menu instead.
+// Top-anchored quick settings opened by a top-edge down-swipe.
 class FrontlightPanelActivity final : public Activity {
-  using UiApp = freeink::ui::FreeInkApp<10, 5>;
+  using UiApp = freeink::ui::FreeInkApp<12, 6>;
 
   ButtonNavigator buttonNavigator;
   freeink::ui::GfxRendererTarget uiTarget;
@@ -32,6 +30,7 @@ class FrontlightPanelActivity final : public Activity {
   // reflected user intent in the first place.
   bool lightOnChanged = false;
   bool draggingSlider = false;
+  uint8_t touchModeRestore = 1;
   int panelBottom = 0;
 
   static void panelScreen(UiApp::ScreenType& screen, void* user);
@@ -40,6 +39,7 @@ class FrontlightPanelActivity final : public Activity {
   static void onToggleEvent(const freeink::ui::ActionEvent& event, void* user);
   static void onBrightnessStepEvent(const freeink::ui::ActionEvent& event, void* user);
   static void onWarmthStepEvent(const freeink::ui::ActionEvent& event, void* user);
+  static void onTileEvent(const freeink::ui::ActionEvent& event, void* user);
 
   void buildPanelScreen(UiApp::ScreenType& screen);
   void addStepSlider(UiApp::ScreenType& screen, const freeink::ui::Rect& row, uint8_t value,
@@ -48,6 +48,7 @@ class FrontlightPanelActivity final : public Activity {
   void adjustBrightness(int delta);
   void adjustWarmth(int delta);
   void toggleLight();
+  void runTile(int index);
   void close();
 
  public:

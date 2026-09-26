@@ -43,6 +43,8 @@ constexpr int TAGS_INDEX = 4;
 constexpr int GRAPH_INDEX = 5;
 constexpr int NEW_NOTE_INDEX = 6;
 constexpr int SYNC_INDEX = 7;
+constexpr int TRANSFER_INDEX = 8;
+constexpr int SETTINGS_INDEX = 9;
 constexpr freeink::ui::ActionId ACTION_WIDGET_SETTINGS = 3;
 constexpr freeink::ui::ActionId ACTION_WIDGET_NEXT = 4;
 constexpr freeink::ui::ActionId ACTION_WIDGET_OPEN_BOOK = 5;
@@ -99,6 +101,8 @@ MicroMarkDActivity::MicroMarkDActivity(GfxRenderer& renderer, MappedInputManager
   setTranslatedRow(NEW_NOTE_INDEX, StrId::STR_MICROMARKD_NEW_NOTE, StrId::STR_MICROMARKD_NEW_NOTE_DESC,
                    UIIcon::NewNote);
   setTranslatedRow(SYNC_INDEX, StrId::STR_MICROMARKD_SYNC, StrId::STR_MICROMARKD_SYNC_DESC, UIIcon::Git);
+  setTranslatedRow(TRANSFER_INDEX, StrId::STR_FILE_TRANSFER, StrId::STR_MICROMARKD_TRANSFER_DESC, UIIcon::Transfer);
+  setTranslatedRow(SETTINGS_INDEX, StrId::STR_SETTINGS_TITLE, StrId::STR_MICROMARKD_SETTINGS_DESC, UIIcon::Settings);
 }
 
 void MicroMarkDActivity::onEnter() {
@@ -300,6 +304,16 @@ void MicroMarkDActivity::activateIndex(const int index) {
 
   if (index == SYNC_INDEX) {
     activityManager.pushActivity(std::make_unique<MarkdownSyncActivity>(renderer, mappedInput));
+    return;
+  }
+
+  if (index == TRANSFER_INDEX) {
+    activityManager.goToFileTransfer();
+    return;
+  }
+
+  if (index == SETTINGS_INDEX) {
+    activityManager.goToSettings();
   }
 }
 

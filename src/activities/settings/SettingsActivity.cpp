@@ -494,15 +494,19 @@ void SettingsActivity::render(RenderLock&&) {
 
   renderer.clearScreen();
 
+#ifdef MICROMARKD_APP
+  const auto& metrics = UITheme::getInstance().getMetrics();
+  const int16_t leftReserve = mappedInput.hasTouch() ? metrics.headerHeight + metrics.headerSidePadding : 0;
+  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, renderer.getScreenWidth(), metrics.headerHeight},
+                 tr(STR_SETTINGS_TITLE), nullptr, leftReserve);
+#else
   const auto pageWidth = renderer.getScreenWidth();
   const auto& metrics = UITheme::getInstance().getMetrics();
-
-  // Header via GUI.drawHeader (already FreeInkUI-themed) for the battery
-  // indicator; the rest of the screen renders through the app.
   // Version rides in the header's trailing label slot: the footer position
   // conflicts with button hints on non-touch devices.
   GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_SETTINGS_TITLE),
                  CROSSPOINT_VERSION);
+#endif
 
   renderUi();
 

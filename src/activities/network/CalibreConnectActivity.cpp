@@ -8,6 +8,7 @@
 #include "MappedInputManager.h"
 #include "SilentRestart.h"
 #include "WifiSelectionActivity.h"
+#include "components/HeaderBackArrow.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 #include "util/TaskWatchdog.h"
@@ -100,7 +101,10 @@ void CalibreConnectActivity::stopWebServer() {
 }
 
 void CalibreConnectActivity::loop() {
-  if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
+  const auto& metrics = UITheme::getInstance().getMetrics();
+  if (mappedInput.wasPressed(MappedInputManager::Button::Back) ||
+      (mappedInput.hasTouch() &&
+       mappedInput.wasTapInRect(4, metrics.topPadding + 4, metrics.headerHeight - 8, metrics.headerHeight - 8))) {
     exitRequested = true;
   }
 
@@ -175,7 +179,13 @@ void CalibreConnectActivity::render(RenderLock&&) {
 
   renderer.clearScreen();
 
-  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_CALIBRE_WIRELESS));
+  const int16_t leftReserve = mappedInput.hasTouch() ? metrics.headerHeight + metrics.headerSidePadding : 0;
+  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_CALIBRE_WIRELESS),
+                 nullptr, leftReserve);
+  if (mappedInput.hasTouch()) {
+    const int buttonSize = metrics.headerHeight - 8;
+    HeaderBackArrow::draw(renderer, 4 + buttonSize / 2, metrics.topPadding + 4 + buttonSize / 2);
+  }
   const auto height = renderer.getLineHeight(UI_10_FONT_ID);
   const auto top = (pageHeight - height) / 2;
 

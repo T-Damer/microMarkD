@@ -37,6 +37,7 @@
 #include "components/UITheme.h"
 #include "fontIds.h"
 #include "images/LoadingIcon.h"
+#include "platform/UsbSerialJtagHandoff.h"
 #include "util/ButtonNavigator.h"
 #include "util/ScreenshotUtil.h"
 
@@ -196,6 +197,15 @@ void silentRestartToReader() {
   LOG_DBG("MAIN", "Silent restart (target=reader)");
   GUI.drawPopup(renderer, tr(STR_LOADING_POPUP));
   delay(50);
+  ESP.restart();
+}
+
+void restartToHomeAfterStorageHandoff() {
+  if (deepSleepInProgress) return;
+  silentRebootTarget = SILENT_REBOOT_TARGET_HOME;
+  silentRebootMagic = SILENT_REBOOT_MAGIC;
+  delay(50);
+  handoffUsbOtgToSerialJtag();
   ESP.restart();
 }
 
@@ -449,7 +459,7 @@ void setup() {
     case HalGPIO::WakeupReason::AfterUSBPower:
       // If USB power caused a cold boot, go back to sleep
       LOG_DBG("MAIN", "Wakeup reason: After USB Power");
-#if FREEINK_DEVICE_PAPERMONO
+#if FREEINK_DEVICE_X4PRO || FREEINK_DEVICE_PAPERMONO
       // There is no armable GPIO wake because the button is behind the PMIC.
       // Sleeping here would strand the device in a USB-replug boot loop.
       break;
@@ -588,6 +598,13 @@ void loop() {
 
   gpio.setSharedConfirmPowerShortPressEmitsPower(SETTINGS.shortPwrBtn == CrossPointSettings::SHORT_PWRBTN::SLEEP);
   gpio.update();
+  if (activityManager.requiresExclusiveStorageLoop()) {
+    activityManager.loop();
+    const bool hostActive = activityManager.preventAutoSleep();
+    powerManager.setPowerSaving(!hostActive);
+    delay(hostActive ? 10 : 50);
+    return;
+  }
   halTiltSensor.update(SETTINGS.tiltPageTurn, SETTINGS.orientation, activityManager.isReaderActivity());
 
   renderer.setFadingFix(SETTINGS.fadingFix);

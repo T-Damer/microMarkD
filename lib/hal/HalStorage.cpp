@@ -3,10 +3,21 @@
 #include <FS.h>  // need to be included before SdFat.h for compatibility with FS.h's File class
 #include <Logging.h>
 #include <SDCardManager.h>
+#if FREEINK_CAP_USB_MSC
+#include <UsbMassStorage.h>
+// TinyUSB's device API, provided by the prebuilt ESP32-S3 Arduino core.
+extern "C" bool tud_disconnect(void);
+#endif
 
 #include <cassert>
 
 #define SDCard SDCardManager::getInstance()
+
+#if FREEINK_CAP_USB_MSC
+namespace {
+freeink::UsbMassStorage usbMassStorage;
+}
+#endif
 
 HalStorage HalStorage::instance;
 
@@ -34,6 +45,59 @@ class HalStorage::StorageLock {
   StorageLock() { xSemaphoreTakeRecursive(HalStorage::getInstance().storageMutex, portMAX_DELAY); }
   ~StorageLock() { xSemaphoreGiveRecursive(HalStorage::getInstance().storageMutex); }
 };
+
+#if FREEINK_CAP_USB_MSC && !FREEINK_SD_SDMMC
+#error "USB Drive requires SDMMC storage"
+#endif
+
+bool HalStorage::beginUsbDrive() {
+#if FREEINK_CAP_USB_MSC
+  StorageLock lock;
+  auto* blockDevice = SDCard.detachFilesystemForRawAccess();
+  if (!blockDevice) return false;
+  if (usbMassStorage.begin(blockDevice)) return true;
+  if (!SDCard.begin()) LOG_ERR("USB", "Could not remount SD after USB startup failure");
+#endif
+  return false;
+}
+
+bool HalStorage::disconnectUsbDriveHost() {
+#if FREEINK_CAP_USB_MSC
+  StorageLock lock;
+  return usbMassStorage.active() && tud_disconnect();
+#else
+  return false;
+#endif
+}
+
+void HalStorage::endUsbDrive() {
+#if FREEINK_CAP_USB_MSC
+  StorageLock lock;
+  usbMassStorage.end();
+#endif
+}
+
+UsbDriveState HalStorage::usbDriveState() const {
+#if FREEINK_CAP_USB_MSC
+  StorageLock lock;
+  switch (usbMassStorage.state()) {
+    case freeink::UsbMassStorageState::WaitingForHost:
+      return UsbDriveState::WaitingForHost;
+    case freeink::UsbMassStorageState::Connected:
+    case freeink::UsbMassStorageState::Accessed:
+      return UsbDriveState::Connected;
+    case freeink::UsbMassStorageState::Ejected:
+      return UsbDriveState::Ejected;
+    case freeink::UsbMassStorageState::Disconnected:
+      return UsbDriveState::Disconnected;
+    case freeink::UsbMassStorageState::IoError:
+      return UsbDriveState::IoError;
+    case freeink::UsbMassStorageState::Idle:
+      break;
+  }
+#endif
+  return UsbDriveState::Unsupported;
+}
 
 #define HAL_STORAGE_WRAPPED_CALL(method, ...) \
   HalStorage::StorageLock lock;               \
