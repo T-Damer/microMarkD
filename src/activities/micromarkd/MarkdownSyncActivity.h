@@ -2,6 +2,8 @@
 
 #ifdef MICROMARKD_APP
 
+#include <Arduino.h>
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -17,6 +19,11 @@ class MarkdownSyncActivity final : public UiListActivity {
   void onEnter() override;
   void onExit() override;
   void loop() override;
+  // A sync can take many minutes; the grace period keeps its result on screen.
+  bool preventAutoSleep() override {
+    return phase_ == Phase::Connecting || phase_ == Phase::Syncing || phase_ == Phase::Indexing ||
+           millis() - syncEndedAtMs_ < SYNC_RESULT_GRACE_MS;
+  }
 
  private:
   enum class Phase : uint8_t { Indexing, Ready, EnteringUrl, EnteringToken, Connecting, Syncing, Complete, Failed };
@@ -25,6 +32,7 @@ class MarkdownSyncActivity final : public UiListActivity {
   static constexpr int COMPLETE_VAULT_INDEX = 1;
   static constexpr size_t MAX_REMOTE_URL_BYTES = 256;
   static constexpr size_t MAX_ACCESS_TOKEN_BYTES = 160;
+  static constexpr unsigned long SYNC_RESULT_GRACE_MS = 5000;
 
   int listCount() const override { return static_cast<int>(rowItems_.size()); }
   void buildScreen(UiScreen& screen) override;
@@ -40,6 +48,7 @@ class MarkdownSyncActivity final : public UiListActivity {
   Phase phase_ = Phase::Indexing;
   bool manifestSaved_ = false;
   bool credentialsSaveFailed_ = false;
+  unsigned long syncEndedAtMs_ = 0;
 
   void refreshActionRow();
   void completeVault();

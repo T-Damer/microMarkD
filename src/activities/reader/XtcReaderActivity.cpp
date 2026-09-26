@@ -7,11 +7,13 @@
 #include <Memory.h>
 
 #include <algorithm>
+#include <cmath>
 
 #include "CrossPointSettings.h"
 #include "ProgressFile.h"
 #include "ReaderActivity.h"
 #include "ReaderUtils.h"
+#include "ReadingSyncBridge.h"
 #include "XtcReaderChapterSelectionActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
@@ -29,7 +31,38 @@ bool XtcReaderActivity::loadBook() {
   xtc = std::move(loadedXtc);
   xtc->setupCacheDir();
   loadProgress();
+#ifdef MICROMARKD_APP
+  // A newer position from another device wins: by source page when this is
+  // a PDF volume holding it, else by fraction of a single-volume book.
+  readingsync::BookRef book;
+  readingsync::Position shared;
+  const uint32_t pages = xtc->getPageCount();
+  if (pages > 0 && ReadingSyncBridge::newerElsewhere(bookPath, book, shared)) {
+    if (book.pdf && shared.page >= book.firstPage && static_cast<uint32_t>(shared.page - book.firstPage) < pages) {
+      currentPage = static_cast<uint32_t>(shared.page - book.firstPage);
+    } else if (!book.multiVolume) {
+      currentPage = static_cast<uint32_t>(std::lround(shared.pct * static_cast<double>(pages - 1)));
+    }
+  }
+#endif
   return true;
+}
+
+bool XtcReaderActivity::currentSharedPosition(double& pct, int& page) const {
+#ifdef MICROMARKD_APP
+  if (!xtc || xtc->getPageCount() == 0) return false;
+  readingsync::BookRef book;
+  // A volume of a split PDF cannot tell its place in the whole book.
+  if (!ReadingSyncBridge::resolve(bookPath, book) || book.multiVolume) return false;
+  const uint32_t pages = xtc->getPageCount();
+  pct = pages > 1 ? static_cast<double>(currentPage) / static_cast<double>(pages - 1) : 0.0;
+  page = book.pdf ? book.firstPage + static_cast<int>(currentPage) : 0;
+  return true;
+#else
+  (void)pct;
+  (void)page;
+  return false;
+#endif
 }
 
 void XtcReaderActivity::openChapterSelection() {

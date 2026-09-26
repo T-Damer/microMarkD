@@ -87,6 +87,8 @@ class EpubReaderActivity final : public ReaderActivity {
   void rememberCurrentContentOffset();
   bool saveProgress(int spineIndex, int currentPage, int pageCount);
   void jumpToPercent(int percent);
+  // Spine item and position inside it for a fraction of the book's text.
+  bool fractionTarget(float fraction, int& spineIndex, float& spineProgress) const;
   void onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction action);
   void openReaderMenu();
   void openDictionaryWordSelect();
@@ -105,6 +107,7 @@ class EpubReaderActivity final : public ReaderActivity {
   void applyOrientation(uint8_t orientation);
 
   bool loadBook() override;
+  bool currentSharedPosition(double& pct, int& page) const override;
   std::string getBookTitle() const override { return epub ? epub->getTitle() : ""; }
   std::string getBookAuthor() const override { return epub ? epub->getAuthor() : ""; }
   std::string getBookThumbBmpPath() const override { return epub ? epub->getThumbBmpPath() : ""; }

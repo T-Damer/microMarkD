@@ -4,13 +4,14 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <HalClock.h>
 #include <HalStorage.h>
 #include <I18n.h>
 #include <MarkdownIndex.h>
 #include <Memory.h>
 #include <WiFi.h>
 
-#ifndef SIMULATOR
+#if !defined(SIMULATOR) || defined(SIMULATOR_GIT)
 #include <SecureHttpClient.h>
 #include <esp32_git.h>
 
@@ -55,7 +56,7 @@ std::string& sessionAccessToken() {
   return value;
 }
 
-#ifndef SIMULATOR
+#if !defined(SIMULATOR) || defined(SIMULATOR_GIT)
 constexpr char GIT_MODULE[] = "MDG";
 constexpr char DEFAULT_GIT_BRANCH[] = "main";
 constexpr char BOOK_GIT_BRANCH[] = "books";
@@ -198,10 +199,46 @@ int gitFileRename(const char* from, const char* to) {
   return -1;
 }
 
+int gitListDirectory(const char* dir, void (*entry)(void*, const char*, int), void* context) {
+  if (!dir || !entry) return -1;
+  HalFile directory = Storage.open(dir);
+  if (!directory || !directory.isDirectory()) return -1;
+  char name[256];
+  for (HalFile child = directory.openNextFile(); child; child = directory.openNextFile()) {
+    if (child.getName(name, sizeof(name)) == 0) continue;
+    entry(context, name, child.isDirectory() ? 1 : 0);
+  }
+  return 0;
+}
+
+// No `stat`: FAT timestamps are not maintained here, so esp32-git hashes files
+// to find edits instead of trusting modification times.
 const esp32git_fs_port GIT_FS_PORT = {
     gitFileSize,   gitReadFile,        gitWriteFile,
     gitFileExists, gitMakeDirectories, {gitFileOpen, gitFileRead, gitFileWrite, gitFileSeek, gitFileClose},
-    gitFileRemove, gitFileRename};
+    gitFileRemove, gitFileRename,      gitListDirectory,
+    nullptr};
+
+// Notes plus the book catalog and shared reading positions, which the readers
+// use to open books where another device left off.
+int vaultDownloadFilter(void*, const char* path) {
+  if (esp32git_filter_notes(nullptr, path)) return 1;
+  if (strcmp(path, "Books/catalog.json") == 0) return 1;
+  constexpr char SYNC_PREFIX[] = "Books/sync/";
+  constexpr char JSON_SUFFIX[] = ".json";
+  const size_t length = strlen(path);
+  return strncmp(path, SYNC_PREFIX, sizeof(SYNC_PREFIX) - 1) == 0 && length > sizeof(JSON_SUFFIX) - 1 &&
+         strcmp(path + length - (sizeof(JSON_SUFFIX) - 1), JSON_SUFFIX) == 0;
+}
+
+constexpr int GIT_ATTEMPTS = 3;
+
+template <typename Operation>
+esp32git_status withRetries(Operation&& operation) {
+  esp32git_status status = ESP32GIT_IO_ERROR;
+  for (int attempt = 0; attempt < GIT_ATTEMPTS && status == ESP32GIT_IO_ERROR; ++attempt) status = operation();
+  return status;
+}
 
 int gitHttpRequest(const char* url, const int isPost, const char* user, const char* token, const char* contentType,
                    const uint8_t* body, const size_t bodyLength, uint8_t** outBody, size_t* outLength) {
@@ -356,7 +393,7 @@ void MarkdownSyncActivity::onEnter() {
 }
 
 void MarkdownSyncActivity::onExit() {
-#ifndef SIMULATOR
+#if !defined(SIMULATOR) || defined(SIMULATOR_GIT)
   unregisterGitPorts();
 #endif
   UiListActivity::onExit();
@@ -417,14 +454,15 @@ bool MarkdownSyncActivity::downloadBook(const std::string& path, std::string& st
     status = tr(STR_MICROMARKD_BOOK_SYNC_FIRST);
     return false;
   }
-#ifndef SIMULATOR
+#if !defined(SIMULATOR) || defined(SIMULATOR_GIT)
   registerGitPorts();
   const auto& remote = sessionRemoteUrl();
   const auto& token = sessionAccessToken();
   const esp32git_remote auth = token.empty() ? esp32git_remote{nullptr, nullptr, nullptr}
                                              : esp32git_remote{remote.c_str(), GITHUB_TOKEN_USER, token.c_str()};
-  const esp32git_status result =
-      esp32git_download_path_url(remote.c_str(), BOOK_ROOT, path.c_str(), token.empty() ? nullptr : &auth);
+  const esp32git_status result = withRetries([&] {
+    return esp32git_download_path_url(remote.c_str(), BOOK_ROOT, path.c_str(), token.empty() ? nullptr : &auth);
+  });
   unregisterGitPorts();
   status = gitStatusText(result);
   return result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE;
@@ -438,7 +476,7 @@ void MarkdownSyncActivity::completeVault() {
   status_ = tr(STR_MICROMARKD_GIT_COMPLETING);
   phase_ = Phase::Syncing;
   requestUpdateAndWait();
-#ifndef SIMULATOR
+#if !defined(SIMULATOR) || defined(SIMULATOR_GIT)
   registerGitPorts();
   const esp32git_remote auth = accessToken_.empty()
                                    ? esp32git_remote{nullptr, nullptr, nullptr}
@@ -447,6 +485,7 @@ void MarkdownSyncActivity::completeVault() {
       esp32git_download_missing_files_url(remoteUrl_.c_str(), VAULT_ROOT, accessToken_.empty() ? nullptr : &auth);
   phase_ = result == ESP32GIT_OK ? Phase::Complete : Phase::Failed;
   status_ = gitStatusText(result);
+  syncEndedAtMs_ = millis();
 #else
   phase_ = Phase::Failed;
   status_ = tr(STR_MICROMARKD_GIT_SIMULATED);
@@ -528,7 +567,7 @@ void MarkdownSyncActivity::syncRepository() {
   status_ = Storage.exists("/vault/.git/HEAD") ? tr(STR_MICROMARKD_GIT_PULLING) : tr(STR_MICROMARKD_GIT_CLONING);
   requestUpdateAndWait();
 
-#ifdef SIMULATOR
+#if defined(SIMULATOR) && !defined(SIMULATOR_GIT)
   status_ = tr(STR_MICROMARKD_GIT_SIMULATED);
   phase_ = Phase::Complete;
   sessionRemoteUrl() = remoteUrl_;
@@ -536,42 +575,61 @@ void MarkdownSyncActivity::syncRepository() {
   requestUpdate();
   return;
 #else
+  if (!Storage.exists("/vault/.git/HEAD") && !directoryIsEmpty(VAULT_ROOT)) {
+    status_ = tr(STR_MICROMARKD_GIT_NOT_EMPTY);
+    phase_ = Phase::Failed;
+    syncEndedAtMs_ = millis();
+    requestUpdate();
+    return;
+  }
+  // Commits made here and shared reading positions carry wall-clock times.
+  halClock.syncFromNTP();
+
   registerGitPorts();
   const esp32git_remote auth = accessToken_.empty()
                                    ? esp32git_remote{nullptr, nullptr, nullptr}
                                    : esp32git_remote{remoteUrl_.c_str(), GITHUB_TOKEN_USER, accessToken_.c_str()};
-  esp32git_status result = ESP32GIT_IO_ERROR;
-  if (Storage.exists("/vault/.git/HEAD")) {
-    result = esp32git_fetch_url_partial(remoteUrl_.c_str(), DEFAULT_GIT_BRANCH, VAULT_ROOT,
-                                        accessToken_.empty() ? nullptr : &auth);
-  } else if (directoryIsEmpty(VAULT_ROOT)) {
-    result = esp32git_clone_url_partial(remoteUrl_.c_str(), DEFAULT_GIT_BRANCH, VAULT_ROOT,
-                                        accessToken_.empty() ? nullptr : &auth);
-  } else {
-    status_ = tr(STR_MICROMARKD_GIT_NOT_EMPTY);
-    phase_ = Phase::Failed;
-    requestUpdate();
-    return;
-  }
+  const esp32git_remote* authPtr = accessToken_.empty() ? nullptr : &auth;
+  static const esp32git_identity IDENTITY = {"Xteink", "xteink@micromarkd"};
+  esp32git_sync_options options{};
+  options.branch = DEFAULT_GIT_BRANCH;
+  options.identity = &IDENTITY;
+  options.message = "Sync from Xteink";
+  options.conflict_tag = "xteink";
+  options.download_filter = vaultDownloadFilter;
+  options.progress = [](void* context, const size_t done, const size_t total, const char*) {
+    auto* self = static_cast<MarkdownSyncActivity*>(context);
+    char text[96];
+    snprintf(text, sizeof(text), tr(STR_MICROMARKD_GIT_NOTES_PROGRESS), static_cast<int>(done),
+             static_cast<int>(total));
+    self->status_ = text;
+    self->requestUpdate();
+  };
+  options.progress_ctx = this;
+  esp32git_sync_report report{};
+  esp32git_status result = esp32git_sync_url(remoteUrl_.c_str(), VAULT_ROOT, authPtr, &options, &report);
 
   if (result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE) {
-    const esp32git_status notes =
-        esp32git_download_missing_notes_url(remoteUrl_.c_str(), VAULT_ROOT, accessToken_.empty() ? nullptr : &auth);
-    if (notes != ESP32GIT_OK) result = notes;
-  }
-  if (result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE) {
+    status_ = tr(STR_MICROMARKD_GIT_UPDATING_BOOKS);
+    requestUpdate();
     if (Storage.exists("/books/.git/HEAD")) {
-      result = esp32git_fetch_url_partial(remoteUrl_.c_str(), BOOK_GIT_BRANCH, BOOK_ROOT,
-                                          accessToken_.empty() ? nullptr : &auth);
+      result = withRetries(
+          [&] { return esp32git_fetch_url_partial(remoteUrl_.c_str(), BOOK_GIT_BRANCH, BOOK_ROOT, authPtr); });
     } else if (directoryIsEmpty(BOOK_ROOT)) {
-      result = esp32git_clone_url_partial(remoteUrl_.c_str(), BOOK_GIT_BRANCH, BOOK_ROOT,
-                                          accessToken_.empty() ? nullptr : &auth);
+      result = withRetries(
+          [&] { return esp32git_clone_url_partial(remoteUrl_.c_str(), BOOK_GIT_BRANCH, BOOK_ROOT, authPtr); });
     } else {
       result = ESP32GIT_REMOTE_DIVERGED;
     }
   }
 
   status_ = gitStatusText(result);
+  if ((result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE) && report.conflicts > 0) {
+    char text[128];
+    snprintf(text, sizeof(text), tr(STR_MICROMARKD_GIT_SYNCED_CONFLICTS), static_cast<int>(report.conflicts));
+    status_ = text;
+  }
+  syncEndedAtMs_ = millis();
   phase_ = result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE ? Phase::Complete : Phase::Failed;
   if (phase_ == Phase::Complete) {
     sessionRemoteUrl() = remoteUrl_;

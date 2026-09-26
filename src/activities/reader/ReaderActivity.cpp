@@ -9,14 +9,15 @@
 #include "CrossPointSettings.h"
 #include "CrossPointState.h"
 #include "EpubReaderActivity.h"
+#include "I18n.h"
 #include "ReaderUtils.h"
+#include "ReadingSyncBridge.h"
 #include "RecentBooksStore.h"
 #include "SdCardFontSystem.h"
 #include "TxtReaderActivity.h"
 #include "XtcReaderActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
-#include "I18n.h"
 
 namespace {
 constexpr int TOUCH_NAV_BUTTON_WIDTH = 96;
@@ -79,6 +80,11 @@ void ReaderActivity::onEnter() {
 }
 
 void ReaderActivity::onExit() {
+#ifdef MICROMARKD_APP
+  double pct = 0;
+  int page = 0;
+  if (currentSharedPosition(pct, page)) ReadingSyncBridge::exportPosition(bookPath, pct, page);
+#endif
   Activity::onExit();
 
   renderer.setOrientation(GfxRenderer::Orientation::Portrait);

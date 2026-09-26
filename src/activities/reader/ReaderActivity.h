@@ -38,6 +38,9 @@ class ReaderActivity : public Activity {
   virtual void renderBook() = 0;
   virtual void applyInitialOrientation();
   virtual void onEndOfBookRendered() {}
+  // Position shared with other devices: fraction of the book and, for XTC
+  // copies of a PDF, the source page (else 0). False when not known.
+  virtual bool currentSharedPosition(double& /*pct*/, int& /*page*/) const { return false; }
 
   bool handleBackNavigation();
   bool handleTouchNavigation();

@@ -33,6 +33,7 @@
 #include "QrDisplayActivity.h"
 #include "ReaderActivity.h"
 #include "ReaderUtils.h"
+#include "ReadingSyncBridge.h"
 #include "RecentBooksStore.h"
 #include "SdCardFontSystem.h"
 #include "activities/settings/TextSettingsActivity.h"
@@ -223,6 +224,22 @@ bool EpubReaderActivity::loadBook() {
   }
 
   loadCachedBookmarks();
+#ifdef MICROMARKD_APP
+  // A newer position from another device (phone, desktop) wins over this one.
+  readingsync::BookRef sharedBook;
+  readingsync::Position shared;
+  int sharedSpine = 0;
+  float sharedProgress = 0.0f;
+  if (ReadingSyncBridge::newerElsewhere(bookPath, sharedBook, shared) &&
+      fractionTarget(static_cast<float>(shared.pct), sharedSpine, sharedProgress)) {
+    LOG_DBG("ERS", "Opening at %.3f from %s", shared.pct, shared.deviceId.c_str());
+    currentSpineIndex = sharedSpine;
+    nextPageNumber = 0;
+    pendingSpineProgress = sharedProgress;
+    pendingPercentJump = true;
+    cachedVisibleTextOffset.reset();
+  }
+#endif
   return true;
 }
 
@@ -574,37 +591,47 @@ void EpubReaderActivity::loop() {
   requestUpdate();
 }
 
-void EpubReaderActivity::jumpToPercent(int percent) {
-  if (!epub) return;
+bool EpubReaderActivity::fractionTarget(const float fraction, int& spineIndex, float& spineProgress) const {
+  if (!epub) return false;
   const size_t bookSize = epub->getBookSize();
-  if (bookSize == 0) return;
-
-  percent = clampPercent(percent);
-
-  size_t targetSize =
-      (bookSize / 100) * static_cast<size_t>(percent) + (bookSize % 100) * static_cast<size_t>(percent) / 100;
-  if (percent >= 100) targetSize = bookSize - 1;
-
   const int spineCount = epub->getSpineItemsCount();
-  if (spineCount == 0) return;
+  if (bookSize == 0 || spineCount == 0) return false;
+  const float clamped = std::clamp(fraction, 0.0f, 1.0f);
+  size_t targetSize = static_cast<size_t>(static_cast<double>(bookSize) * clamped);
+  if (targetSize >= bookSize) targetSize = bookSize - 1;
 
-  int targetSpineIndex = spineCount - 1;
+  spineIndex = spineCount - 1;
   size_t prevCumulative = 0;
-
   for (int i = 0; i < spineCount; i++) {
     const size_t cumulative = epub->getCumulativeSpineItemSize(i);
     if (targetSize <= cumulative) {
-      targetSpineIndex = i;
+      spineIndex = i;
       prevCumulative = (i > 0) ? epub->getCumulativeSpineItemSize(i - 1) : 0;
       break;
     }
   }
-
-  const size_t cumulative = epub->getCumulativeSpineItemSize(targetSpineIndex);
+  const size_t cumulative = epub->getCumulativeSpineItemSize(spineIndex);
   const size_t spineSize = (cumulative > prevCumulative) ? (cumulative - prevCumulative) : 0;
-  pendingSpineProgress =
+  spineProgress =
       (spineSize == 0) ? 0.0f : static_cast<float>(targetSize - prevCumulative) / static_cast<float>(spineSize);
-  pendingSpineProgress = std::clamp(pendingSpineProgress, 0.0f, 1.0f);
+  spineProgress = std::clamp(spineProgress, 0.0f, 1.0f);
+  return true;
+}
+
+bool EpubReaderActivity::currentSharedPosition(double& pct, int& page) const {
+  if (!epub || !section || epub->getBookSize() == 0 || section->estimatedTotalPages() <= 0) return false;
+  const float chapterProgress =
+      static_cast<float>(section->currentPage) / static_cast<float>(section->estimatedTotalPages());
+  pct = epub->calculateProgress(currentSpineIndex, chapterProgress);
+  page = 0;
+  return true;
+}
+
+void EpubReaderActivity::jumpToPercent(int percent) {
+  int targetSpineIndex = 0;
+  if (!fractionTarget(static_cast<float>(clampPercent(percent)) / 100.0f, targetSpineIndex, pendingSpineProgress)) {
+    return;
+  }
 
   {
     RenderLock lock;
