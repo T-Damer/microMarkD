@@ -20,4 +20,8 @@ void exportPosition(const std::string& bookPath, double pct, int page);
 // A position from another device that is newer than this device's own.
 bool newerElsewhere(const std::string& bookPath, readingsync::BookRef& book, readingsync::Position& position);
 
+// Git URL of the repository holding the library's `books` branch: the one the
+// synced catalog names, else `vaultUrl` (books kept in the vault itself).
+std::string booksRemoteUrl(const std::string& vaultUrl);
+
 }  // namespace ReadingSyncBridge

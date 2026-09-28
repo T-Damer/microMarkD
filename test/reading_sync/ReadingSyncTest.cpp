@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <cstring>
+
 #include "ReadingSync.h"
 
 using namespace readingsync;
@@ -47,6 +50,48 @@ TEST(ReadingSync, FindsBooksBySourceOrXteinkCopy) {
 
   EXPECT_FALSE(findBook(kCatalog, "Books/files/personal/Другое.epub", book));
   EXPECT_FALSE(findBook("{\"version\":1,\"books\":[]}", "Books/files/personal/Роман.epub", book));
+}
+
+TEST(ReadingSync, ScansALargeCatalogInSmallReads) {
+  // ~400 books, as after the Boox import: far more than the device could parse at once.
+  std::string catalog = R"({"version": 2, "files": {"repository": "T-Damer/ZettleKasten-library", "branch": "books"},
+    "books": [)";
+  for (int i = 0; i < 400; i++) {
+    char id[33];
+    snprintf(id, sizeof(id), "%032x", i + 1);
+    if (i) catalog += ",";
+    catalog +=
+        std::string(R"({"id": ")") + id + R"(", "title": "Книга \")" + std::to_string(i) +
+        R"(\" {с} [скобками]", "format": "epub", "library": "gold", "source": {"path": "Books/files/gold/Книга )" +
+        std::to_string(i) +
+        R"(.epub", "gitSha": "a", "bytes": 1, "sha256": "b"}, "xteink": [], "positionMap": "epub-percent"})";
+  }
+  catalog += "]}";
+  struct Source {
+    const std::string* text;
+    size_t offset = 0;
+    size_t largestRead = 0;
+  } source{&catalog};
+  const auto read = [](void* context, char* buffer, size_t capacity) {
+    auto* s = static_cast<Source*>(context);
+    capacity = std::min<size_t>(capacity, 7);  // tokens split across reads
+    const size_t n = std::min(capacity, s->text->size() - s->offset);
+    memcpy(buffer, s->text->data() + s->offset, n);
+    s->offset += n;
+    s->largestRead = std::max(s->largestRead, n);
+    return n;
+  };
+  BookRef book;
+  ASSERT_TRUE(findBook(CatalogReader{&source, read}, "Books/files/gold/Книга 399.epub", book));
+  EXPECT_EQ(book.id, "00000000000000000000000000000190");
+  EXPECT_EQ(book.title, "Книга \"399\" {с} [скобками]");
+  EXPECT_LE(source.largestRead, 7u);
+  EXPECT_TRUE(findBook(catalog, "Books/files/gold/Книга 1.epub", book));
+
+  EXPECT_EQ(filesRepository(catalog), "T-Damer/ZettleKasten-library");
+  EXPECT_EQ(filesRepository(kCatalog), "");
+  EXPECT_EQ(filesRepository(R"({"version": 2, "files": {"repository": "x/y z", "branch": "books"}, "books": []})"), "");
+  EXPECT_EQ(filesRepository(R"({"version": 3, "files": {"repository": "a/b", "branch": "books"}, "books": []})"), "");
 }
 
 TEST(ReadingSync, ReadsThePluginFormat) {

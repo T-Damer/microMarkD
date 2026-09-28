@@ -5,6 +5,7 @@
 // newest position across all device files for a book. Pure C++ so it runs in
 // host tests; file access stays in the firmware glue.
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -24,9 +25,23 @@ struct BookRef {
   bool multiVolume = false;
 };
 
+// Supplies the next catalog bytes into `buffer`; 0 at the end. The catalog grows
+// with the library (hundreds of KB), so it is scanned, never held whole: only
+// one book entry is parsed at a time.
+struct CatalogReader {
+  void* context;
+  size_t (*read)(void* context, char* buffer, size_t capacity);
+};
+
 // Finds the catalog entry owning `filesPath`, a path on the books branch such
 // as "Books/files/medical/Title.xtc" (the source or one of its Xteink copies).
+bool findBook(const CatalogReader& read, std::string_view filesPath, BookRef& out);
 bool findBook(std::string_view catalogJson, std::string_view filesPath, BookRef& out);
+
+// "owner/name" of the GitHub repository whose `books` branch holds the book
+// files (catalog "files.repository"); empty when they live in the vault itself.
+std::string filesRepository(const CatalogReader& read);
+std::string filesRepository(std::string_view catalogJson);
 
 struct Position {
   int64_t updatedAt = 0;  // milliseconds since the epoch

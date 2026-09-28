@@ -4,13 +4,12 @@
 
 #include <HalStorage.h>
 #include <Logging.h>
+#include <esp_mac.h>
 #include <sys/time.h>
 
 #include <cmath>
 #include <cstdio>
 #include <vector>
-
-#include <esp_mac.h>
 
 namespace ReadingSyncBridge {
 
@@ -69,6 +68,14 @@ int64_t nowMs() {
   return static_cast<int64_t>(now.tv_sec) * 1000 + now.tv_usec / 1000;
 }
 
+// The catalog is streamed from the SD card; it outgrows the heap as the library grows.
+size_t readCatalog(void* context, char* buffer, const size_t capacity) {
+  const int n = static_cast<HalFile*>(context)->read(buffer, capacity);
+  return n > 0 ? static_cast<size_t>(n) : 0;
+}
+
+readingsync::CatalogReader catalogReader(HalFile& file) { return {&file, readCatalog}; }
+
 std::string bookDir(const readingsync::BookRef& book) { return std::string(SYNC_ROOT) + "/" + book.id; }
 
 std::string ownFile(const readingsync::BookRef& book) { return bookDir(book) + "/" + deviceId() + ".json"; }
@@ -77,9 +84,18 @@ std::string ownFile(const readingsync::BookRef& book) { return bookDir(book) + "
 
 bool resolve(const std::string& bookPath, readingsync::BookRef& book) {
   if (bookPath.rfind(FILES_PREFIX, 0) != 0) return false;
-  const std::string catalog = readText(CATALOG_PATH);
-  if (catalog.empty()) return false;
-  return readingsync::findBook(catalog, std::string_view(bookPath).substr(sizeof(LIBRARY_PREFIX) - 1), book);
+  HalFile catalog;
+  if (!Storage.openFileForRead(MODULE, CATALOG_PATH, catalog)) return false;
+  return readingsync::findBook(catalogReader(catalog), std::string_view(bookPath).substr(sizeof(LIBRARY_PREFIX) - 1),
+                               book);
+}
+
+std::string booksRemoteUrl(const std::string& vaultUrl) {
+  HalFile catalog;
+  if (!Storage.openFileForRead(MODULE, CATALOG_PATH, catalog)) return vaultUrl;
+  const std::string repository = readingsync::filesRepository(catalogReader(catalog));
+  if (repository.empty()) return vaultUrl;
+  return "https://github.com/" + repository + ".git";
 }
 
 void exportPosition(const std::string& bookPath, const double pct, const int page) {

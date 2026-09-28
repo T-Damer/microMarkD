@@ -29,6 +29,7 @@
 #include "activities/micromarkd/MarkdownCatalogStorage.h"
 #include "activities/micromarkd/MarkdownIndexStorage.h"
 #include "activities/network/WifiSelectionActivity.h"
+#include "activities/reader/ReadingSyncBridge.h"
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 #include "components/UiAppHelpers.h"
@@ -456,7 +457,7 @@ bool MarkdownSyncActivity::downloadBook(const std::string& path, std::string& st
   }
 #if !defined(SIMULATOR) || defined(SIMULATOR_GIT)
   registerGitPorts();
-  const auto& remote = sessionRemoteUrl();
+  const std::string remote = ReadingSyncBridge::booksRemoteUrl(sessionRemoteUrl());
   const auto& token = sessionAccessToken();
   const esp32git_remote auth = token.empty() ? esp32git_remote{nullptr, nullptr, nullptr}
                                              : esp32git_remote{remote.c_str(), GITHUB_TOKEN_USER, token.c_str()};
@@ -612,12 +613,16 @@ void MarkdownSyncActivity::syncRepository() {
   if (result == ESP32GIT_OK || result == ESP32GIT_UP_TO_DATE) {
     status_ = tr(STR_MICROMARKD_GIT_UPDATING_BOOKS);
     requestUpdate();
+    // The vault was just synced, so its catalog names the current books repository.
+    const std::string booksUrl = ReadingSyncBridge::booksRemoteUrl(remoteUrl_);
+    const esp32git_remote booksAuth{booksUrl.c_str(), GITHUB_TOKEN_USER, accessToken_.c_str()};
+    const esp32git_remote* booksAuthPtr = accessToken_.empty() ? nullptr : &booksAuth;
     if (Storage.exists("/books/.git/HEAD")) {
       result = withRetries(
-          [&] { return esp32git_fetch_url_partial(remoteUrl_.c_str(), BOOK_GIT_BRANCH, BOOK_ROOT, authPtr); });
+          [&] { return esp32git_fetch_url_partial(booksUrl.c_str(), BOOK_GIT_BRANCH, BOOK_ROOT, booksAuthPtr); });
     } else if (directoryIsEmpty(BOOK_ROOT)) {
       result = withRetries(
-          [&] { return esp32git_clone_url_partial(remoteUrl_.c_str(), BOOK_GIT_BRANCH, BOOK_ROOT, authPtr); });
+          [&] { return esp32git_clone_url_partial(booksUrl.c_str(), BOOK_GIT_BRANCH, BOOK_ROOT, booksAuthPtr); });
     } else {
       result = ESP32GIT_REMOTE_DIVERGED;
     }
