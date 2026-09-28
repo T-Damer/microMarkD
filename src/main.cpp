@@ -29,6 +29,7 @@
 #include "KOReaderCredentialStore.h"
 #include "MappedInputManager.h"
 #include "OpdsServerStore.h"
+#include "Provisioning.h"
 #include "RecentBooksStore.h"
 #include "SdCardFontSystem.h"
 #include "activities/Activity.h"
@@ -432,6 +433,7 @@ void setup() {
 
   HalSystem::checkPanic();
 
+  Provisioning::apply();
   SETTINGS.loadFromFile();
   APP_STATE.loadFromFile();
   RECENT_BOOKS.loadFromFile();

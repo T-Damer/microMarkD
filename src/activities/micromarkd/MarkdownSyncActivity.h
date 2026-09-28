@@ -15,6 +15,8 @@ class MarkdownSyncActivity final : public UiListActivity {
  public:
   MarkdownSyncActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
   static bool downloadBook(const std::string& path, std::string& status);
+  // Stores the vault's Git remote and token as if entered on the sync screen.
+  static bool saveSyncCredentials(const std::string& url, const std::string& token);
 
   void onEnter() override;
   void onExit() override;

@@ -33,3 +33,6 @@ lib/EpdFont/scripts/output/
 /sdkconfig.*
 sdkconfig.sticky
 flake.*
+
+# Firmware provisioning with secrets (scripts/gen_provisioning.py)
+provision.local.json

@@ -1,0 +1,10 @@
+{
+  "wifi": [
+    {"ssid": "Имя сети", "password": "пароль"}
+  ],
+  "git": {
+    "url": "https://github.com/T-Damer/ZettleKasten",
+    "token": "github_pat_... (Contents: Read and write на ZettleKasten и ZettleKasten-library)"
+  },
+  "settings": {"language": "RU"}
+}

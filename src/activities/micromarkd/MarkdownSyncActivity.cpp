@@ -449,6 +449,10 @@ void MarkdownSyncActivity::refreshActionRow() {
   rowItems_[COMPLETE_VAULT_INDEX].actionValue = COMPLETE_VAULT_INDEX;
 }
 
+bool MarkdownSyncActivity::saveSyncCredentials(const std::string& url, const std::string& token) {
+  return saveCredentials(url, token);
+}
+
 bool MarkdownSyncActivity::downloadBook(const std::string& path, std::string& status) {
   loadSavedCredentials();
   if (path.rfind("Books/files/", 0) != 0 || sessionRemoteUrl().empty()) {
